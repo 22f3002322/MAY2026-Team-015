@@ -37,14 +37,23 @@ const Table = ({
                 </td>
               </tr>
             ) : data.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="py-16 text-center text-slate-500"
-                >
-                  {emptyMessage}
+            <tr>
+                <td colSpan={columns.length} className="p-0">
+                <div className="flex flex-col items-center justify-center py-16">
+                    <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100">
+                    📄
+                    </div>
+
+                    <h3 className="text-lg font-semibold text-slate-700">
+                    No Records Found
+                    </h3>
+
+                    <p className="mt-2 text-sm text-slate-500">
+                    {emptyMessage}
+                    </p>
+                </div>
                 </td>
-              </tr>
+            </tr>
             ) : (
               data.map((row, rowIndex) => (
                 <tr
