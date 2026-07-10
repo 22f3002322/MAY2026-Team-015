@@ -16,6 +16,8 @@ const Badge = ({
 
     info: "bg-sky-100 text-sky-700",
 
+    secondary: "bg-slate-200 text-slate-700",
+
     purple: "bg-purple-100 text-purple-700",
   };
 

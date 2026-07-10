@@ -2,7 +2,7 @@ import {
   LayoutDashboard,
   Building2,
   Users,
-  CircleAlert,
+  ClipboardList,
   UserRoundCheck,
   CalendarDays,
   Megaphone,
@@ -33,7 +33,7 @@ const menuItems = [
   },
   {
     title: "Complaints",
-    icon: CircleAlert,
+    icon: ClipboardList,
     path: "/complaints",
   },
   {
