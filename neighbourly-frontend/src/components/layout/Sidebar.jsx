@@ -6,8 +6,9 @@ import {
   UserRoundCheck,
   CalendarDays,
   Megaphone,
-  Bell,
+  FolderOpen,
   Vote,
+  FileBarChart2,
   ReceiptIndianRupee,
   BriefcaseBusiness,
   Settings,
@@ -16,11 +17,14 @@ import {
 import { NavLink } from "react-router-dom";
 
 const menuItems = [
+  // Dashboard
   {
     title: "Dashboard",
     icon: LayoutDashboard,
     path: "/dashboard",
   },
+
+  // Society Management
   {
     title: "Apartments",
     icon: Building2,
@@ -41,25 +45,12 @@ const menuItems = [
     icon: UserRoundCheck,
     path: "/visitors",
   },
+
+  // Operations
   {
     title: "Facility Booking",
     icon: CalendarDays,
     path: "/bookings",
-  },
-  {
-    title: "Announcements",
-    icon: Megaphone,
-    path: "/announcements",
-  },
-  {
-    title: "Notifications",
-    icon: Bell,
-    path: "/notifications",
-  },
-  {
-    title: "Polls",
-    icon: Vote,
-    path: "/polls",
   },
   {
     title: "Billing",
@@ -67,8 +58,32 @@ const menuItems = [
     path: "/billing",
   },
   {
+    title: "Notice Board",
+    icon: Megaphone,
+    path: "/notices",
+  },
+
+  // Coming Modules
+  {
+    title: "Documents",
+    icon: FolderOpen,
+    path: "/documents",
+  },
+  {
+    title: "Polls",
+    icon: Vote,
+    path: "/polls",
+  },
+  {
+    title: "Reports",
+    icon: FileBarChart2,
+    path: "/reports",
+  },
+
+  // Administration
+  {
     title: "Staff",
-    icon: BriefcaseBusiness,
+    icon: Users,
     path: "/staff",
   },
   {

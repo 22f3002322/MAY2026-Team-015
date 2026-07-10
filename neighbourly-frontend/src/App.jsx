@@ -5,6 +5,9 @@ import Residents from "./pages/admin/Residents";
 import Apartments from "./pages/admin/Apartments";
 import Complaints from "./pages/admin/Complaints";
 import Visitors from "./pages/admin/Visitors";
+import FacilityBookings from "./pages/admin/FacilityBookings";
+import Billing from "./pages/admin/Billing";
+import Notices from "./pages/admin/Notices";
 
 function App() {
   return (
@@ -15,6 +18,9 @@ function App() {
       <Route path="/apartments" element={<Apartments/>} />
       <Route path="/complaints" element={<Complaints />} />
       <Route path="/visitors" element={<Visitors />} />
+      <Route path="/bookings" element={<FacilityBookings />} />
+      <Route path="/billing" element={<Billing />} />
+      <Route path="/notices" element={<Notices />} />
     </Routes>
   );
 }
