@@ -17,14 +17,6 @@ import ExportReports from "../../components/reports/ExportReports";
 import useReportStore from "../../store/reportStore";
 
 const Reports = () => {
-  const fetchReports = useReportStore(
-    (state) => state.fetchReports
-  );
-
-  useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
-
   return (
     <Layout
       title="Reports & Analytics"

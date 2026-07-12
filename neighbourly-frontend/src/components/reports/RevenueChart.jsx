@@ -1,222 +1,140 @@
-import { create } from "zustand";
+import { useMemo } from "react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
 
-const currentYear = new Date().getFullYear();
+import Card from "../ui/Card";
+import useBillingStore from "../../store/billingStore";
 
-const useReportStore = create((set, get) => ({
-  // ===========================
-  // Filters
-  // ===========================
-  filters: {
-    fromDate: "",
-    toDate: "",
-    month: "",
-    year: currentYear,
-  },
+const months = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
-  updateFilters: (data) =>
-    set((state) => ({
-      filters: {
-        ...state.filters,
-        ...data,
-      },
-    })),
+const RevenueChart = () => {
+  const bills = useBillingStore(
+    (state) => state.bills
+  );
 
-  resetFilters: () =>
-    set({
-      filters: {
-        fromDate: "",
-        toDate: "",
-        month: "",
-        year: currentYear,
-      },
-    }),
+  const revenueData = useMemo(() => {
+    const revenue = months.map((month) => ({
+      month,
+      revenue: 0,
+    }));
 
-  // ===========================
-  // Dashboard Stats
-  // ===========================
-  stats: [
-    {
-      title: "Total Revenue",
-      value: "₹12.8L",
-      change: "+18%",
-      trend: "up",
-    },
-    {
-      title: "Occupancy Rate",
-      value: "94%",
-      change: "+2%",
-      trend: "up",
-    },
-    {
-      title: "Open Complaints",
-      value: "18",
-      change: "-6",
-      trend: "down",
-    },
-    {
-      title: "Total Visitors",
-      value: "3,482",
-      change: "+11%",
-      trend: "up",
-    },
-  ],
+    bills.forEach((bill) => {
+      if (
+        bill.status !== "Paid" ||
+        !bill.paidDate
+      )
+        return;
 
-  // ===========================
-  // Revenue
-  // ===========================
-  revenueData: [
-    { month: "Jan", revenue: 820000 },
-    { month: "Feb", revenue: 860000 },
-    { month: "Mar", revenue: 910000 },
-    { month: "Apr", revenue: 955000 },
-    { month: "May", revenue: 990000 },
-    { month: "Jun", revenue: 1030000 },
-    { month: "Jul", revenue: 1080000 },
-    { month: "Aug", revenue: 1120000 },
-    { month: "Sep", revenue: 1160000 },
-    { month: "Oct", revenue: 1200000 },
-    { month: "Nov", revenue: 1240000 },
-    { month: "Dec", revenue: 1280000 },
-  ],
+      // paidDate format: "08 Jul 2026"
+      const monthName =
+        bill.paidDate.split(" ")[1];
 
-  // ===========================
-  // Complaints
-  // ===========================
-  complaintData: [
-    { name: "Plumbing", value: 28 },
-    { name: "Electrical", value: 22 },
-    { name: "Cleaning", value: 18 },
-    { name: "Parking", value: 15 },
-    { name: "Security", value: 17 },
-  ],
+      const index =
+        months.indexOf(monthName);
 
-  // ===========================
-  // Occupancy
-  // ===========================
-  occupancyData: [
-    {
-      status: "Occupied",
-      apartments: 188,
-      color: "#22C55E",
-    },
-    {
-      status: "Vacant",
-      apartments: 12,
-      color: "#F59E0B",
-    },
-    {
-      status: "Maintenance",
-      apartments: 5,
-      color: "#EF4444",
-    },
-  ],
+      if (index !== -1) {
+        revenue[index].revenue += Number(
+          bill.amount
+        );
+      }
+    });
 
-  // ===========================
-  // Billing
-  // ===========================
-  billingData: [
-    {
-      month: "Jan",
-      paid: 180,
-      pending: 12,
-      overdue: 6,
-    },
-    {
-      month: "Feb",
-      paid: 184,
-      pending: 10,
-      overdue: 5,
-    },
-    {
-      month: "Mar",
-      paid: 190,
-      pending: 8,
-      overdue: 4,
-    },
-    {
-      month: "Apr",
-      paid: 186,
-      pending: 11,
-      overdue: 3,
-    },
-    {
-      month: "May",
-      paid: 192,
-      pending: 6,
-      overdue: 2,
-    },
-    {
-      month: "Jun",
-      paid: 195,
-      pending: 4,
-      overdue: 1,
-    },
-  ],
+    return revenue;
+  }, [bills]);
 
-  // ===========================
-  // Polls
-  // ===========================
-  pollData: [
-    {
-      poll: "Parking\nAllocation",
-      votes: 168,
-      color: "#4F46E5",
-    },
-    {
-      poll: "Security\nUpgrade",
-      votes: 152,
-      color: "#22C55E",
-    },
-    {
-      poll: "Clubhouse\nRenovation",
-      votes: 141,
-      color: "#F59E0B",
-    },
-    {
-      poll: "Maintenance\nBudget",
-      votes: 126,
-      color: "#EF4444",
-    },
-  ],
+  return (
+    <Card className="p-6">
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-slate-800">
+          Monthly Revenue
+        </h3>
 
-  // ===========================
-  // Visitors
-  // ===========================
-  visitorData: [
-    { month: "Jan", visitors: 420 },
-    { month: "Feb", visitors: 480 },
-    { month: "Mar", visitors: 510 },
-    { month: "Apr", visitors: 560 },
-    { month: "May", visitors: 610 },
-    { month: "Jun", visitors: 680 },
-  ],
+        <p className="text-sm text-slate-500">
+          Revenue collected from paid bills
+        </p>
+      </div>
 
-  // ===========================
-  // Export Actions
-  // ===========================
-  exportPDF: () => {
-    alert("PDF export will be connected to backend.");
-    console.log("Export PDF", get().filters);
-  },
+      <ResponsiveContainer
+        width="100%"
+        height={340}
+      >
+        <AreaChart data={revenueData}>
+          <defs>
+            <linearGradient
+              id="revenueGradient"
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="1"
+            >
+              <stop
+                offset="5%"
+                stopColor="#4F46E5"
+                stopOpacity={0.4}
+              />
+              <stop
+                offset="95%"
+                stopColor="#4F46E5"
+                stopOpacity={0}
+              />
+            </linearGradient>
+          </defs>
 
-  exportExcel: () => {
-    alert("Excel export will be connected to backend.");
-    console.log("Export Excel", get().filters);
-  },
+          <CartesianGrid
+            strokeDasharray="3 3"
+            vertical={false}
+          />
 
-  exportCSV: () => {
-    alert("CSV export will be connected to backend.");
-    console.log("Export CSV", get().filters);
-  },
+          <XAxis dataKey="month" />
 
-  printReport: () => {
-    window.print();
-  },
+          <YAxis
+            tickFormatter={(value) =>
+              `₹${(
+                value / 1000
+              ).toFixed(0)}k`
+            }
+          />
 
-  emailReport: () => {
-    alert("Email service will be connected to backend.");
-    console.log("Email Report");
-  },
-}));
+          <Tooltip
+            formatter={(value) => [
+              `₹${Number(
+                value
+              ).toLocaleString()}`,
+              "Revenue",
+            ]}
+          />
 
-export default useReportStore;
+          <Area
+            type="monotone"
+            dataKey="revenue"
+            stroke="#4F46E5"
+            strokeWidth={3}
+            fill="url(#revenueGradient)"
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+};
+
+export default RevenueChart;

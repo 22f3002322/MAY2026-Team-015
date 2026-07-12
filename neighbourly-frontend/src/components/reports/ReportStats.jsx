@@ -1,216 +1,88 @@
-import { create } from "zustand";
+import {
+  Users,
+  Home,
+  UserCheck,
+  UserX,
+} from "lucide-react";
 
-const currentYear = new Date().getFullYear();
+import Card from "../ui/Card";
 
-const useReportStore = create((set, get) => ({
-  // =========================
-  // Filters
-  // =========================
-  filters: {
-    fromDate: "",
-    toDate: "",
-    month: "",
-    year: currentYear,
-  },
+import useResidentStore from "../../store/residentStore";
 
-  updateFilters: (data) =>
-    set((state) => ({
-      filters: {
-        ...state.filters,
-        ...data,
-      },
-    })),
+const ResidentStats = () => {
+  const residents = useResidentStore(
+    (state) => state.residents
+  );
 
-  resetFilters: () =>
-    set({
-      filters: {
-        fromDate: "",
-        toDate: "",
-        month: "",
-        year: currentYear,
-      },
-    }),
-
-  // =========================
-  // Report Statistics
-  // =========================
-  stats: [
+  const stats = [
     {
-      title: "Total Revenue",
-      value: "₹12.8L",
-      change: "+18%",
-      trend: "up",
+      title: "Total Residents",
+      value: residents.length,
+      icon: Users,
+      color: "text-indigo-600",
+      bg: "bg-indigo-100",
     },
     {
-      title: "Occupancy Rate",
-      value: "94%",
-      change: "+2%",
-      trend: "up",
+      title: "Owners",
+      value: residents.filter(
+        (resident) =>
+          resident.occupancy === "Owner"
+      ).length,
+      icon: Home,
+      color: "text-emerald-600",
+      bg: "bg-emerald-100",
     },
     {
-      title: "Open Complaints",
-      value: "18",
-      change: "-6",
-      trend: "down",
+      title: "Tenants",
+      value: residents.filter(
+        (resident) =>
+          resident.occupancy === "Tenant"
+      ).length,
+      icon: UserCheck,
+      color: "text-amber-600",
+      bg: "bg-amber-100",
     },
     {
-      title: "Total Visitors",
-      value: "3,482",
-      change: "+11%",
-      trend: "up",
+      title: "Active Residents",
+      value: residents.filter(
+        (resident) =>
+          resident.status === "Active"
+      ).length,
+      icon: UserX,
+      color: "text-sky-600",
+      bg: "bg-sky-100",
     },
-  ],
+  ];
 
-  // =========================
-  // Revenue Chart
-  // =========================
-  revenueData: [
-    { month: "Jan", revenue: 8.2 },
-    { month: "Feb", revenue: 9.1 },
-    { month: "Mar", revenue: 10.5 },
-    { month: "Apr", revenue: 11.2 },
-    { month: "May", revenue: 12.0 },
-    { month: "Jun", revenue: 12.8 },
-  ],
+  return (
+    <div className="mb-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+      {stats.map((item) => {
+        const Icon = item.icon;
 
-  // =========================
-  // Complaint Chart
-  // =========================
-  complaintData: [
-    { name: "Plumbing", value: 28 },
-    { name: "Electrical", value: 22 },
-    { name: "Cleaning", value: 18 },
-    { name: "Parking", value: 15 },
-    { name: "Security", value: 17 },
-  ],
+        return (
+          <Card key={item.title}>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-slate-500">
+                  {item.title}
+                </p>
 
-  // =========================
-  // Occupancy Chart
-  // =========================
-  occupancyData: [
-    {
-      status: "Occupied",
-      apartments: 188,
-      color: "#22C55E",
-    },
-    {
-      status: "Vacant",
-      apartments: 12,
-      color: "#F59E0B",
-    },
-    {
-      status: "Maintenance",
-      apartments: 5,
-      color: "#EF4444",
-    },
-  ],
+                <h2 className="mt-3 text-3xl font-bold text-slate-800">
+                  {item.value}
+                </h2>
+              </div>
 
-  // =========================
-  // Visitor Chart
-  // =========================
-  visitorData: [
-    { month: "Jan", visitors: 420 },
-    { month: "Feb", visitors: 480 },
-    { month: "Mar", visitors: 560 },
-    { month: "Apr", visitors: 610 },
-    { month: "May", visitors: 670 },
-    { month: "Jun", visitors: 741 },
-  ],
+              <div
+                className={`rounded-xl p-3 ${item.bg} ${item.color}`}
+              >
+                <Icon size={24} />
+              </div>
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+};
 
-  // =========================
-  // Billing Chart
-  // =========================
-  billingData: [
-    {
-      month: "Jan",
-      paid: 180,
-      pending: 12,
-      overdue: 6,
-    },
-    {
-      month: "Feb",
-      paid: 184,
-      pending: 10,
-      overdue: 5,
-    },
-    {
-      month: "Mar",
-      paid: 190,
-      pending: 8,
-      overdue: 4,
-    },
-    {
-      month: "Apr",
-      paid: 186,
-      pending: 11,
-      overdue: 3,
-    },
-    {
-      month: "May",
-      paid: 192,
-      pending: 6,
-      overdue: 2,
-    },
-    {
-      month: "Jun",
-      paid: 195,
-      pending: 4,
-      overdue: 1,
-    },
-  ],
-
-  // =========================
-  // Poll Chart
-  // =========================
-  pollData: [
-    {
-      poll: "Parking\nAllocation",
-      votes: 168,
-      color: "#4F46E5",
-    },
-    {
-      poll: "Security\nUpgrade",
-      votes: 152,
-      color: "#22C55E",
-    },
-    {
-      poll: "Clubhouse\nRenovation",
-      votes: 141,
-      color: "#F59E0B",
-    },
-    {
-      poll: "Maintenance\nBudget",
-      votes: 126,
-      color: "#EF4444",
-    },
-  ],
-
-  // =========================
-  // Export Actions
-  // =========================
-  exportPDF: () => {
-    alert("PDF export will be connected to backend.");
-    console.log("Export PDF", get().filters);
-  },
-
-  exportExcel: () => {
-    alert("Excel export will be connected to backend.");
-    console.log("Export Excel", get().filters);
-  },
-
-  exportCSV: () => {
-    alert("CSV export will be connected to backend.");
-    console.log("Export CSV", get().filters);
-  },
-
-  printReport: () => {
-    window.print();
-  },
-
-  emailReport: () => {
-    alert("Email service will be connected to backend.");
-    console.log("Email Report", get().filters);
-  },
-}));
-
-export default useReportStore;
+export default ResidentStats;
