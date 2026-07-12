@@ -9,17 +9,21 @@ import {
 const Topbar = ({
   title = "Dashboard",
   breadcrumb = ["Home", "Dashboard"],
+  onMenuClick,
 }) => {
   return (
-    <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-slate-200 bg-white px-8">
+    <header className="sticky top-0 z-30 flex h-16 md:h-20 items-center justify-between border-b border-slate-200 bg-white px-4 md:px-8">
 
       {/* Left Section */}
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-3 md:gap-6">
 
         {/* Mobile Menu Button */}
 
-        <button className="rounded-lg p-2 hover:bg-slate-100 lg:hidden">
+        <button 
+          className="rounded-lg p-2 hover:bg-slate-100 lg:hidden"
+          onClick={onMenuClick}
+        >
           <Menu size={22} />
         </button>
 

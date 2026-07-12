@@ -18,7 +18,7 @@ const StaffFilters = ({
   return (
     <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
 
-      <div className="grid flex-1 gap-4 md:grid-cols-3">
+       <div className="grid flex-1 gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
 
         <Input
           placeholder="Search staff..."

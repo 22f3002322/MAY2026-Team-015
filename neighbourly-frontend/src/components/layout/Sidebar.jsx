@@ -93,21 +93,36 @@ const menuItems = [
   },
 ];
 
-const Sidebar = () => {
+import { X } from "lucide-react"; // add X for close button
+
+const Sidebar = ({ isOpen, setIsOpen }) => {
   return (
-    <aside className="w-72 h-screen bg-white border-r border-slate-200 flex flex-col">
+    <aside 
+      className={`fixed lg:static inset-y-0 left-0 z-50 w-72 h-screen bg-white border-r border-slate-200 flex flex-col transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
 
       {/* Logo */}
 
-      <div className="px-6 py-6 border-b border-slate-200">
+      <div className="px-6 py-6 border-b border-slate-200 flex justify-between items-center">
 
-        <h1 className="text-2xl font-bold text-indigo-600">
-          Neighbourly
-        </h1>
-
-        <p className="text-sm text-slate-500 mt-1">
-          Smart Community Management
-        </p>
+        <div>
+          <h1 className="text-2xl font-bold text-indigo-600">
+            Neighbourly
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Smart Community Management
+          </p>
+        </div>
+        
+        {/* Close Button Mobile */}
+        <button 
+          className="lg:hidden p-1 rounded-md text-slate-500 hover:bg-slate-100"
+          onClick={() => setIsOpen(false)}
+        >
+          <X size={20} />
+        </button>
 
       </div>
 
