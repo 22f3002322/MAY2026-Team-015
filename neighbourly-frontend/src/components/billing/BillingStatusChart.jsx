@@ -9,20 +9,7 @@ import {
 
 import Card from "../ui/Card";
 
-const data = [
-  {
-    name: "Paid",
-    value: 318,
-  },
-  {
-    name: "Pending",
-    value: 22,
-  },
-  {
-    name: "Overdue",
-    value: 12,
-  },
-];
+import useBillingStore from "../../store/billingStore";
 
 const COLORS = [
   "#22C55E",
@@ -31,9 +18,33 @@ const COLORS = [
 ];
 
 const BillingStatusChart = () => {
+  const bills = useBillingStore(
+    (state) => state.bills
+  );
+
+  const data = [
+    {
+      name: "Paid",
+      value: bills.filter(
+        (bill) => bill.status === "Paid"
+      ).length,
+    },
+    {
+      name: "Pending",
+      value: bills.filter(
+        (bill) => bill.status === "Pending"
+      ).length,
+    },
+    {
+      name: "Overdue",
+      value: bills.filter(
+        (bill) => bill.status === "Overdue"
+      ).length,
+    },
+  ].filter((item) => item.value > 0);
+
   return (
     <Card>
-
       <h3 className="mb-5 text-lg font-semibold text-slate-800">
         Payment Status
       </h3>
@@ -43,29 +54,35 @@ const BillingStatusChart = () => {
         height={320}
       >
         <PieChart>
-
           <Pie
             data={data}
             dataKey="value"
             nameKey="name"
             outerRadius={110}
-            label
+            label={({ name, percent }) =>
+              `${name} ${(percent * 100).toFixed(0)}%`
+            }
           >
             {data.map((entry, index) => (
               <Cell
-                key={index}
-                fill={COLORS[index]}
+                key={entry.name}
+                fill={
+                  COLORS[index % COLORS.length]
+                }
               />
             ))}
           </Pie>
 
-          <Tooltip />
+          <Tooltip
+            formatter={(value) => [
+              value,
+              "Bills",
+            ]}
+          />
 
           <Legend />
-
         </PieChart>
       </ResponsiveContainer>
-
     </Card>
   );
 };

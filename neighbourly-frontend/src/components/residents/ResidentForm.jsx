@@ -5,31 +5,32 @@ import Input from "../ui/Input";
 
 const ResidentForm = ({
   onClose,
+  onSubmit,
   initialData = null,
 }) => {
   const [form, setForm] = useState(
-  initialData || {
-    name: "",
-    email: "",
-    phone: "",
-    block: "",
-    flat: "",
-    occupancy: "Owner",
-    status: "Active",
-  }
-);
+    initialData || {
+      name: "",
+      email: "",
+      phone: "",
+      block: "",
+      flat: "",
+      occupancy: "Owner",
+      status: "Active",
+    }
+  );
 
   const handleChange = (e) => {
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    });
+    }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log(form);
+    onSubmit(form);
 
     onClose();
   };
@@ -48,6 +49,7 @@ const ResidentForm = ({
 
       <Input
         label="Email"
+        type="email"
         name="email"
         value={form.email}
         onChange={handleChange}
@@ -63,6 +65,7 @@ const ResidentForm = ({
       <div className="grid grid-cols-2 gap-4">
 
         <div>
+
           <label className="mb-2 block text-sm font-medium">
             Block
           </label>
@@ -71,7 +74,7 @@ const ResidentForm = ({
             name="block"
             value={form.block}
             onChange={handleChange}
-            className="w-full rounded-xl border border-slate-300 px-4 py-3"
+            className="h-14 w-full rounded-xl border border-slate-300 px-4"
           >
             <option value="">Select Block</option>
             <option>A</option>
@@ -79,6 +82,7 @@ const ResidentForm = ({
             <option>C</option>
             <option>D</option>
           </select>
+
         </div>
 
         <Input
@@ -93,6 +97,7 @@ const ResidentForm = ({
       <div className="grid grid-cols-2 gap-4">
 
         <div>
+
           <label className="mb-2 block text-sm font-medium">
             Occupancy
           </label>
@@ -101,14 +106,16 @@ const ResidentForm = ({
             name="occupancy"
             value={form.occupancy}
             onChange={handleChange}
-            className="w-full rounded-xl border border-slate-300 px-4 py-3"
+            className="h-14 w-full rounded-xl border border-slate-300 px-4"
           >
             <option>Owner</option>
             <option>Tenant</option>
           </select>
+
         </div>
 
         <div>
+
           <label className="mb-2 block text-sm font-medium">
             Status
           </label>
@@ -117,27 +124,30 @@ const ResidentForm = ({
             name="status"
             value={form.status}
             onChange={handleChange}
-            className="w-full rounded-xl border border-slate-300 px-4 py-3"
+            className="h-14 w-full rounded-xl border border-slate-300 px-4"
           >
             <option>Active</option>
             <option>Inactive</option>
           </select>
+
         </div>
 
       </div>
 
-      <div className="flex justify-end gap-3">
+      <div className="flex justify-end gap-3 pt-4">
 
         <Button
-          variant="outline"
           type="button"
+          variant="outline"
           onClick={onClose}
         >
           Cancel
         </Button>
 
         <Button type="submit">
-          Save Resident
+          {initialData
+            ? "Update Resident"
+            : "Add Resident"}
         </Button>
 
       </div>

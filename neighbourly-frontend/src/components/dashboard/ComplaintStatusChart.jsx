@@ -16,14 +16,17 @@ const COLORS = [
   "#6366F1",
 ];
 
-const ComplaintStatusChart = ({ data }) => {
+const ComplaintStatusChart = ({ data = [] }) => {
   return (
     <Card
       title="Complaint Status"
       subtitle="Current complaint distribution"
     >
       <div className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+        >
           <PieChart>
             <Pie
               data={data}
@@ -33,9 +36,9 @@ const ComplaintStatusChart = ({ data }) => {
               innerRadius={55}
               paddingAngle={4}
             >
-              {data.map((_, index) => (
+              {data.map((entry, index) => (
                 <Cell
-                  key={index}
+                  key={entry.name}
                   fill={COLORS[index % COLORS.length]}
                 />
               ))}

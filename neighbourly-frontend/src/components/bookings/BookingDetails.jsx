@@ -5,6 +5,8 @@ import {
   IndianRupee,
   Users,
   FileText,
+  CreditCard,
+  CheckCircle2,
   X,
 } from "lucide-react";
 
@@ -17,15 +19,27 @@ const BookingDetails = ({
 }) => {
   if (!booking) return null;
 
+  const formatDate = (date) => {
+    if (!date) return "-";
+
+    return new Date(date).toLocaleString(
+      "en-GB",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
-
       <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl">
-
         {/* Header */}
 
         <div className="sticky top-0 flex items-center justify-between border-b bg-white px-6 py-5">
-
           <div>
             <h2 className="text-2xl font-bold text-slate-800">
               Booking Details
@@ -42,19 +56,16 @@ const BookingDetails = ({
           >
             <X size={20} />
           </button>
-
         </div>
 
         {/* Body */}
 
         <div className="space-y-8 p-6">
-
           {/* Resident */}
 
           <div className="flex items-center gap-4">
-
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 text-2xl font-bold text-indigo-600">
-              {booking.resident.charAt(0)}
+              {booking.resident?.charAt(0)}
             </div>
 
             <div>
@@ -66,27 +77,42 @@ const BookingDetails = ({
                 Flat {booking.flat}
               </p>
             </div>
-
           </div>
 
           {/* Status */}
 
-          <Badge
-            variant={
-              booking.status === "Approved"
-                ? "success"
-                : booking.status === "Pending"
-                ? "warning"
-                : "danger"
-            }
-          >
-            {booking.status}
-          </Badge>
+          <div className="flex flex-wrap gap-3">
+            <Badge
+              variant={
+                booking.status === "Approved"
+                  ? "success"
+                  : booking.status ===
+                    "Pending"
+                  ? "warning"
+                  : "danger"
+              }
+            >
+              {booking.status}
+            </Badge>
+
+            <Badge
+              variant={
+                booking.paymentStatus ===
+                "Paid"
+                  ? "success"
+                  : booking.paymentStatus ===
+                    "Pending"
+                  ? "warning"
+                  : "danger"
+              }
+            >
+              {booking.paymentStatus}
+            </Badge>
+          </div>
 
           {/* Information */}
 
           <div className="grid grid-cols-2 gap-6">
-
             <Info
               icon={Home}
               label="Facility"
@@ -114,7 +140,17 @@ const BookingDetails = ({
             <Info
               icon={IndianRupee}
               label="Amount"
-              value={`₹${booking.amount}`}
+              value={`₹${Number(
+                booking.amount
+              ).toLocaleString()}`}
+            />
+
+            <Info
+              icon={CreditCard}
+              label="Payment"
+              value={
+                booking.paymentStatus
+              }
             />
 
             <Info
@@ -123,6 +159,21 @@ const BookingDetails = ({
               value={booking.bookingId}
             />
 
+            <Info
+              icon={CheckCircle2}
+              label="Created"
+              value={formatDate(
+                booking.createdAt
+              )}
+            />
+
+            <Info
+              icon={Calendar}
+              label="Last Updated"
+              value={formatDate(
+                booking.updatedAt
+              )}
+            />
           </div>
 
           {/* Notes */}
@@ -133,7 +184,8 @@ const BookingDetails = ({
             </h4>
 
             <div className="rounded-xl border bg-slate-50 p-4 text-slate-600">
-              {booking.notes || "No notes available."}
+              {booking.notes ||
+                "No notes available."}
             </div>
           </div>
 
@@ -146,11 +198,8 @@ const BookingDetails = ({
           >
             Close
           </Button>
-
         </div>
-
       </div>
-
     </div>
   );
 };
@@ -161,7 +210,6 @@ const Info = ({
   value,
 }) => (
   <div className="flex gap-3">
-
     <div className="mt-1 text-indigo-600">
       <Icon size={18} />
     </div>
@@ -172,10 +220,9 @@ const Info = ({
       </p>
 
       <p className="font-medium text-slate-800">
-        {value}
+        {value || "-"}
       </p>
     </div>
-
   </div>
 );
 

@@ -8,26 +8,35 @@ import {
 import Button from "../ui/Button";
 import Card from "../ui/Card";
 
-const actions = [
-  {
-    title: "Raise Complaint",
-    icon: Plus,
-  },
-  {
-    title: "Add Resident",
-    icon: UserPlus,
-  },
-  {
-    title: "Register Visitor",
-    icon: UserRoundPlus,
-  },
-  {
-    title: "Book Facility",
-    icon: CalendarPlus,
-  },
-];
+const QuickActions = ({
+  onRaiseComplaint,
+  onAddResident,
+  onRegisterVisitor,
+  onBookFacility,
+}) => {
+  const actions = [
+    {
+      title: "Raise Complaint",
+      icon: Plus,
+      onClick: onRaiseComplaint,
+    },
+    {
+      title: "Add Resident",
+      icon: UserPlus,
+      onClick: onAddResident,
+    },
+    {
+      title: "Register Visitor",
+      icon: UserRoundPlus,
+      onClick: onRegisterVisitor,
+    },
+    {
+      title: "Book Facility",
+      icon: CalendarPlus,
+      onClick: onBookFacility,
+    },
+  ];
 
-const QuickActions = () => {
   return (
     <Card
       title="Quick Actions"
@@ -41,7 +50,8 @@ const QuickActions = () => {
             <Button
               key={action.title}
               variant="outline"
-              className="justify-start h-14"
+              className="h-14 justify-start"
+              onClick={action.onClick}
             >
               <Icon size={18} />
               {action.title}

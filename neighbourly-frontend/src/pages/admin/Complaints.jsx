@@ -15,43 +15,91 @@ import ComplaintTrendChart from "../../components/complaints/ComplaintTrendChart
 import Modal from "../../components/ui/Modal";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
-import { complaints } from "../../mock/complaints";
+import useComplaintStore from "../../store/complaintStore";
 
 const Complaints = () => {
+    // Zustand Store
+
+    const complaints = useComplaintStore(
+        (state) => state.complaints
+    );
+
+    const addComplaint = useComplaintStore(
+        (state) => state.addComplaint
+    );
+
+    const updateComplaint = useComplaintStore(
+        (state) => state.updateComplaint
+    );
+
+    const removeComplaint = useComplaintStore(
+        (state) => state.deleteComplaint
+    );
+
+    // Filters
+
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("");
     const [priority, setPriority] = useState("");
     const [status, setStatus] = useState("");
+
+    // Modals
+
     const [openModal, setOpenModal] = useState(false);
-    const [selectedComplaint, setSelectedComplaint] = useState(null);
-    const [editingComplaint, setEditingComplaint] = useState(null);
     const [editModal, setEditModal] = useState(false);
-    const [assignComplaint, setAssignComplaint] = useState(null);
-    const [deleteComplaint, setDeleteComplaint] = useState(null);
-    const [statusComplaint, setStatusComplaint] = useState(null);
 
-    const filteredComplaints = complaints.filter((complaint) => {
-        const matchesSearch =
-            complaint.ticket.toLowerCase().includes(search.toLowerCase()) ||
-            complaint.title.toLowerCase().includes(search.toLowerCase()) ||
-            complaint.resident.toLowerCase().includes(search.toLowerCase());
+    // Selected Data
 
-        const matchesCategory =
-            category === "" || complaint.category === category;
+    const [selectedComplaint, setSelectedComplaint] =
+        useState(null);
 
-        const matchesPriority =
-            priority === "" || complaint.priority === priority;
+    const [editingComplaint, setEditingComplaint] =
+        useState(null);
 
-        const matchesStatus =
-            status === "" || complaint.status === status;
+    const [assignComplaint, setAssignComplaint] =
+        useState(null);
 
-        return (
-            matchesSearch &&
-            matchesCategory &&
-            matchesPriority &&
-            matchesStatus
-        );
-    });
+    const [statusComplaint, setStatusComplaint] =
+        useState(null);
+
+    const [deleteComplaint, setDeleteComplaint] =
+        useState(null);
+
+    // Filters
+
+    const filteredComplaints = complaints.filter(
+        (complaint) => {
+            const matchesSearch =
+                complaint.ticket
+                    .toLowerCase()
+                    .includes(search.toLowerCase()) ||
+                complaint.title
+                    .toLowerCase()
+                    .includes(search.toLowerCase()) ||
+                complaint.resident
+                    .toLowerCase()
+                    .includes(search.toLowerCase());
+
+            const matchesCategory =
+                category === "" ||
+                complaint.category === category;
+
+            const matchesPriority =
+                priority === "" ||
+                complaint.priority === priority;
+
+            const matchesStatus =
+                status === "" ||
+                complaint.status === status;
+
+            return (
+                matchesSearch &&
+                matchesCategory &&
+                matchesPriority &&
+                matchesStatus
+            );
+        }
+    );
 
     return (
         <Layout
@@ -59,6 +107,7 @@ const Complaints = () => {
             breadcrumb={["Home", "Complaints"]}
         >
             <ComplaintStats />
+
             <div className="mb-6 grid gap-6 xl:grid-cols-2">
                 <ComplaintCategoryChart />
                 <ComplaintTrendChart />
@@ -73,8 +122,11 @@ const Complaints = () => {
                 setPriority={setPriority}
                 status={status}
                 setStatus={setStatus}
-                onRaiseComplaint={() => setOpenModal(true)}
+                onRaiseComplaint={() =>
+                    setOpenModal(true)
+                }
             />
+
             <ComplaintTable
                 complaints={filteredComplaints}
                 onView={setSelectedComplaint}
@@ -86,15 +138,35 @@ const Complaints = () => {
                 onStatus={setStatusComplaint}
                 onDelete={setDeleteComplaint}
             />
+
+            {/* Add Complaint */}
+
             <Modal
                 open={openModal}
                 title="Raise Complaint"
                 onClose={() => setOpenModal(false)}
             >
                 <ComplaintForm
+                    onSubmit={(data) => {
+                        addComplaint({
+                            ...data,
+                            id: Date.now(),
+                            ticket: `CMP-${Date.now()
+                                .toString()
+                                .slice(-5)}`,
+                            status: "Open",
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                        });
+
+                        setOpenModal(false);
+                    }}
                     onClose={() => setOpenModal(false)}
                 />
             </Modal>
+
+            {/* Edit Complaint */}
+
             <Modal
                 open={editModal}
                 title="Edit Complaint"
@@ -105,35 +177,68 @@ const Complaints = () => {
             >
                 <ComplaintForm
                     initialData={editingComplaint}
+                    onSubmit={(data) => {
+                        updateComplaint(
+                            editingComplaint.id,
+                            {
+                                ...editingComplaint,
+                                ...data,
+                                updatedAt: new Date().toISOString(),
+                            }
+                        );
+
+                        setEditModal(false);
+                        setEditingComplaint(null);
+                    }}
                     onClose={() => {
                         setEditModal(false);
                         setEditingComplaint(null);
                     }}
                 />
             </Modal>
+
+            {/* Details */}
+
             <ComplaintDetails
                 complaint={selectedComplaint}
-                onClose={() => setSelectedComplaint(null)}
+                onClose={() =>
+                    setSelectedComplaint(null)
+                }
             />
+
+            {/* Assign Staff */}
+
             <AssignStaffModal
                 complaint={assignComplaint}
-                onClose={() => setAssignComplaint(null)}
+                onClose={() =>
+                    setAssignComplaint(null)
+                }
             />
+
+            {/* Delete */}
+
             <ConfirmDialog
                 open={!!deleteComplaint}
                 title="Delete Complaint"
                 message={`Delete ${deleteComplaint?.ticket}?`}
                 confirmText="Delete"
-                onCancel={() => setDeleteComplaint(null)}
+                onCancel={() =>
+                    setDeleteComplaint(null)
+                }
                 onConfirm={() => {
-                    console.log(deleteComplaint);
+                    removeComplaint(deleteComplaint.id);
 
                     setDeleteComplaint(null);
                 }}
             />
+
+            {/* Status Update */}
+
             <StatusUpdateModal
                 complaint={statusComplaint}
-                onClose={() => setStatusComplaint(null)}
+                onClose={() =>
+                    setStatusComplaint(null)
+                }
             />
         </Layout>
     );

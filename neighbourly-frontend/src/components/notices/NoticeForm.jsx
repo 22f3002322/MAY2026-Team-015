@@ -3,10 +3,20 @@ import { useState } from "react";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 
+import useNoticeStore from "../../store/noticeStore";
+
 const NoticeForm = ({
   initialData = null,
   onClose,
 }) => {
+  const addNotice = useNoticeStore(
+    (state) => state.addNotice
+  );
+
+  const updateNotice = useNoticeStore(
+    (state) => state.updateNotice
+  );
+
   const [form, setForm] = useState(
     initialData || {
       title: "",
@@ -42,10 +52,12 @@ const NoticeForm = ({
     const newErrors = {};
 
     if (!form.title.trim())
-      newErrors.title = "Title is required.";
+      newErrors.title =
+        "Title is required.";
 
     if (!form.author.trim())
-      newErrors.author = "Author is required.";
+      newErrors.author =
+        "Author is required.";
 
     if (!form.publishDate)
       newErrors.publishDate =
@@ -81,7 +93,20 @@ const NoticeForm = ({
       return;
     }
 
-    console.log(form);
+    const noticeData = {
+      ...form,
+    };
+
+    if (initialData) {
+      updateNotice({
+        ...initialData,
+        ...noticeData,
+        updatedAt:
+          new Date().toISOString(),
+      });
+    } else {
+      addNotice(noticeData);
+    }
 
     onClose();
   };
@@ -104,7 +129,6 @@ const NoticeForm = ({
       />
 
       <div className="grid gap-5 md:grid-cols-2">
-
         {/* Category */}
 
         <div>
@@ -224,7 +248,10 @@ const NoticeForm = ({
 
           <input
             type="date"
-            min={form.publishDate || today}
+            min={
+              form.publishDate ||
+              today
+            }
             value={form.expiryDate}
             onChange={(e) =>
               handleChange(
@@ -241,7 +268,6 @@ const NoticeForm = ({
             </p>
           )}
         </div>
-
       </div>
 
       {/* Description */}
@@ -272,7 +298,6 @@ const NoticeForm = ({
       </div>
 
       <div className="flex justify-end gap-3">
-
         <Button
           type="button"
           variant="outline"
@@ -286,7 +311,6 @@ const NoticeForm = ({
             ? "Update Notice"
             : "Publish Notice"}
         </Button>
-
       </div>
     </form>
   );

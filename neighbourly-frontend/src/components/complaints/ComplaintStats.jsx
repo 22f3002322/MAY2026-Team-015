@@ -7,34 +7,58 @@ import {
 
 import Card from "../ui/Card";
 
-const stats = [
-  {
-    title: "Open",
-    value: 14,
-    icon: AlertCircle,
-    color: "bg-red-100 text-red-600",
-  },
-  {
-    title: "Assigned",
-    value: 9,
-    icon: UserCheck,
-    color: "bg-blue-100 text-blue-600",
-  },
-  {
-    title: "In Progress",
-    value: 6,
-    icon: Wrench,
-    color: "bg-orange-100 text-orange-600",
-  },
-  {
-    title: "Resolved",
-    value: 52,
-    icon: CheckCircle2,
-    color: "bg-green-100 text-green-600",
-  },
-];
+import useComplaintStore from "../../store/complaintStore";
 
 const ComplaintStats = () => {
+  const complaints = useComplaintStore(
+    (state) => state.complaints
+  );
+
+  const open = complaints.filter(
+    (c) => c.status === "Open"
+  ).length;
+
+  const assigned = complaints.filter(
+    (c) =>
+      c.status === "Assigned" ||
+      (c.assignedTo && c.status === "Open")
+  ).length;
+
+  const inProgress = complaints.filter(
+    (c) => c.status === "In Progress"
+  ).length;
+
+  const resolved = complaints.filter(
+    (c) => c.status === "Resolved"
+  ).length;
+
+  const stats = [
+    {
+      title: "Open",
+      value: open,
+      icon: AlertCircle,
+      color: "bg-red-100 text-red-600",
+    },
+    {
+      title: "Assigned",
+      value: assigned,
+      icon: UserCheck,
+      color: "bg-blue-100 text-blue-600",
+    },
+    {
+      title: "In Progress",
+      value: inProgress,
+      icon: Wrench,
+      color: "bg-orange-100 text-orange-600",
+    },
+    {
+      title: "Resolved",
+      value: resolved,
+      icon: CheckCircle2,
+      color: "bg-green-100 text-green-600",
+    },
+  ];
+
   return (
     <div className="mb-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((item) => {
@@ -45,6 +69,7 @@ const ComplaintStats = () => {
             <div className="flex items-center justify-between">
 
               <div>
+
                 <p className="text-sm text-slate-500">
                   {item.title}
                 </p>
@@ -52,6 +77,7 @@ const ComplaintStats = () => {
                 <h2 className="mt-2 text-3xl font-bold text-slate-800">
                   {item.value}
                 </h2>
+
               </div>
 
               <div

@@ -5,6 +5,7 @@ import Input from "../ui/Input";
 
 const ApartmentForm = ({
   onClose,
+  onSubmit,
   initialData = null,
 }) => {
   const [form, setForm] = useState(
@@ -19,16 +20,16 @@ const ApartmentForm = ({
   );
 
   const handleChange = (key, value) => {
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       [key]: value,
-    });
+    }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log(form);
+    onSubmit(form);
 
     onClose();
   };
@@ -78,6 +79,7 @@ const ApartmentForm = ({
       <div className="grid grid-cols-2 gap-4">
 
         <div>
+
           <label className="mb-2 block text-sm font-medium">
             Flat Type
           </label>
@@ -94,9 +96,11 @@ const ApartmentForm = ({
             <option>3 BHK</option>
             <option>4 BHK</option>
           </select>
+
         </div>
 
         <div>
+
           <label className="mb-2 block text-sm font-medium">
             Occupancy
           </label>
@@ -104,13 +108,17 @@ const ApartmentForm = ({
           <select
             value={form.occupancy}
             onChange={(e) =>
-              handleChange("occupancy", e.target.value)
+              handleChange(
+                "occupancy",
+                e.target.value
+              )
             }
             className="h-14 w-full rounded-xl border border-slate-300 px-4"
           >
             <option>Occupied</option>
             <option>Vacant</option>
           </select>
+
         </div>
 
       </div>
@@ -118,15 +126,17 @@ const ApartmentForm = ({
       <div className="flex justify-end gap-3 pt-4">
 
         <Button
-          variant="outline"
           type="button"
+          variant="outline"
           onClick={onClose}
         >
           Cancel
         </Button>
 
         <Button type="submit">
-          {initialData ? "Update Flat" : "Add Flat"}
+          {initialData
+            ? "Update Flat"
+            : "Add Flat"}
         </Button>
 
       </div>

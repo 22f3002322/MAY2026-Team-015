@@ -6,14 +6,19 @@ import Input from "../ui/Input";
 
 const ComplaintForm = ({
   initialData = null,
+  onSubmit,
   onClose,
 }) => {
   const [form, setForm] = useState(
     initialData || {
+      ticket: "",
       title: "",
       description: "",
+      resident: "",
       category: "Electrical",
       priority: "Medium",
+      status: "Open",
+      assignedTo: "",
       image: null,
     }
   );
@@ -36,7 +41,7 @@ const ComplaintForm = ({
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log(form);
+    onSubmit(form);
 
     onClose();
   };
@@ -65,7 +70,10 @@ const ComplaintForm = ({
           placeholder="Describe your issue..."
           value={form.description}
           onChange={(e) =>
-            handleChange("description", e.target.value)
+            handleChange(
+              "description",
+              e.target.value
+            )
           }
           className="w-full rounded-xl border border-slate-300 p-4 outline-none transition focus:border-indigo-600"
         />
@@ -74,6 +82,7 @@ const ComplaintForm = ({
       <div className="grid gap-4 md:grid-cols-2">
 
         <div>
+
           <label className="mb-2 block text-sm font-medium text-slate-700">
             Category
           </label>
@@ -81,7 +90,10 @@ const ComplaintForm = ({
           <select
             value={form.category}
             onChange={(e) =>
-              handleChange("category", e.target.value)
+              handleChange(
+                "category",
+                e.target.value
+              )
             }
             className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
           >
@@ -92,9 +104,11 @@ const ComplaintForm = ({
             <option>Security</option>
             <option>Other</option>
           </select>
+
         </div>
 
         <div>
+
           <label className="mb-2 block text-sm font-medium text-slate-700">
             Priority
           </label>
@@ -102,7 +116,10 @@ const ComplaintForm = ({
           <select
             value={form.priority}
             onChange={(e) =>
-              handleChange("priority", e.target.value)
+              handleChange(
+                "priority",
+                e.target.value
+              )
             }
             className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
           >
@@ -111,11 +128,13 @@ const ComplaintForm = ({
             <option>High</option>
             <option>Critical</option>
           </select>
+
         </div>
 
       </div>
 
       <div>
+
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Attach Image
         </label>
@@ -149,6 +168,7 @@ const ComplaintForm = ({
           />
 
         </label>
+
       </div>
 
       <div className="flex justify-end gap-3 pt-2">

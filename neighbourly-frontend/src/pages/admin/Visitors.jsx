@@ -14,46 +14,85 @@ import VisitorTrendChart from "../../components/visitors/VisitorTrendChart";
 import Modal from "../../components/ui/Modal";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
-import { visitors } from "../../mock/visitors";
+import useVisitorStore from "../../store/visitorStore";
 
 const Visitors = () => {
+  // Zustand
+
+  const visitors = useVisitorStore(
+    (state) => state.visitors
+  );
+
+  const addVisitor = useVisitorStore(
+    (state) => state.addVisitor
+  );
+
+  const updateVisitor = useVisitorStore(
+    (state) => state.updateVisitor
+  );
+
+  const removeVisitor = useVisitorStore(
+    (state) => state.deleteVisitor
+  );
+
+  // Filters
+
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [date, setDate] = useState("");
+
+  // Modals
+
   const [openModal, setOpenModal] = useState(false);
+
+  // Selected
+
   const [selectedVisitor, setSelectedVisitor] =
     useState(null);
+
   const [editingVisitor, setEditingVisitor] =
     useState(null);
+
   const [deleteVisitor, setDeleteVisitor] =
     useState(null);
+
   const [checkVisitor, setCheckVisitor] =
     useState(null);
 
-  const filteredVisitors = visitors.filter((visitor) => {
-    const matchesSearch =
-      visitor.name.toLowerCase().includes(search.toLowerCase()) ||
-      visitor.flat.toLowerCase().includes(search.toLowerCase()) ||
-      visitor.phone.includes(search);
+  const filteredVisitors = visitors.filter(
+    (visitor) => {
+      const matchesSearch =
+        visitor.name
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+        visitor.flat
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+        visitor.phone.includes(search);
 
-    const matchesStatus =
-      status === "" || visitor.status === status;
+      const matchesStatus =
+        status === "" ||
+        visitor.status === status;
 
-    const matchesDate =
-      date === "" ||
-      visitor.date ===
-      new Date(date).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
+      const matchesDate =
+        date === "" ||
+        visitor.date ===
+          new Date(date).toLocaleDateString(
+            "en-GB",
+            {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            }
+          );
 
-    return (
-      matchesSearch &&
-      matchesStatus &&
-      matchesDate
-    );
-  });
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesDate
+      );
+    }
+  );
 
   return (
     <Layout
@@ -61,6 +100,7 @@ const Visitors = () => {
       breadcrumb={["Home", "Visitors"]}
     >
       <VisitorStats />
+
       <div className="mb-6 grid gap-6 xl:grid-cols-2">
         <VisitorPurposeChart />
         <VisitorTrendChart />
@@ -73,7 +113,9 @@ const Visitors = () => {
         setStatus={setStatus}
         date={date}
         setDate={setDate}
-        onRegisterVisitor={() => setOpenModal(true)}
+        onRegisterVisitor={() =>
+          setOpenModal(true)
+        }
       />
 
       <VisitorTable
@@ -86,6 +128,9 @@ const Visitors = () => {
         onCheck={setCheckVisitor}
         onDelete={setDeleteVisitor}
       />
+
+      {/* Add / Edit */}
+
       <Modal
         open={openModal}
         title={
@@ -100,31 +145,64 @@ const Visitors = () => {
       >
         <VisitorForm
           initialData={editingVisitor}
+          onSubmit={(data) => {
+            if (editingVisitor) {
+              updateVisitor(
+                editingVisitor.id,
+                data
+              );
+            } else {
+              addVisitor({
+                ...data,
+                id: Date.now(),
+                createdAt:
+                  new Date().toISOString(),
+              });
+            }
+
+            setOpenModal(false);
+            setEditingVisitor(null);
+          }}
           onClose={() => {
             setOpenModal(false);
             setEditingVisitor(null);
           }}
         />
       </Modal>
+
+      {/* Details */}
+
       <VisitorDetails
         visitor={selectedVisitor}
-        onClose={() => setSelectedVisitor(null)}
+        onClose={() =>
+          setSelectedVisitor(null)
+        }
       />
+
+      {/* Delete */}
+
       <ConfirmDialog
         open={!!deleteVisitor}
         title="Delete Visitor"
         message={`Delete ${deleteVisitor?.name}?`}
         confirmText="Delete"
-        onCancel={() => setDeleteVisitor(null)}
+        onCancel={() =>
+          setDeleteVisitor(null)
+        }
         onConfirm={() => {
-          console.log(deleteVisitor);
+          removeVisitor(deleteVisitor.id);
 
           setDeleteVisitor(null);
         }}
       />
+
+      {/* Check In / Out */}
+
       <CheckInOutModal
         visitor={checkVisitor}
-        onClose={() => setCheckVisitor(null)}
+        onClose={() =>
+          setCheckVisitor(null)
+        }
       />
     </Layout>
   );

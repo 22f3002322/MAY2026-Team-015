@@ -13,51 +13,78 @@ import NoticeTimelineChart from "../../components/notices/NoticeTimelineChart";
 import Modal from "../../components/ui/Modal";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
-import { notices } from "../../mock/notices";
+import useNoticeStore from "../../store/noticeStore";
 
 const Notices = () => {
+  // Zustand Store
+
+  const notices = useNoticeStore(
+    (state) => state.notices
+  );
+
+  const deleteNoticeById = useNoticeStore(
+    (state) => state.deleteNotice
+  );
+
   // Filters
 
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [priority, setPriority] = useState("");
-  const [status, setStatus] = useState("");
 
-  // CRUD States
+  const [category, setCategory] =
+    useState("");
 
-  const [openModal, setOpenModal] = useState(false);
-  const [selectedNotice, setSelectedNotice] = useState(null);
-  const [editingNotice, setEditingNotice] = useState(null);
-  const [deleteNotice, setDeleteNotice] = useState(null);
+  const [priority, setPriority] =
+    useState("");
 
-  const filteredNotices = notices.filter((notice) => {
-    const matchesSearch =
-      notice.title
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      notice.noticeId
-        .toLowerCase()
-        .includes(search.toLowerCase());
+  const [status, setStatus] =
+    useState("");
 
-    const matchesCategory =
-      category === "" ||
-      notice.category === category;
+  // CRUD
 
-    const matchesPriority =
-      priority === "" ||
-      notice.priority === priority;
+  const [openModal, setOpenModal] =
+    useState(false);
 
-    const matchesStatus =
-      status === "" ||
-      notice.status === status;
+  const [selectedNotice, setSelectedNotice] =
+    useState(null);
 
-    return (
-      matchesSearch &&
-      matchesCategory &&
-      matchesPriority &&
-      matchesStatus
-    );
-  });
+  const [editingNotice, setEditingNotice] =
+    useState(null);
+
+  const [deleteNotice, setDeleteNotice] =
+    useState(null);
+
+  // Filter Notices
+
+  const filteredNotices = notices.filter(
+    (notice) => {
+      const matchesSearch =
+        notice.title
+          ?.toLowerCase()
+          .includes(search.toLowerCase()) ||
+        notice.noticeId
+          ?.toLowerCase()
+          .includes(search.toLowerCase());
+
+      const matchesCategory =
+        category === "" ||
+        notice.category === category;
+
+      const matchesPriority =
+        priority === "" ||
+        notice.priority === priority;
+
+      const matchesStatus =
+        status === "" ||
+        notice.status === status;
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesPriority &&
+        matchesStatus
+      );
+    }
+  );
 
   return (
     <Layout
@@ -96,7 +123,7 @@ const Notices = () => {
         onDelete={setDeleteNotice}
       />
 
-      {/* Add/Edit */}
+      {/* Create / Edit */}
 
       <Modal
         open={openModal}
@@ -123,7 +150,9 @@ const Notices = () => {
 
       <NoticeDetails
         notice={selectedNotice}
-        onClose={() => setSelectedNotice(null)}
+        onClose={() =>
+          setSelectedNotice(null)
+        }
       />
 
       {/* Delete */}
@@ -133,9 +162,11 @@ const Notices = () => {
         title="Delete Notice"
         message={`Delete "${deleteNotice?.title}"?`}
         confirmText="Delete"
-        onCancel={() => setDeleteNotice(null)}
+        onCancel={() =>
+          setDeleteNotice(null)
+        }
         onConfirm={() => {
-          console.log(deleteNotice);
+          deleteNoticeById(deleteNotice.id);
 
           setDeleteNotice(null);
         }}

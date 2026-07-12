@@ -4,17 +4,12 @@ import {
   Cell,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 
 import Card from "../ui/Card";
 
-const data = [
-  { name: "Club House", value: 35 },
-  { name: "Swimming Pool", value: 22 },
-  { name: "Gym", value: 18 },
-  { name: "Party Hall", value: 15 },
-  { name: "Tennis Court", value: 10 },
-];
+import useBookingStore from "../../store/bookingStore";
 
 const COLORS = [
   "#4F46E5",
@@ -22,13 +17,33 @@ const COLORS = [
   "#F59E0B",
   "#EF4444",
   "#06B6D4",
+  "#8B5CF6",
+  "#14B8A6",
 ];
 
 const BookingFacilityChart = () => {
+  const bookings = useBookingStore(
+    (state) => state.bookings
+  );
+
+  const facilityMap = {};
+
+  bookings.forEach((booking) => {
+    facilityMap[booking.facility] =
+      (facilityMap[booking.facility] || 0) + 1;
+  });
+
+  const data = Object.entries(facilityMap).map(
+    ([name, value]) => ({
+      name,
+      value,
+    })
+  );
+
   return (
     <Card>
       <h3 className="mb-5 text-lg font-semibold">
-        Facility Usage
+        Facility Bookings
       </h3>
 
       <ResponsiveContainer
@@ -45,13 +60,16 @@ const BookingFacilityChart = () => {
           >
             {data.map((entry, index) => (
               <Cell
-                key={index}
-                fill={COLORS[index]}
+                key={entry.name}
+                fill={
+                  COLORS[index % COLORS.length]
+                }
               />
             ))}
           </Pie>
 
           <Tooltip />
+          <Legend />
         </PieChart>
       </ResponsiveContainer>
     </Card>

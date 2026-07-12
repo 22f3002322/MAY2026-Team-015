@@ -8,6 +8,11 @@ import Visitors from "./pages/admin/Visitors";
 import FacilityBookings from "./pages/admin/FacilityBookings";
 import Billing from "./pages/admin/Billing";
 import Notices from "./pages/admin/Notices";
+import Documents from "./pages/admin/Documents";
+import Polls from "./pages/admin/Polls";
+import Settings from "./pages/admin/Settings";
+import Reports from "./pages/admin/Reports";
+import Staff from "./pages/admin/Staff";
 
 function App() {
   return (
@@ -21,6 +26,11 @@ function App() {
       <Route path="/bookings" element={<FacilityBookings />} />
       <Route path="/billing" element={<Billing />} />
       <Route path="/notices" element={<Notices />} />
+      <Route path="/documents" element={<Documents />} />
+      <Route path="/polls" element={<Polls />} />
+      <Route path="/settings" element={<Settings />} />
+      <Route path="/reports" element={<Reports />} />
+      <Route path="/staff" element={<Staff />} />
     </Routes>
   );
 }

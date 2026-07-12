@@ -3,10 +3,16 @@ import { useState } from "react";
 import Modal from "../ui/Modal";
 import Button from "../ui/Button";
 
+import useVisitorStore from "../../store/visitorStore";
+
 const CheckInOutModal = ({
   visitor,
   onClose,
 }) => {
+  const updateVisitor = useVisitorStore(
+    (state) => state.updateVisitor
+  );
+
   const [remarks, setRemarks] = useState("");
 
   if (!visitor) return null;
@@ -17,14 +23,21 @@ const CheckInOutModal = ({
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log({
-      visitor,
-      action: isCheckIn
-        ? "Check In"
-        : "Check Out",
+    updateVisitor(visitor.id, {
+      status: isCheckIn
+        ? "Checked In"
+        : "Checked Out",
+
       remarks,
-      time: new Date().toLocaleTimeString(),
+
+      lastActionTime:
+        new Date().toLocaleTimeString(),
+
+      updatedAt:
+        new Date().toISOString(),
     });
+
+    setRemarks("");
 
     onClose();
   };
@@ -37,7 +50,10 @@ const CheckInOutModal = ({
           ? "Check In Visitor"
           : "Check Out Visitor"
       }
-      onClose={onClose}
+      onClose={() => {
+        setRemarks("");
+        onClose();
+      }}
     >
       <form
         onSubmit={handleSubmit}
@@ -67,6 +83,14 @@ const CheckInOutModal = ({
               {visitor.flat}
             </span>
           </p>
+
+          <p className="mt-2 text-sm">
+            Current Status :
+            <span className="font-semibold">
+              {" "}
+              {visitor.status}
+            </span>
+          </p>
         </div>
 
         <div>
@@ -93,7 +117,10 @@ const CheckInOutModal = ({
           <Button
             type="button"
             variant="outline"
-            onClick={onClose}
+            onClick={() => {
+              setRemarks("");
+              onClose();
+            }}
           >
             Cancel
           </Button>

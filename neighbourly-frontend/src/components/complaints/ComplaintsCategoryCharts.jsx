@@ -8,13 +8,7 @@ import {
 
 import Card from "../ui/Card";
 
-const data = [
-  { name: "Electrical", value: 18 },
-  { name: "Plumbing", value: 14 },
-  { name: "Maintenance", value: 10 },
-  { name: "Cleaning", value: 8 },
-  { name: "Security", value: 5 },
-];
+import useComplaintStore from "../../store/complaintStore";
 
 const COLORS = [
   "#4F46E5",
@@ -22,9 +16,31 @@ const COLORS = [
   "#F59E0B",
   "#EF4444",
   "#06B6D4",
+  "#8B5CF6",
+  "#EC4899",
 ];
 
 const ComplaintCategoryChart = () => {
+  const complaints = useComplaintStore(
+    (state) => state.complaints
+  );
+
+  // Count complaints by category
+  const categoryMap = complaints.reduce((acc, complaint) => {
+    const category = complaint.category || "Other";
+
+    acc[category] = (acc[category] || 0) + 1;
+
+    return acc;
+  }, {});
+
+  const data = Object.entries(categoryMap).map(
+    ([name, value]) => ({
+      name,
+      value,
+    })
+  );
+
   return (
     <Card>
       <h3 className="mb-5 text-lg font-semibold">
@@ -36,6 +52,7 @@ const ComplaintCategoryChart = () => {
         height={320}
       >
         <PieChart>
+
           <Pie
             data={data}
             dataKey="value"
@@ -45,7 +62,7 @@ const ComplaintCategoryChart = () => {
           >
             {data.map((entry, index) => (
               <Cell
-                key={index}
+                key={entry.name}
                 fill={
                   COLORS[index % COLORS.length]
                 }
@@ -54,6 +71,7 @@ const ComplaintCategoryChart = () => {
           </Pie>
 
           <Tooltip />
+
         </PieChart>
       </ResponsiveContainer>
     </Card>

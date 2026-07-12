@@ -1,11 +1,12 @@
 import {
   Receipt,
-  User,
   Home,
   Calendar,
   IndianRupee,
   FileText,
   CheckCircle2,
+  CreditCard,
+  Clock,
   X,
 } from "lucide-react";
 
@@ -18,15 +19,27 @@ const BillDetails = ({
 }) => {
   if (!bill) return null;
 
+  const formatDateTime = (date) => {
+    if (!date) return "-";
+
+    return new Date(date).toLocaleString(
+      "en-GB",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
-
       <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl">
-
         {/* Header */}
 
         <div className="sticky top-0 flex items-center justify-between border-b bg-white px-6 py-5">
-
           <div>
             <h2 className="text-2xl font-bold text-slate-800">
               Bill Details
@@ -43,19 +56,14 @@ const BillDetails = ({
           >
             <X size={20} />
           </button>
-
         </div>
 
         {/* Body */}
 
         <div className="space-y-8 p-6">
-
-          {/* Resident */}
-
           <div className="flex items-center gap-4">
-
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 text-2xl font-bold text-indigo-600">
-              {bill.resident.charAt(0)}
+              {bill.resident?.charAt(0)}
             </div>
 
             <div>
@@ -67,10 +75,7 @@ const BillDetails = ({
                 Flat {bill.flat}
               </p>
             </div>
-
           </div>
-
-          {/* Status */}
 
           <Badge
             variant={
@@ -84,10 +89,7 @@ const BillDetails = ({
             {bill.status}
           </Badge>
 
-          {/* Information */}
-
           <div className="grid grid-cols-2 gap-6">
-
             <Info
               icon={Receipt}
               label="Bill ID"
@@ -115,8 +117,14 @@ const BillDetails = ({
             <Info
               icon={CheckCircle2}
               label="Paid Date"
+              value={bill.paidDate || "-"}
+            />
+
+            <Info
+              icon={CreditCard}
+              label="Payment Method"
               value={
-                bill.paidDate || "Not Paid"
+                bill.paymentMethod || "-"
               }
             />
 
@@ -126,9 +134,22 @@ const BillDetails = ({
               value={bill.flat}
             />
 
-          </div>
+            <Info
+              icon={Clock}
+              label="Created"
+              value={formatDateTime(
+                bill.createdAt
+              )}
+            />
 
-          {/* Description */}
+            <Info
+              icon={Clock}
+              label="Last Updated"
+              value={formatDateTime(
+                bill.updatedAt
+              )}
+            />
+          </div>
 
           <div>
             <h4 className="mb-2 font-semibold text-slate-800">
@@ -141,8 +162,6 @@ const BillDetails = ({
             </div>
           </div>
 
-          {/* Footer */}
-
           <Button
             variant="outline"
             className="w-full"
@@ -150,11 +169,8 @@ const BillDetails = ({
           >
             Close
           </Button>
-
         </div>
-
       </div>
-
     </div>
   );
 };
@@ -165,7 +181,6 @@ const Info = ({
   value,
 }) => (
   <div className="flex gap-3">
-
     <div className="mt-1 text-indigo-600">
       <Icon size={18} />
     </div>
@@ -179,7 +194,6 @@ const Info = ({
         {value}
       </p>
     </div>
-
   </div>
 );
 

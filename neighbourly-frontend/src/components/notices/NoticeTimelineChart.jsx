@@ -10,41 +10,47 @@ import {
 
 import Card from "../ui/Card";
 
-const data = [
-  {
-    month: "Jan",
-    notices: 6,
-  },
-  {
-    month: "Feb",
-    notices: 9,
-  },
-  {
-    month: "Mar",
-    notices: 12,
-  },
-  {
-    month: "Apr",
-    notices: 8,
-  },
-  {
-    month: "May",
-    notices: 15,
-  },
-  {
-    month: "Jun",
-    notices: 11,
-  },
-  {
-    month: "Jul",
-    notices: 18,
-  },
+import useNoticeStore from "../../store/noticeStore";
+
+const months = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 const NoticeTimelineChart = () => {
+  const notices = useNoticeStore(
+    (state) => state.notices
+  );
+
+  const monthlyData = Array(12)
+    .fill(0)
+    .map((_, index) => ({
+      month: months[index],
+      notices: 0,
+    }));
+
+  notices.forEach((notice) => {
+    if (!notice.publishDate) return;
+
+    const month = new Date(
+      notice.publishDate
+    ).getMonth();
+
+    monthlyData[month].notices += 1;
+  });
+
   return (
     <Card>
-
       <h3 className="mb-5 text-lg font-semibold text-slate-800">
         Notice Activity
       </h3>
@@ -53,15 +59,19 @@ const NoticeTimelineChart = () => {
         width="100%"
         height={320}
       >
-        <LineChart data={data}>
-
+        <LineChart data={monthlyData}>
           <CartesianGrid strokeDasharray="3 3" />
 
           <XAxis dataKey="month" />
 
-          <YAxis />
+          <YAxis allowDecimals={false} />
 
-          <Tooltip />
+          <Tooltip
+            formatter={(value) => [
+              value,
+              "Notices",
+            ]}
+          />
 
           <Line
             type="monotone"
@@ -69,10 +79,8 @@ const NoticeTimelineChart = () => {
             stroke="#4F46E5"
             strokeWidth={3}
           />
-
         </LineChart>
       </ResponsiveContainer>
-
     </Card>
   );
 };

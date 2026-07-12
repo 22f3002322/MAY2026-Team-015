@@ -3,10 +3,20 @@ import { useState } from "react";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 
+import useBookingStore from "../../store/bookingStore";
+
 const BookingForm = ({
   initialData = null,
   onClose,
 }) => {
+  const addBooking = useBookingStore(
+    (state) => state.addBooking
+  );
+
+  const updateBooking = useBookingStore(
+    (state) => state.updateBooking
+  );
+
   const [form, setForm] = useState(
     initialData || {
       resident: "",
@@ -17,13 +27,16 @@ const BookingForm = ({
       guests: "",
       amount: "",
       status: "Pending",
+      paymentStatus: "Pending",
       notes: "",
     }
   );
 
   const [errors, setErrors] = useState({});
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date()
+    .toISOString()
+    .split("T")[0];
 
   const handleChange = (field, value) => {
     setForm((prev) => ({
@@ -37,28 +50,32 @@ const BookingForm = ({
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
+  const validate = () => {
     const newErrors = {};
 
     if (!form.resident.trim())
-      newErrors.resident = "Resident name is required.";
+      newErrors.resident =
+        "Resident name is required.";
 
     if (!form.flat.trim())
-      newErrors.flat = "Flat number is required.";
+      newErrors.flat =
+        "Flat number is required.";
 
     if (!form.facility)
-      newErrors.facility = "Select a facility.";
+      newErrors.facility =
+        "Select a facility.";
 
     if (!form.date)
-      newErrors.date = "Booking date is required.";
+      newErrors.date =
+        "Booking date is required.";
 
     if (form.date < today)
-      newErrors.date = "Past dates are not allowed.";
+      newErrors.date =
+        "Past dates are not allowed.";
 
     if (!form.slot)
-      newErrors.slot = "Time slot is required.";
+      newErrors.slot =
+        "Time slot is required.";
 
     if (
       !form.guests ||
@@ -74,12 +91,55 @@ const BookingForm = ({
       newErrors.amount =
         "Enter a valid amount.";
 
-    if (Object.keys(newErrors).length) {
-      setErrors(newErrors);
+    return newErrors;
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "";
+
+    return new Date(date).toLocaleDateString(
+      "en-GB",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const validation = validate();
+
+    if (Object.keys(validation).length) {
+      setErrors(validation);
       return;
     }
 
-    console.log(form);
+    const bookingData = {
+      ...form,
+      guests: Number(form.guests),
+      amount: Number(form.amount),
+      date: formatDate(form.date),
+    };
+
+    if (initialData) {
+      updateBooking({
+        ...initialData,
+        ...bookingData,
+        createdAt: initialData.createdAt,
+        updatedAt: new Date().toISOString(),
+      });
+    } else {
+      addBooking({
+        id: Date.now(),
+        bookingId: `BK-${Date.now()}`,
+        ...bookingData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+    }
 
     onClose();
   };
@@ -90,7 +150,6 @@ const BookingForm = ({
       className="space-y-5"
     >
       <div className="grid gap-5 md:grid-cols-2">
-
         <Input
           label="Resident Name"
           value={form.resident}
@@ -128,11 +187,10 @@ const BookingForm = ({
                 e.target.value
               )
             }
-            className={`h-14 w-full rounded-xl border px-4 outline-none ${
-              errors.facility
+            className={`h-14 w-full rounded-xl border px-4 ${errors.facility
                 ? "border-red-500"
-                : "border-slate-300 focus:border-indigo-600"
-            }`}
+                : "border-slate-300"
+              }`}
           >
             <option value="">
               Select Facility
@@ -166,11 +224,10 @@ const BookingForm = ({
                 e.target.value
               )
             }
-            className={`h-14 w-full rounded-xl border px-4 outline-none ${
-              errors.date
+            className={`h-14 w-full rounded-xl border px-4 ${errors.date
                 ? "border-red-500"
-                : "border-slate-300 focus:border-indigo-600"
-            }`}
+                : "border-slate-300"
+              }`}
           />
 
           {errors.date && (
@@ -232,14 +289,13 @@ const BookingForm = ({
                 e.target.value
               )
             }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 px-4"
           >
             <option>Pending</option>
             <option>Approved</option>
             <option>Rejected</option>
           </select>
         </div>
-
       </div>
 
       <div>
@@ -257,12 +313,11 @@ const BookingForm = ({
             )
           }
           placeholder="Additional notes..."
-          className="w-full rounded-xl border border-slate-300 p-4 outline-none focus:border-indigo-600"
+          className="w-full rounded-xl border border-slate-300 p-4"
         />
       </div>
 
       <div className="flex justify-end gap-3">
-
         <Button
           type="button"
           variant="outline"
@@ -276,7 +331,6 @@ const BookingForm = ({
             ? "Update Booking"
             : "Create Booking"}
         </Button>
-
       </div>
     </form>
   );

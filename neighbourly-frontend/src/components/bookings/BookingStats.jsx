@@ -7,41 +7,60 @@ import {
 
 import Card from "../ui/Card";
 
-const stats = [
-  {
-    title: "Total Bookings",
-    value: "128",
-    change: "+12%",
-    trend: "up",
-    icon: CalendarDays,
-  },
-
-  {
-    title: "Active Facilities",
-    value: "8",
-    change: "+2%",
-    trend: "up",
-    icon: Building2,
-  },
-
-  {
-    title: "Revenue",
-    value: "₹42,500",
-    change: "+18%",
-    trend: "up",
-    icon: IndianRupee,
-  },
-
-  {
-    title: "Pending Requests",
-    value: "14",
-    change: "-4%",
-    trend: "down",
-    icon: Clock,
-  },
-];
+import useBookingStore from "../../store/bookingStore";
 
 const BookingStats = () => {
+  const bookings = useBookingStore(
+    (state) => state.bookings
+  );
+
+  const totalBookings = bookings.length;
+
+  const activeFacilities = new Set(
+    bookings.map((booking) => booking.facility)
+  ).size;
+
+  const totalRevenue = bookings.reduce(
+    (sum, booking) =>
+      sum + (Number(booking.amount) || 0),
+    0
+  );
+
+  const pendingRequests = bookings.filter(
+    (booking) => booking.status === "Pending"
+  ).length;
+
+  const stats = [
+    {
+      title: "Total Bookings",
+      value: totalBookings,
+      change: "",
+      trend: "up",
+      icon: CalendarDays,
+    },
+    {
+      title: "Active Facilities",
+      value: activeFacilities,
+      change: "",
+      trend: "up",
+      icon: Building2,
+    },
+    {
+      title: "Revenue",
+      value: `₹${totalRevenue.toLocaleString()}`,
+      change: "",
+      trend: "up",
+      icon: IndianRupee,
+    },
+    {
+      title: "Pending Requests",
+      value: pendingRequests,
+      change: "",
+      trend: pendingRequests > 0 ? "down" : "up",
+      icon: Clock,
+    },
+  ];
+
   return (
     <div className="mb-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((item) => {
@@ -66,7 +85,7 @@ const BookingStats = () => {
                       : "text-red-600"
                   }`}
                 >
-                  {item.change} this month
+                  Live Data
                 </p>
               </div>
 

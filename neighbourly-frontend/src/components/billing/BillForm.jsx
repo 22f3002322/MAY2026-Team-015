@@ -3,21 +3,42 @@ import { useState } from "react";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 
+import useBillingStore from "../../store/billingStore";
+
 const BillForm = ({
   initialData = null,
   onClose,
 }) => {
+  const addBill = useBillingStore(
+    (state) => state.addBill
+  );
+
+  const updateBill = useBillingStore(
+    (state) => state.updateBill
+  );
+
   const [form, setForm] = useState(
-    initialData || {
-      resident: "",
-      flat: "",
-      category: "Maintenance",
-      amount: "",
-      dueDate: "",
-      paidDate: "",
-      status: "Pending",
-      description: "",
-    }
+    initialData
+      ? {
+        ...initialData,
+        dueDate: initialData.dueDate
+          ? initialData.dueDate.split("T")[0]
+          : "",
+        paidDate: initialData.paidDate
+          ? initialData.paidDate.split("T")[0]
+          : "",
+      }
+      : {
+        resident: "",
+        flat: "",
+        category: "Maintenance",
+        amount: "",
+        dueDate: "",
+        paidDate: "",
+        status: "Pending",
+        paymentMethod: "",
+        description: "",
+      }
   );
 
   const [errors, setErrors] = useState({});
@@ -51,7 +72,7 @@ const BillForm = ({
 
     if (!form.category)
       newErrors.category =
-        "Select a category.";
+        "Category is required.";
 
     if (!form.amount)
       newErrors.amount =
@@ -79,6 +100,19 @@ const BillForm = ({
     return newErrors;
   };
 
+  const formatDate = (date) => {
+    if (!date) return "";
+
+    return new Date(date).toLocaleDateString(
+      "en-GB",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -89,7 +123,32 @@ const BillForm = ({
       return;
     }
 
-    console.log(form);
+    const billData = {
+      ...form,
+      amount: Number(form.amount),
+
+      // Store ISO dates
+      dueDate: form.dueDate
+        ? new Date(form.dueDate).toISOString()
+        : "",
+
+      paidDate: form.paidDate
+        ? new Date(form.paidDate).toISOString()
+        : "",
+    };
+
+    if (initialData) {
+      updateBill({
+        ...initialData,
+        ...billData,
+      });
+    } else {
+      addBill({
+        ...billData,
+        billId: `BILL-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      });
+    }
 
     onClose();
   };
@@ -100,7 +159,6 @@ const BillForm = ({
       className="space-y-6"
     >
       <div className="grid gap-5 md:grid-cols-2">
-
         <Input
           label="Resident Name"
           value={form.resident}
@@ -125,8 +183,6 @@ const BillForm = ({
           }
         />
 
-        {/* Category */}
-
         <div>
           <label className="mb-2 block text-sm font-medium">
             Category
@@ -140,7 +196,7 @@ const BillForm = ({
                 e.target.value
               )
             }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 px-4"
           >
             <option>Maintenance</option>
             <option>Water</option>
@@ -170,8 +226,6 @@ const BillForm = ({
           }
         />
 
-        {/* Due Date */}
-
         <div>
           <label className="mb-2 block text-sm font-medium">
             Due Date
@@ -187,7 +241,7 @@ const BillForm = ({
                 e.target.value
               )
             }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 px-4"
           />
 
           {errors.dueDate && (
@@ -197,8 +251,6 @@ const BillForm = ({
           )}
         </div>
 
-        {/* Paid Date */}
-
         <div>
           <label className="mb-2 block text-sm font-medium">
             Paid Date
@@ -207,14 +259,14 @@ const BillForm = ({
           <input
             type="date"
             value={form.paidDate}
+            disabled={form.status !== "Paid"}
             onChange={(e) =>
               handleChange(
                 "paidDate",
                 e.target.value
               )
             }
-            disabled={form.status !== "Paid"}
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none disabled:bg-slate-100 focus:border-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 px-4 disabled:bg-slate-100"
           />
 
           {errors.paidDate && (
@@ -223,8 +275,6 @@ const BillForm = ({
             </p>
           )}
         </div>
-
-        {/* Status */}
 
         <div>
           <label className="mb-2 block text-sm font-medium">
@@ -239,17 +289,14 @@ const BillForm = ({
                 e.target.value
               )
             }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 px-4"
           >
             <option>Pending</option>
             <option>Paid</option>
             <option>Overdue</option>
           </select>
         </div>
-
       </div>
-
-      {/* Description */}
 
       <div>
         <label className="mb-2 block text-sm font-medium">
@@ -265,15 +312,11 @@ const BillForm = ({
               e.target.value
             )
           }
-          placeholder="Enter bill description..."
-          className="w-full rounded-xl border border-slate-300 p-4 outline-none focus:border-indigo-600"
+          className="w-full rounded-xl border border-slate-300 p-4"
         />
       </div>
 
-      {/* Buttons */}
-
       <div className="flex justify-end gap-3">
-
         <Button
           variant="outline"
           type="button"
@@ -287,7 +330,6 @@ const BillForm = ({
             ? "Update Bill"
             : "Generate Bill"}
         </Button>
-
       </div>
     </form>
   );

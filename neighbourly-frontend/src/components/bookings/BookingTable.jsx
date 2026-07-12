@@ -21,7 +21,7 @@ const BookingTable = ({
       render: (row) => (
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-600">
-            {row.resident.charAt(0)}
+            {row.resident?.charAt(0)}
           </div>
 
           <div>
@@ -30,7 +30,7 @@ const BookingTable = ({
             </p>
 
             <p className="text-xs text-slate-500">
-              {row.flat}
+              Flat {row.flat}
             </p>
           </div>
         </div>
@@ -61,6 +61,9 @@ const BookingTable = ({
     {
       key: "guests",
       header: "Guests",
+      render: (row) => (
+        <span>{row.guests}</span>
+      ),
     },
 
     {
@@ -68,14 +71,35 @@ const BookingTable = ({
       header: "Amount",
       render: (row) => (
         <span className="font-semibold">
-          ₹{row.amount}
+          ₹{Number(
+            row.amount
+          ).toLocaleString()}
         </span>
       ),
     },
 
     {
+      key: "paymentStatus",
+      header: "Payment",
+      render: (row) => (
+        <Badge
+          variant={
+            row.paymentStatus === "Paid"
+              ? "success"
+              : row.paymentStatus ===
+                "Pending"
+              ? "warning"
+              : "danger"
+          }
+        >
+          {row.paymentStatus}
+        </Badge>
+      ),
+    },
+
+    {
       key: "status",
-      header: "Status",
+      header: "Booking Status",
       render: (row) => (
         <Badge
           variant={
@@ -96,7 +120,6 @@ const BookingTable = ({
       header: "Actions",
       render: (row) => (
         <div className="flex gap-2">
-
           <Button
             variant="ghost"
             size="sm"
@@ -120,7 +143,6 @@ const BookingTable = ({
           >
             <Trash2 size={16} />
           </Button>
-
         </div>
       ),
     },

@@ -13,68 +13,95 @@ import BookingTrendChart from "../../components/bookings/BookingTrendChart";
 import Modal from "../../components/ui/Modal";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
-import { bookings } from "../../mock/bookings";
+import useBookingStore from "../../store/bookingStore";
 
 const FacilityBookings = () => {
+  const bookings = useBookingStore(
+    (state) => state.bookings
+  );
+
+  const deleteBookingById = useBookingStore(
+    (state) => state.deleteBooking
+  );
+
+  // Filters
   const [search, setSearch] = useState("");
   const [facility, setFacility] = useState("");
   const [status, setStatus] = useState("");
   const [date, setDate] = useState("");
-  const [openModal, setOpenModal] = useState(false);
+
+  // CRUD
+  const [openModal, setOpenModal] =
+    useState(false);
+
   const [selectedBooking, setSelectedBooking] =
     useState(null);
+
   const [editingBooking, setEditingBooking] =
     useState(null);
+
   const [deleteBooking, setDeleteBooking] =
     useState(null);
 
-  const filteredBookings = bookings.filter((booking) => {
-    const matchesSearch =
-      booking.resident
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      booking.flat
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      booking.facility
-        .toLowerCase()
-        .includes(search.toLowerCase());
+  const filteredBookings = bookings.filter(
+    (booking) => {
+      const matchesSearch =
+        booking.resident
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+        booking.flat
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+        booking.facility
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+        booking.bookingId
+          .toLowerCase()
+          .includes(search.toLowerCase());
 
-    const matchesFacility =
-      facility === "" ||
-      booking.facility === facility;
+      const matchesFacility =
+        facility === "" ||
+        booking.facility === facility;
 
-    const matchesStatus =
-      status === "" ||
-      booking.status === status;
+      const matchesStatus =
+        status === "" ||
+        booking.status === status;
 
-    const matchesDate =
-      date === "" ||
-      booking.date ===
-      new Date(date).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
+      const matchesDate =
+        date === "" ||
+        booking.date ===
+          new Date(date).toLocaleDateString(
+            "en-GB",
+            {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            }
+          );
 
-    return (
-      matchesSearch &&
-      matchesFacility &&
-      matchesStatus &&
-      matchesDate
-    );
-  });
+      return (
+        matchesSearch &&
+        matchesFacility &&
+        matchesStatus &&
+        matchesDate
+      );
+    }
+  );
 
   return (
     <Layout
       title="Facility Booking"
-      breadcrumb={["Home", "Facility Booking"]}
+      breadcrumb={[
+        "Home",
+        "Facility Booking",
+      ]}
     >
       <BookingStats />
+
       <div className="mb-6 grid gap-6 xl:grid-cols-2">
-  <BookingFacilityChart />
-  <BookingTrendChart />
-</div>
+        <BookingFacilityChart />
+        <BookingTrendChart />
+      </div>
 
       <BookingFilters
         search={search}
@@ -100,6 +127,7 @@ const FacilityBookings = () => {
         }}
         onDelete={setDeleteBooking}
       />
+
       <Modal
         open={openModal}
         title={
@@ -120,12 +148,14 @@ const FacilityBookings = () => {
           }}
         />
       </Modal>
+
       <BookingDetails
         booking={selectedBooking}
         onClose={() =>
           setSelectedBooking(null)
         }
       />
+
       <ConfirmDialog
         open={!!deleteBooking}
         title="Delete Booking"
@@ -135,8 +165,7 @@ const FacilityBookings = () => {
           setDeleteBooking(null)
         }
         onConfirm={() => {
-          console.log(deleteBooking);
-
+          deleteBookingById(deleteBooking.id);
           setDeleteBooking(null);
         }}
       />

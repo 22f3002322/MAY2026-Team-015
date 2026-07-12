@@ -5,22 +5,50 @@ import ApartmentStats from "../../components/apartments/ApartmentStat";
 import ApartmentFilters from "../../components/apartments/ApartmentFilters";
 import ApartmentTable from "../../components/apartments/ApartmentTable";
 import ApartmentDetails from "../../components/apartments/ApartmentDetails";
-import Modal from "../../components/ui/Modal";
 import ApartmentForm from "../../components/apartments/ApartmentForm";
+
+import Modal from "../../components/ui/Modal";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
-import { apartments } from "../../mock/apartments";
+import useApartmentStore from "../../store/apartmentStore";
 
 const Apartments = () => {
+  // Zustand Store
+
+  const apartments = useApartmentStore(
+    (state) => state.apartments
+  );
+
+  const addApartment = useApartmentStore(
+    (state) => state.addApartment
+  );
+
+  const updateApartment = useApartmentStore(
+    (state) => state.updateApartment
+  );
+
+  const removeApartment = useApartmentStore(
+    (state) => state.deleteApartment
+  );
+
+  // Filters
+
   const [search, setSearch] = useState("");
   const [block, setBlock] = useState("");
   const [occupancy, setOccupancy] = useState("");
+
+  // Modals
+
   const [openModal, setOpenModal] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+
+  // Selected Data
 
   const [selectedApartment, setSelectedApartment] = useState(null);
   const [editingApartment, setEditingApartment] = useState(null);
-  const [editModal, setEditModal] = useState(false);
   const [deleteApartment, setDeleteApartment] = useState(null);
+
+  // Filter
 
   const filteredApartments = apartments.filter((flat) => {
     const matchesSearch =
@@ -62,52 +90,85 @@ const Apartments = () => {
         apartments={filteredApartments}
         onView={setSelectedApartment}
         onEdit={(flat) => {
-            setEditingApartment(flat);
-            setEditModal(true);
-            }}
+          setEditingApartment(flat);
+          setEditModal(true);
+        }}
         onDelete={setDeleteApartment}
       />
+
+      {/* Add Apartment */}
+
       <Modal
         open={openModal}
         title="Add Apartment"
         onClose={() => setOpenModal(false)}
-        >
+      >
         <ApartmentForm
-            onClose={() => setOpenModal(false)}
+          onSubmit={(data) => {
+            addApartment({
+              ...data,
+              id: Date.now(),
+            });
+
+            setOpenModal(false);
+          }}
+          onClose={() => setOpenModal(false)}
         />
-    </Modal>
-    <Modal
+      </Modal>
+
+      {/* Edit Apartment */}
+
+      <Modal
         open={editModal}
         title="Edit Apartment"
         onClose={() => {
-        setEditModal(false);
-        setEditingApartment(null);
+          setEditModal(false);
+          setEditingApartment(null);
         }}
-        >
+      >
         <ApartmentForm
-            initialData={editingApartment}
-            onClose={() => {
+          initialData={editingApartment}
+          onSubmit={(data) => {
+            updateApartment(
+              editingApartment.id,
+              data
+            );
+
             setEditModal(false);
             setEditingApartment(null);
-            }}
+          }}
+          onClose={() => {
+            setEditModal(false);
+            setEditingApartment(null);
+          }}
         />
-    </Modal>
-    <ApartmentDetails
-    apartment={selectedApartment}
-    onClose={() => setSelectedApartment(null)}
-    />
-    <ConfirmDialog
+      </Modal>
+
+      {/* View Details */}
+
+      <ApartmentDetails
+        apartment={selectedApartment}
+        onClose={() =>
+          setSelectedApartment(null)
+        }
+      />
+
+      {/* Delete */}
+
+      <ConfirmDialog
         open={!!deleteApartment}
         title="Delete Apartment"
         message={`Are you sure you want to delete ${deleteApartment?.flat}?`}
         confirmText="Delete"
-        onCancel={() => setDeleteApartment(null)}
+        onCancel={() =>
+          setDeleteApartment(null)
+        }
         onConfirm={() => {
-            console.log(deleteApartment);
+          removeApartment(deleteApartment.id);
 
-            setDeleteApartment(null);
+          setDeleteApartment(null);
         }}
-    />
+      />
     </Layout>
   );
 };

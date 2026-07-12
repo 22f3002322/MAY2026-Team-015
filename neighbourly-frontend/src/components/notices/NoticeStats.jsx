@@ -7,38 +7,74 @@ import {
 
 import Card from "../ui/Card";
 
-const stats = [
-  {
-    title: "Total Notices",
-    value: "48",
-    change: "+6%",
-    trend: "up",
-    icon: Bell,
-  },
-  {
-    title: "Published",
-    value: "38",
-    change: "+4%",
-    trend: "up",
-    icon: Megaphone,
-  },
-  {
-    title: "Draft",
-    value: "6",
-    change: "+2%",
-    trend: "up",
-    icon: FileText,
-  },
-  {
-    title: "Expiring Soon",
-    value: "4",
-    change: "-1%",
-    trend: "down",
-    icon: Clock,
-  },
-];
+import useNoticeStore from "../../store/noticeStore";
 
 const NoticeStats = () => {
+  const notices = useNoticeStore(
+    (state) => state.notices
+  );
+
+  const totalNotices = notices.length;
+
+  const published = notices.filter(
+    (notice) =>
+      notice.status === "Published"
+  ).length;
+
+  const drafts = notices.filter(
+    (notice) =>
+      notice.status === "Draft"
+  ).length;
+
+  const today = new Date();
+
+  const expiringSoon = notices.filter(
+    (notice) => {
+      if (
+        !notice.expiryDate ||
+        notice.status !== "Published"
+      )
+        return false;
+
+      const expiry = new Date(
+        notice.expiryDate
+      );
+
+      const diff =
+        (expiry - today) /
+        (1000 * 60 * 60 * 24);
+
+      return diff >= 0 && diff <= 7;
+    }
+  ).length;
+
+  const stats = [
+    {
+      title: "Total Notices",
+      value: totalNotices,
+      icon: Bell,
+      color: "bg-indigo-100 text-indigo-600",
+    },
+    {
+      title: "Published",
+      value: published,
+      icon: Megaphone,
+      color: "bg-green-100 text-green-600",
+    },
+    {
+      title: "Draft",
+      value: drafts,
+      icon: FileText,
+      color: "bg-yellow-100 text-yellow-600",
+    },
+    {
+      title: "Expiring Soon",
+      value: expiringSoon,
+      icon: Clock,
+      color: "bg-red-100 text-red-600",
+    },
+  ];
+
   return (
     <div className="mb-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((item) => {
@@ -46,28 +82,20 @@ const NoticeStats = () => {
 
         return (
           <Card key={item.title}>
-            <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500">
                   {item.title}
                 </p>
 
-                <h2 className="mt-3 text-3xl font-bold">
+                <h2 className="mt-3 text-3xl font-bold text-slate-800">
                   {item.value}
                 </h2>
-
-                <p
-                  className={`mt-2 text-sm font-medium ${
-                    item.trend === "up"
-                      ? "text-emerald-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {item.change} this month
-                </p>
               </div>
 
-              <div className="rounded-xl bg-indigo-100 p-3 text-indigo-600">
+              <div
+                className={`rounded-xl p-3 ${item.color}`}
+              >
                 <Icon size={24} />
               </div>
             </div>

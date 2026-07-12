@@ -5,6 +5,7 @@ import Button from "../ui/Button";
 
 const VisitorForm = ({
   initialData = null,
+  onSubmit,
   onClose,
 }) => {
   const [form, setForm] = useState(
@@ -19,12 +20,15 @@ const VisitorForm = ({
       visitTime: "",
       idType: "Aadhaar Card",
       idNumber: "",
+      status: "Expected",
     }
   );
 
   const [errors, setErrors] = useState({});
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date()
+    .toISOString()
+    .split("T")[0];
 
   const handleChange = (field, value) => {
     setForm((prev) => ({
@@ -47,35 +51,43 @@ const VisitorForm = ({
       newErrors.name = "Visitor name is required.";
 
     if (!/^[0-9]{10}$/.test(form.phone))
-      newErrors.phone = "Enter a valid 10-digit mobile number.";
+      newErrors.phone =
+        "Enter a valid 10-digit mobile number.";
 
     if (!form.resident.trim())
-      newErrors.resident = "Resident name is required.";
+      newErrors.resident =
+        "Resident name is required.";
 
     if (!form.flat.trim())
-      newErrors.flat = "Flat number is required.";
+      newErrors.flat =
+        "Flat number is required.";
 
     if (!form.purpose.trim())
-      newErrors.purpose = "Purpose is required.";
+      newErrors.purpose =
+        "Purpose is required.";
 
     if (!form.visitDate)
-      newErrors.visitDate = "Visit date is required.";
+      newErrors.visitDate =
+        "Visit date is required.";
 
     if (form.visitDate < today)
-      newErrors.visitDate = "Past dates are not allowed.";
+      newErrors.visitDate =
+        "Past dates are not allowed.";
 
     if (!form.visitTime)
-      newErrors.visitTime = "Visit time is required.";
+      newErrors.visitTime =
+        "Visit time is required.";
 
     if (!form.idNumber.trim())
-      newErrors.idNumber = "ID number is required.";
+      newErrors.idNumber =
+        "ID number is required.";
 
     if (Object.keys(newErrors).length) {
       setErrors(newErrors);
       return;
     }
 
-    console.log(form);
+    onSubmit(form);
 
     onClose();
   };
@@ -90,6 +102,7 @@ const VisitorForm = ({
         <Input
           label="Visitor Name"
           value={form.name}
+          error={errors.name}
           onChange={(e) =>
             handleChange("name", e.target.value)
           }
@@ -98,6 +111,7 @@ const VisitorForm = ({
         <Input
           label="Mobile Number"
           value={form.phone}
+          error={errors.phone}
           onChange={(e) =>
             handleChange("phone", e.target.value)
           }
@@ -106,14 +120,19 @@ const VisitorForm = ({
         <Input
           label="Resident Name"
           value={form.resident}
+          error={errors.resident}
           onChange={(e) =>
-            handleChange("resident", e.target.value)
+            handleChange(
+              "resident",
+              e.target.value
+            )
           }
         />
 
         <Input
           label="Flat Number"
           value={form.flat}
+          error={errors.flat}
           onChange={(e) =>
             handleChange("flat", e.target.value)
           }
@@ -122,8 +141,12 @@ const VisitorForm = ({
         <Input
           label="Purpose"
           value={form.purpose}
+          error={errors.purpose}
           onChange={(e) =>
-            handleChange("purpose", e.target.value)
+            handleChange(
+              "purpose",
+              e.target.value
+            )
           }
         />
 
@@ -131,7 +154,10 @@ const VisitorForm = ({
           label="Vehicle Number (Optional)"
           value={form.vehicle}
           onChange={(e) =>
-            handleChange("vehicle", e.target.value)
+            handleChange(
+              "vehicle",
+              e.target.value
+            )
           }
         />
 
@@ -145,9 +171,12 @@ const VisitorForm = ({
             min={today}
             value={form.visitDate}
             onChange={(e) =>
-              handleChange("visitDate", e.target.value)
+              handleChange(
+                "visitDate",
+                e.target.value
+              )
             }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 px-4"
           />
 
           {errors.visitDate && (
@@ -166,9 +195,12 @@ const VisitorForm = ({
             type="time"
             value={form.visitTime}
             onChange={(e) =>
-              handleChange("visitTime", e.target.value)
+              handleChange(
+                "visitTime",
+                e.target.value
+              )
             }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 px-4"
           />
 
           {errors.visitTime && (
@@ -186,9 +218,12 @@ const VisitorForm = ({
           <select
             value={form.idType}
             onChange={(e) =>
-              handleChange("idType", e.target.value)
+              handleChange(
+                "idType",
+                e.target.value
+              )
             }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 px-4"
           >
             <option>Aadhaar Card</option>
             <option>PAN Card</option>
@@ -198,11 +233,14 @@ const VisitorForm = ({
         </div>
 
         <Input
-          label="Visitor Name"
-          value={form.name}
-          error={errors.name}
+          label="ID Number"
+          value={form.idNumber}
+          error={errors.idNumber}
           onChange={(e) =>
-            handleChange("name", e.target.value)
+            handleChange(
+              "idNumber",
+              e.target.value
+            )
           }
         />
 
@@ -219,7 +257,9 @@ const VisitorForm = ({
         </Button>
 
         <Button type="submit">
-          Register Visitor
+          {initialData
+            ? "Update Visitor"
+            : "Register Visitor"}
         </Button>
 
       </div>

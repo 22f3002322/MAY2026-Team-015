@@ -9,32 +9,7 @@ import {
 
 import Card from "../ui/Card";
 
-const data = [
-  {
-    name: "Maintenance",
-    value: 14,
-  },
-  {
-    name: "Meeting",
-    value: 8,
-  },
-  {
-    name: "Parking",
-    value: 6,
-  },
-  {
-    name: "Safety",
-    value: 5,
-  },
-  {
-    name: "Events",
-    value: 9,
-  },
-  {
-    name: "General",
-    value: 12,
-  },
-];
+import useNoticeStore from "../../store/noticeStore";
 
 const COLORS = [
   "#4F46E5",
@@ -46,9 +21,26 @@ const COLORS = [
 ];
 
 const NoticeCategoryChart = () => {
+  const notices = useNoticeStore(
+    (state) => state.notices
+  );
+
+  const categoryMap = {};
+
+  notices.forEach((notice) => {
+    categoryMap[notice.category] =
+      (categoryMap[notice.category] || 0) + 1;
+  });
+
+  const data = Object.entries(categoryMap).map(
+    ([name, value]) => ({
+      name,
+      value,
+    })
+  );
+
   return (
     <Card>
-
       <h3 className="mb-5 text-lg font-semibold text-slate-800">
         Notices by Category
       </h3>
@@ -58,7 +50,6 @@ const NoticeCategoryChart = () => {
         height={320}
       >
         <PieChart>
-
           <Pie
             data={data}
             dataKey="value"
@@ -66,10 +57,14 @@ const NoticeCategoryChart = () => {
             outerRadius={110}
             label
           >
-            {data.map((entry, index) => (
+            {data.map((_, index) => (
               <Cell
                 key={index}
-                fill={COLORS[index]}
+                fill={
+                  COLORS[
+                    index % COLORS.length
+                  ]
+                }
               />
             ))}
           </Pie>
@@ -77,10 +72,8 @@ const NoticeCategoryChart = () => {
           <Tooltip />
 
           <Legend />
-
         </PieChart>
       </ResponsiveContainer>
-
     </Card>
   );
 };

@@ -13,141 +13,137 @@ import BillDetails from "../../components/billing/BillDetails";
 import Modal from "../../components/ui/Modal";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
-import { bills } from "../../mock/bills";
+import useBillingStore from "../../store/billingStore";
 
 const Billing = () => {
-  // Filters
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [status, setStatus] = useState("");
-  const [dueDate, setDueDate] = useState("");
+    const bills = useBillingStore(
+        (state) => state.bills
+    );
 
-  // CRUD States
-  const [openModal, setOpenModal] = useState(false);
-  const [selectedBill, setSelectedBill] = useState(null);
-  const [editingBill, setEditingBill] = useState(null);
-  const [deleteBill, setDeleteBill] = useState(null);
+    const deleteBillById = useBillingStore(
+        (state) => state.deleteBill
+    );
 
-  const filteredBills = bills.filter((bill) => {
-    const matchesSearch =
-      bill.resident
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      bill.flat
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      bill.billId
-        .toLowerCase()
-        .includes(search.toLowerCase());
+    // Filters
+    const [search, setSearch] = useState("");
+    const [category, setCategory] = useState("");
+    const [status, setStatus] = useState("");
+    const [dueDate, setDueDate] = useState("");
 
-    const matchesCategory =
-      category === "" ||
-      bill.category === category;
+    // CRUD
+    const [openModal, setOpenModal] = useState(false);
+    const [selectedBill, setSelectedBill] = useState(null);
+    const [editingBill, setEditingBill] = useState(null);
+    const [deleteBill, setDeleteBill] = useState(null);
 
-    const matchesStatus =
-      status === "" ||
-      bill.status === status;
+    const filteredBills = bills.filter((bill) => {
+        const matchesSearch =
+            bill.resident
+                .toLowerCase()
+                .includes(search.toLowerCase()) ||
+            bill.flat
+                .toLowerCase()
+                .includes(search.toLowerCase()) ||
+            bill.billId
+                .toLowerCase()
+                .includes(search.toLowerCase());
 
-    const matchesDueDate =
-      dueDate === "" ||
-      bill.dueDate ===
-        new Date(dueDate).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        });
+        const matchesCategory =
+            category === "" ||
+            bill.category === category;
+
+        const matchesStatus =
+            status === "" ||
+            bill.status === status;
+
+        const matchesDueDate =
+            dueDate === "" ||
+            bill.dueDate?.split("T")[0] === dueDate;
+
+        return (
+            matchesSearch &&
+            matchesCategory &&
+            matchesStatus &&
+            matchesDueDate
+        );
+    });
 
     return (
-      matchesSearch &&
-      matchesCategory &&
-      matchesStatus &&
-      matchesDueDate
+        <Layout
+            title="Billing & Payments"
+            breadcrumb={["Home", "Billing"]}
+        >
+            <BillingStats />
+
+            <div className="mb-6 grid gap-6 xl:grid-cols-2">
+                <BillingRevenueChart />
+                <BillingStatusChart />
+            </div>
+
+            <BillingFilters
+                search={search}
+                setSearch={setSearch}
+                category={category}
+                setCategory={setCategory}
+                status={status}
+                setStatus={setStatus}
+                dueDate={dueDate}
+                setDueDate={setDueDate}
+                onGenerateBill={() => {
+                    setEditingBill(null);
+                    setOpenModal(true);
+                }}
+            />
+
+            <BillingTable
+                bills={filteredBills}
+                onView={setSelectedBill}
+                onEdit={(bill) => {
+                    setEditingBill(bill);
+                    setOpenModal(true);
+                }}
+                onDelete={setDeleteBill}
+            />
+
+            <Modal
+                open={openModal}
+                title={
+                    editingBill
+                        ? "Edit Bill"
+                        : "Generate Bill"
+                }
+                onClose={() => {
+                    setOpenModal(false);
+                    setEditingBill(null);
+                }}
+            >
+                <BillForm
+                    initialData={editingBill}
+                    onClose={() => {
+                        setOpenModal(false);
+                        setEditingBill(null);
+                    }}
+                />
+            </Modal>
+
+            <BillDetails
+                bill={selectedBill}
+                onClose={() => setSelectedBill(null)}
+            />
+
+            <ConfirmDialog
+                open={!!deleteBill}
+                title="Delete Bill"
+                message={`Delete ${deleteBill?.billId}?`}
+                confirmText="Delete"
+                onCancel={() => setDeleteBill(null)}
+                onConfirm={() => {
+                    deleteBillById(deleteBill.id);
+                    setDeleteBill(null);
+                }}
+            />
+        </Layout>
     );
-  });
-
-  return (
-    <Layout
-      title="Billing & Payments"
-      breadcrumb={["Home", "Billing"]}
-    >
-      <BillingStats />
-
-      <div className="mb-6 grid gap-6 xl:grid-cols-2">
-        <BillingRevenueChart />
-        <BillingStatusChart />
-      </div>
-
-      <BillingFilters
-        search={search}
-        setSearch={setSearch}
-        category={category}
-        setCategory={setCategory}
-        status={status}
-        setStatus={setStatus}
-        dueDate={dueDate}
-        setDueDate={setDueDate}
-        onGenerateBill={() => {
-          setEditingBill(null);
-          setOpenModal(true);
-        }}
-      />
-
-      <BillingTable
-        bills={filteredBills}
-        onView={setSelectedBill}
-        onEdit={(bill) => {
-          setEditingBill(bill);
-          setOpenModal(true);
-        }}
-        onDelete={setDeleteBill}
-      />
-
-      {/* Add/Edit Modal */}
-
-      <Modal
-        open={openModal}
-        title={
-          editingBill
-            ? "Edit Bill"
-            : "Generate Bill"
-        }
-        onClose={() => {
-          setOpenModal(false);
-          setEditingBill(null);
-        }}
-      >
-        <BillForm
-          initialData={editingBill}
-          onClose={() => {
-            setOpenModal(false);
-            setEditingBill(null);
-          }}
-        />
-      </Modal>
-
-      {/* Details */}
-
-      <BillDetails
-        bill={selectedBill}
-        onClose={() => setSelectedBill(null)}
-      />
-
-      {/* Delete */}
-
-      <ConfirmDialog
-        open={!!deleteBill}
-        title="Delete Bill"
-        message={`Delete ${deleteBill?.billId}?`}
-        confirmText="Delete"
-        onCancel={() => setDeleteBill(null)}
-        onConfirm={() => {
-          console.log(deleteBill);
-
-          setDeleteBill(null);
-        }}
-      />
-    </Layout>
-  );
 };
 
 export default Billing;

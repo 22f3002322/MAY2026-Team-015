@@ -10,16 +10,35 @@ import {
 
 import Card from "../ui/Card";
 
-const data = [
-  { month: "Jan", bookings: 24 },
-  { month: "Feb", bookings: 31 },
-  { month: "Mar", bookings: 42 },
-  { month: "Apr", bookings: 38 },
-  { month: "May", bookings: 55 },
-  { month: "Jun", bookings: 48 },
-];
+import useBookingStore from "../../store/bookingStore";
 
 const BookingTrendChart = () => {
+  const bookings = useBookingStore(
+    (state) => state.bookings
+  );
+
+  const data = Array.from(
+    { length: 12 },
+    (_, index) => ({
+      month: new Date(
+        2026,
+        index
+      ).toLocaleString("default", {
+        month: "short",
+      }),
+      bookings: bookings.filter((booking) => {
+        if (!booking.createdAt)
+          return false;
+
+        return (
+          new Date(
+            booking.createdAt
+          ).getMonth() === index
+        );
+      }).length,
+    })
+  );
+
   return (
     <Card>
       <h3 className="mb-5 text-lg font-semibold">

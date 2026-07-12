@@ -10,16 +10,44 @@ import {
 
 import Card from "../ui/Card";
 
-const data = [
-  { month: "Jan", complaints: 12 },
-  { month: "Feb", complaints: 18 },
-  { month: "Mar", complaints: 15 },
-  { month: "Apr", complaints: 22 },
-  { month: "May", complaints: 30 },
-  { month: "Jun", complaints: 25 },
+import useComplaintStore from "../../store/complaintStore";
+
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 const ComplaintTrendChart = () => {
+  const complaints = useComplaintStore(
+    (state) => state.complaints
+  );
+
+  const monthCounts = new Array(12).fill(0);
+
+  complaints.forEach((complaint) => {
+    // Use createdAt if available; otherwise treat as current month
+    const date = complaint.createdAt
+      ? new Date(complaint.createdAt)
+      : new Date();
+
+    monthCounts[date.getMonth()]++;
+  });
+
+  const data = MONTHS.map((month, index) => ({
+    month,
+    complaints: monthCounts[index],
+  }));
+
   return (
     <Card>
       <h3 className="mb-5 text-lg font-semibold">
@@ -31,11 +59,12 @@ const ComplaintTrendChart = () => {
         height={320}
       >
         <AreaChart data={data}>
+
           <CartesianGrid strokeDasharray="3 3" />
 
           <XAxis dataKey="month" />
 
-          <YAxis />
+          <YAxis allowDecimals={false} />
 
           <Tooltip />
 
@@ -45,6 +74,7 @@ const ComplaintTrendChart = () => {
             stroke="#4F46E5"
             fill="#C7D2FE"
           />
+
         </AreaChart>
       </ResponsiveContainer>
     </Card>
