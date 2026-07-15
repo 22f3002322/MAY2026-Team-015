@@ -19,6 +19,8 @@ const Login = () => {
         navigate("/admin/dashboard");
       } else if (role === "resident") {
         navigate("/resident/dashboard");
+      } else if (role === "staff") {
+        navigate("/staff/dashboard");
       }
     }
   }, [isAuthenticated, role, navigate]);
@@ -41,8 +43,10 @@ const Login = () => {
       toast.success(`Welcome back!`);
       if (result.role === "admin") {
         navigate("/admin/dashboard");
-      } else {
+      } else if (result.role === "resident") {
         navigate("/resident/dashboard");
+      } else {
+        navigate("/staff/dashboard");
       }
     } else {
       toast.error(result.message);
@@ -59,6 +63,21 @@ const Login = () => {
   const autofillResident = () => {
     setEmail("william@example.com");
     setPassword("password123");
+  };
+
+  const autofillSecurity = () => {
+    setEmail("security@example.com");
+    setPassword("staff123");
+  };
+
+  const autofillMaintenance = () => {
+    setEmail("maintenance@example.com");
+    setPassword("staff123");
+  };
+
+  const autofillHousekeeping = () => {
+    setEmail("housekeeping@example.com");
+    setPassword("staff123");
   };
 
   return (
@@ -110,20 +129,46 @@ const Login = () => {
             <p className="text-sm text-center text-slate-500 dark:text-slate-400 mb-4">
               Demo Accounts
             </p>
-            <div className="flex gap-3">
+            <div className="grid grid-cols-2 gap-3 mb-3">
               <Button
                 variant="outline"
-                className="flex-1 text-xs py-2"
+                className="text-xs py-2"
                 onClick={autofillAdmin}
               >
                 Admin
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 text-xs py-2"
+                className="text-xs py-2"
                 onClick={autofillResident}
               >
                 Resident
+              </Button>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Button
+                variant="outline"
+                className="text-[10px] py-1.5 px-1 truncate"
+                onClick={autofillSecurity}
+                title="Autofill Security staff role"
+              >
+                Security
+              </Button>
+              <Button
+                variant="outline"
+                className="text-[10px] py-1.5 px-1 truncate"
+                onClick={autofillMaintenance}
+                title="Autofill Maintenance staff role"
+              >
+                Maint.
+              </Button>
+              <Button
+                variant="outline"
+                className="text-[10px] py-1.5 px-1 truncate"
+                onClick={autofillHousekeeping}
+                title="Autofill Housekeeping staff role"
+              >
+                Housekeep.
               </Button>
             </div>
           </div>

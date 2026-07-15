@@ -15,6 +15,7 @@ const ComplaintTable = ({
     onView,
     onEdit,
     onAssign,
+    onStatus,
     onDelete,
 }) => {
     const getPriorityVariant = (priority) => {

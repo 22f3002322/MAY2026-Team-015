@@ -15,6 +15,7 @@ const StaffForm = ({
       designation: "",
       phone: "",
       email: "",
+      password: "staff123",
       shift: "Morning",
       joiningDate: "",
       salary: "",
@@ -105,6 +106,15 @@ const StaffForm = ({
         />
 
       </div>
+
+      <Input label="Password (for Staff Login)"
+        type="text"
+        value={form.password || ""}
+        placeholder="Enter Password..." onChange={(e) =>
+          handleChange("password", e.target.value)
+        }
+        required
+      />
 
       <div className="grid grid-cols-2 gap-4">
 

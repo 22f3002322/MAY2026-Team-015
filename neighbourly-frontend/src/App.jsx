@@ -32,6 +32,20 @@ import ResidentProfile from "./pages/resident/Profile";
 import ResidentSettings from "./pages/resident/Settings";
 import ResidentVisitors from "./pages/resident/Visitors";
 
+// Staff Pages
+import StaffDashboard from "./pages/staff/Dashboard";
+import VisitorVerification from "./pages/staff/VisitorVerification";
+import DeliveryRegister from "./pages/staff/DeliveryRegister";
+import IncidentReports from "./pages/staff/IncidentReports";
+import EmergencyContacts from "./pages/staff/EmergencyContacts";
+import VisitorHistory from "./pages/staff/VisitorHistory";
+import AssignedComplaints from "./pages/staff/AssignedComplaints";
+import CompletedJobs from "./pages/staff/CompletedJobs";
+import MaintenanceHistory from "./pages/staff/MaintenanceHistory";
+import CleaningTasks from "./pages/staff/CleaningTasks";
+import CompletedCleaning from "./pages/staff/CompletedCleaning";
+import CleaningSchedule from "./pages/staff/CleaningSchedule";
+
 import NotFound from "./pages/NotFound";
 import useAuthStore from "./store/authStore";
 
@@ -75,6 +89,20 @@ function App() {
       <Route path="/resident/settings" element={<RoleRoute requiredRole="resident"><ResidentSettings /></RoleRoute>} />
       <Route path="/resident/visitors" element={<RoleRoute requiredRole="resident"><ResidentVisitors /></RoleRoute>} />
       
+      {/* Staff Routes */}
+      <Route path="/staff/dashboard" element={<RoleRoute requiredRole="staff"><StaffDashboard /></RoleRoute>} />
+      <Route path="/staff/verify-visitors" element={<RoleRoute requiredRole="staff"><VisitorVerification /></RoleRoute>} />
+      <Route path="/staff/deliveries" element={<RoleRoute requiredRole="staff"><DeliveryRegister /></RoleRoute>} />
+      <Route path="/staff/incidents" element={<RoleRoute requiredRole="staff"><IncidentReports /></RoleRoute>} />
+      <Route path="/staff/emergency-contacts" element={<RoleRoute requiredRole="staff"><EmergencyContacts /></RoleRoute>} />
+      <Route path="/staff/visitor-history" element={<RoleRoute requiredRole="staff"><VisitorHistory /></RoleRoute>} />
+      <Route path="/staff/assigned-complaints" element={<RoleRoute requiredRole="staff"><AssignedComplaints /></RoleRoute>} />
+      <Route path="/staff/completed-jobs" element={<RoleRoute requiredRole="staff"><CompletedJobs /></RoleRoute>} />
+      <Route path="/staff/maintenance-history" element={<RoleRoute requiredRole="staff"><MaintenanceHistory /></RoleRoute>} />
+      <Route path="/staff/cleaning-tasks" element={<RoleRoute requiredRole="staff"><CleaningTasks /></RoleRoute>} />
+      <Route path="/staff/completed-cleaning" element={<RoleRoute requiredRole="staff"><CompletedCleaning /></RoleRoute>} />
+      <Route path="/staff/cleaning-schedule" element={<RoleRoute requiredRole="staff"><CleaningSchedule /></RoleRoute>} />
+
       {/* Fallback for old un-prefixed routes - redirect to root so auth logic handles it */}
       <Route path="/dashboard" element={<Navigate to="/" replace />} />
 

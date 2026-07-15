@@ -13,7 +13,16 @@ import {
   Settings,
   X,
   LogOut,
-  User
+  User,
+  Shield,
+  Truck,
+  AlertTriangle,
+  Phone,
+  History,
+  Wrench,
+  CheckSquare,
+  Sparkles,
+  Calendar
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
@@ -48,11 +57,47 @@ const residentMenuItems = [
   { title: "Settings", icon: Settings, path: "/resident/settings" },
 ];
 
+const securityMenuItems = [
+  { title: "Dashboard", icon: LayoutDashboard, path: "/staff/dashboard" },
+  { title: "Verify Visitors", icon: Shield, path: "/staff/verify-visitors" },
+  { title: "Delivery Register", icon: Truck, path: "/staff/deliveries" },
+  { title: "Incident Reports", icon: AlertTriangle, path: "/staff/incidents" },
+  { title: "Emergency Contacts", icon: Phone, path: "/staff/emergency-contacts" },
+  { title: "Visitor History", icon: History, path: "/staff/visitor-history" },
+];
+
+const maintenanceMenuItems = [
+  { title: "Dashboard", icon: LayoutDashboard, path: "/staff/dashboard" },
+  { title: "Assigned Complaints", icon: Wrench, path: "/staff/assigned-complaints" },
+  { title: "Completed Jobs", icon: CheckSquare, path: "/staff/completed-jobs" },
+  { title: "Job History", icon: History, path: "/staff/maintenance-history" },
+  { title: "Emergency Contacts", icon: Phone, path: "/staff/emergency-contacts" },
+];
+
+const housekeepingMenuItems = [
+  { title: "Dashboard", icon: LayoutDashboard, path: "/staff/dashboard" },
+  { title: "Cleaning Tasks", icon: Sparkles, path: "/staff/cleaning-tasks" },
+  { title: "Completed Tasks", icon: CheckSquare, path: "/staff/completed-cleaning" },
+  { title: "Cleaning Schedule", icon: Calendar, path: "/staff/cleaning-schedule" },
+];
+
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const { user, role, logout } = useAuthStore();
   const navigate = useNavigate();
 
-  const menuItems = role === "admin" ? adminMenuItems : residentMenuItems;
+  const getMenuItems = () => {
+    if (role === "admin") return adminMenuItems;
+    if (role === "resident") return residentMenuItems;
+    if (role === "staff") {
+      const staffRole = user?.staffRole;
+      if (staffRole === "security") return securityMenuItems;
+      if (staffRole === "maintenance") return maintenanceMenuItems;
+      if (staffRole === "housekeeping") return housekeepingMenuItems;
+    }
+    return [];
+  };
+
+  const menuItems = getMenuItems();
 
   const handleLogout = () => {
     logout();

@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { toast } from "sonner";
 
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 
 import useBookingStore from "../../store/bookingStore";
+import useBillingStore from "../../store/billingStore";
 
 const BookingForm = ({
   initialData = null,
@@ -124,6 +126,8 @@ const BookingForm = ({
       date: formatDate(form.date),
     };
 
+    const isNowApproved = bookingData.status === "Approved" && (!initialData || initialData.status !== "Approved");
+
     if (initialData) {
       updateBooking({
         ...initialData,
@@ -139,6 +143,23 @@ const BookingForm = ({
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
+    }
+
+    if (isNowApproved) {
+      useBillingStore.getState().addBill({
+        resident: bookingData.resident,
+        flat: bookingData.flat,
+        category: "Facility Booking",
+        amount: Number(bookingData.amount || 0),
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+        status: "Pending",
+        remarks: `Booking fee for ${bookingData.facility || "Facility"}`,
+      });
+      toast.success("Facility booking approved and invoice generated!");
     }
 
     onClose();

@@ -71,13 +71,13 @@ const Complaints = () => {
     const filteredComplaints = complaints.filter(
         (complaint) => {
             const matchesSearch =
-                complaint.ticket
+                (complaint.ticket || "")
                     .toLowerCase()
                     .includes(search.toLowerCase()) ||
-                complaint.title
+                (complaint.title || "")
                     .toLowerCase()
                     .includes(search.toLowerCase()) ||
-                complaint.resident
+                (complaint.resident || "")
                     .toLowerCase()
                     .includes(search.toLowerCase());
 

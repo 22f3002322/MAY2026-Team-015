@@ -15,6 +15,7 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 import useComplaintStore from "../../store/complaintStore";
 import useResidentStore from "../../store/residentStore";
+import useAuthStore from "../../store/authStore";
 
 const Complaints = () => {
   // Zustand Store
@@ -22,9 +23,7 @@ const Complaints = () => {
     (state) => state.complaints
   );
   
-  const resident = useResidentStore(
-    (state) => state.residents[0]
-  );
+  const { user } = useAuthStore();
 
   const addComplaint = useComplaintStore(
     (state) => state.addComplaint
@@ -168,8 +167,8 @@ const Complaints = () => {
           onSubmit={(data) => {
             addComplaint({
               ...data,
-              resident: resident ? resident.name : "Current Resident",
-              flat: resident ? resident.flat : "101",
+              resident: user ? user.name : "Current Resident",
+              flat: user ? user.flat : "101",
             });
             toast.success("Complaint submitted successfully!");
 

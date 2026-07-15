@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 import Button from "../../ui/Button";
 import useFacilityStore from "../../../store/facilityStore";
-import useResidentStore from "../../../store/residentStore";
+import useAuthStore from "../../../store/authStore";
 
 const FacilityBookingForm = ({
   facility,
@@ -36,7 +36,7 @@ const FacilityBookingForm = ({
     // Simulate processing delay
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    const resident = useResidentStore.getState().residents[0];
+    const currentUser = useAuthStore.getState().user;
 
     addBooking({
       facilityId: facility.id,
@@ -45,8 +45,8 @@ const FacilityBookingForm = ({
       time: formData.time,
       purpose: formData.purpose,
       status: "Pending",
-      bookedBy: resident ? resident.name : "Current Resident",
-      flat: resident ? resident.flat : "101",
+      bookedBy: currentUser ? currentUser.name : "Current Resident",
+      flat: currentUser ? currentUser.flat : "101",
     });
 
     toast.success(`${facility.name} booked successfully! Awaiting approval.`);
