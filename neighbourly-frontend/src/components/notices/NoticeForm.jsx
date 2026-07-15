@@ -4,6 +4,7 @@ import Input from "../ui/Input";
 import Button from "../ui/Button";
 
 import useNoticeStore from "../../store/noticeStore";
+import { toast } from "sonner";
 
 const NoticeForm = ({
   initialData = null,
@@ -93,19 +94,17 @@ const NoticeForm = ({
       return;
     }
 
-    const noticeData = {
-      ...form,
-    };
-
     if (initialData) {
       updateNotice({
         ...initialData,
-        ...noticeData,
+        ...form,
         updatedAt:
           new Date().toISOString(),
       });
+      toast.success('Notice updated successfully!');
     } else {
-      addNotice(noticeData);
+      addNotice(form);
+      toast.success('Notice published successfully!');
     }
 
     onClose();
@@ -119,7 +118,7 @@ const NoticeForm = ({
       <Input label="Notice Title"
         value={form.title}
         error={errors.title}
-        onChange={(e) = placeholder="Enter Notice Title..." >
+        placeholder="Enter Notice Title..." onChange={(e) =>
           handleChange(
             "title",
             e.target.value
@@ -202,7 +201,7 @@ const NoticeForm = ({
         <Input label="Author"
           value={form.author}
           error={errors.author}
-          onChange={(e) = placeholder="Enter Author..." >
+          placeholder="Enter Author..." onChange={(e) =>
             handleChange(
               "author",
               e.target.value

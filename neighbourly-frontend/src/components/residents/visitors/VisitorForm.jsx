@@ -1,4 +1,5 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 import Button from "../../ui/Button";
 
@@ -7,29 +8,28 @@ const VisitorForm = ({
   onSubmit,
   onClose,
 }) => {
-  const [formData, setFormData] =
-    useState({
-      name:
-        initialData.name || "",
-      phone:
-        initialData.phone || "",
-      purpose:
-        initialData.purpose ||
-        "Guest",
-      date:
-        initialData.date || "",
-      visitTime:
-        initialData.visitTime || "",
-      status:
-        initialData.status ||
-        "Expected",
-    });
+  const [formData, setFormData] = useState({
+    name: initialData.name || "",
+    phone: initialData.phone || "",
+    purpose: initialData.purpose || "Guest",
+    date: initialData.date || "",
+    visitTime: initialData.visitTime || "",
+    status: initialData.status || "Expected",
+  });
+
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
+
+  const currentTime = `${String(now.getHours()).padStart(
+    2,
+    "0"
+  )}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+  const inputClass =
+    "h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-slate-700 shadow-sm outline-none transition-all focus:border-indigo-600 focus:ring-2 focus:ring-indigo-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-indigo-500/30";
 
   const handleChange = (e) => {
-    const {
-      name,
-      value,
-    } = e.target;
+    const { name, value } = e.target;
 
     setFormData((prev) => ({
       ...prev,
@@ -40,7 +40,32 @@ const VisitorForm = ({
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    const selectedDateTime = new Date(
+      `${formData.date}T${formData.visitTime}`
+    );
+
+    if (selectedDateTime < new Date()) {
+      toast.error(
+        "You cannot book a visitor for a past date or time.",
+        {
+          duration: 3000,
+          position: "top-right",
+        }
+      );
+      return;
+    }
+
     onSubmit(formData);
+
+    toast.success(
+      initialData?.id
+        ? "Visitor updated successfully!"
+        : "Visitor added successfully!",
+      {
+        duration: 3000,
+        position: "top-right",
+      }
+    );
   };
 
   return (
@@ -49,9 +74,8 @@ const VisitorForm = ({
       className="space-y-5"
     >
       {/* Visitor Name */}
-
       <div>
-        <label className="mb-2 block text-sm font-medium">
+        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
           Visitor Name
         </label>
 
@@ -59,16 +83,16 @@ const VisitorForm = ({
           type="text"
           name="name"
           required
+          placeholder="Enter visitor name"
           value={formData.name}
           onChange={handleChange}
-          className="h-12 w-full rounded-xl border border-slate-300 px-4 focus:border-indigo-600 outline-none"
+          className={inputClass}
         />
       </div>
 
       {/* Phone */}
-
       <div>
-        <label className="mb-2 block text-sm font-medium">
+        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
           Phone Number
         </label>
 
@@ -76,16 +100,16 @@ const VisitorForm = ({
           type="tel"
           name="phone"
           required
+          placeholder="Enter phone number"
           value={formData.phone}
           onChange={handleChange}
-          className="h-12 w-full rounded-xl border border-slate-300 px-4 focus:border-indigo-600 outline-none"
+          className={inputClass}
         />
       </div>
 
       {/* Purpose */}
-
       <div>
-        <label className="mb-2 block text-sm font-medium">
+        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
           Purpose
         </label>
 
@@ -93,38 +117,20 @@ const VisitorForm = ({
           name="purpose"
           value={formData.purpose}
           onChange={handleChange}
-          className="h-12 w-full rounded-xl border border-slate-300 px-4 focus:border-indigo-600 outline-none"
+          className={inputClass}
         >
-          <option>
-            Guest
-          </option>
-
-          <option>
-            Family
-          </option>
-
-          <option>
-            Friends
-          </option>
-
-          <option>
-            Delivery
-          </option>
-
-          <option>
-            Maintenance
-          </option>
-
-          <option>
-            Other
-          </option>
+          <option value="Guest">Guest</option>
+          <option value="Family">Family</option>
+          <option value="Friends">Friends</option>
+          <option value="Delivery">Delivery</option>
+          <option value="Maintenance">Maintenance</option>
+          <option value="Other">Other</option>
         </select>
       </div>
 
       {/* Visit Date */}
-
       <div>
-        <label className="mb-2 block text-sm font-medium">
+        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
           Visit Date
         </label>
 
@@ -132,16 +138,16 @@ const VisitorForm = ({
           type="date"
           name="date"
           required
+          min={today}
           value={formData.date}
           onChange={handleChange}
-          className="h-12 w-full rounded-xl border border-slate-300 px-4 focus:border-indigo-600 outline-none"
+          className={inputClass}
         />
       </div>
 
       {/* Visit Time */}
-
       <div>
-        <label className="mb-2 block text-sm font-medium">
+        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
           Visit Time
         </label>
 
@@ -149,16 +155,20 @@ const VisitorForm = ({
           type="time"
           name="visitTime"
           required
+          min={
+            formData.date === today
+              ? currentTime
+              : undefined
+          }
           value={formData.visitTime}
           onChange={handleChange}
-          className="h-12 w-full rounded-xl border border-slate-300 px-4 focus:border-indigo-600 outline-none"
+          className={inputClass}
         />
       </div>
 
       {/* Status */}
-
       <div>
-        <label className="mb-2 block text-sm font-medium">
+        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
           Status
         </label>
 
@@ -166,29 +176,25 @@ const VisitorForm = ({
           name="status"
           value={formData.status}
           onChange={handleChange}
-          className="h-12 w-full rounded-xl border border-slate-300 px-4 focus:border-indigo-600 outline-none"
+          className={inputClass}
         >
-          <option>
+          <option value="Expected">
             Expected
           </option>
-
-          <option>
+          <option value="Checked In">
             Checked In
           </option>
-
-          <option>
+          <option value="Completed">
             Completed
           </option>
-
-          <option>
+          <option value="Cancelled">
             Cancelled
           </option>
         </select>
       </div>
 
       {/* Buttons */}
-
-      <div className="flex justify-end gap-3 pt-2">
+      <div className="flex justify-end gap-3 pt-4">
         <Button
           type="button"
           variant="outline"
@@ -198,7 +204,7 @@ const VisitorForm = ({
         </Button>
 
         <Button type="submit">
-          {initialData.id
+          {initialData?.id
             ? "Update Visitor"
             : "Add Visitor"}
         </Button>

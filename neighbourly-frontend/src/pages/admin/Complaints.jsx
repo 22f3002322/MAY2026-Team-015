@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 
 import Layout from "../../components/layout/Layout";
 
@@ -236,6 +237,14 @@ const Complaints = () => {
 
             <StatusUpdateModal
                 complaint={statusComplaint}
+                onUpdate={(statusData) => {
+                    updateComplaint(statusComplaint.id, {
+                        status: statusData.status,
+                        remarks: statusData.remarks
+                    });
+                    toast.success("Complaint status updated successfully!");
+                    setStatusComplaint(null);
+                }}
                 onClose={() =>
                     setStatusComplaint(null)
                 }

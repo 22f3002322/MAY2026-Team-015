@@ -95,6 +95,7 @@ const RecentDownloads = () => {
             text-xl
             font-bold
             text-slate-800
+            dark:text-slate-100
             "
           >
 
@@ -108,6 +109,7 @@ const RecentDownloads = () => {
             mt-1
             text-sm
             text-slate-500
+            dark:text-slate-100
             "
           >
 
@@ -199,6 +201,7 @@ const RecentDownloads = () => {
                     className="
                     font-semibold
                     text-slate-800
+                    dark:text-slate-100
                     "
                   >
 

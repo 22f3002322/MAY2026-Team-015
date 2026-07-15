@@ -63,7 +63,7 @@ const MyRegistrations = ({
 
                 <div className="mb-4 flex items-center gap-3">
 
-                  <h2 className="text-lg font-semibold text-slate-800">
+                  <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
                     {
                       registration.eventTitle
                     }
@@ -82,11 +82,12 @@ const MyRegistrations = ({
                     <Users size={16} />
 
                     <span>
-                      Attendees :
+                      <h3 className="dark:text-slate-100">Attendees :
                       {" "}
                       {
                         registration.members
                       }
+                      </h3>
                     </span>
 
                   </div>
@@ -97,7 +98,7 @@ const MyRegistrations = ({
                       size={16}
                     />
 
-                    <span>
+                    <span className="dark:text-slate-100">
                       {new Date(
                         registration.registeredAt
                       ).toLocaleDateString()}

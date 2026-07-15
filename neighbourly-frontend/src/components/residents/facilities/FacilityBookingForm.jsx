@@ -1,16 +1,17 @@
 import { useState } from "react";
+import { toast } from "sonner";
 
 import Button from "../../ui/Button";
-
 import useFacilityStore from "../../../store/facilityStore";
+import useResidentStore from "../../../store/residentStore";
 
 const FacilityBookingForm = ({
   facility,
   onClose,
 }) => {
-  const addBooking = useFacilityStore(
-    (state) => state.addBooking
-  );
+  const addBooking = useFacilityStore((state) => state.addBooking);
+
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] =
     useState({
@@ -28,8 +29,14 @@ const FacilityBookingForm = ({
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
+    // Simulate processing delay
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    const resident = useResidentStore.getState().residents[0];
 
     addBooking({
       facilityId: facility.id,
@@ -37,8 +44,13 @@ const FacilityBookingForm = ({
       date: formData.date,
       time: formData.time,
       purpose: formData.purpose,
+      status: "Pending",
+      bookedBy: resident ? resident.name : "Current Resident",
+      flat: resident ? resident.flat : "101",
     });
 
+    toast.success(`${facility.name} booked successfully! Awaiting approval.`);
+    setLoading(false);
     onClose();
   };
 
@@ -170,8 +182,8 @@ const FacilityBookingForm = ({
           Cancel
         </Button>
 
-        <Button type="submit">
-          Book Facility
+        <Button type="submit" disabled={loading}>
+          {loading ? "Booking..." : "Book Facility"}
         </Button>
 
       </div>

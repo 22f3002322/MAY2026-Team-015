@@ -3,19 +3,19 @@ import { useState } from "react";
 import Button from "../../ui/Button";
 
 const ComplaintForm = ({
-  initialData = {},
+  initialData = null,
   onSubmit,
   onClose,
 }) => {
   const [formData, setFormData] = useState({
-    title: initialData.title || "",
+    title: initialData?.title || "",
     category:
-      initialData.category || "Electrical",
+      initialData?.category || "Electrical",
     priority:
-      initialData.priority || "Medium",
+      initialData?.priority || "Medium",
     description:
-      initialData.description || "",
-    status: initialData.status || "Open",
+      initialData?.description || "",
+    status: initialData?.status || "Open",
   });
 
   const handleChange = (
@@ -142,7 +142,7 @@ const ComplaintForm = ({
         </Button>
 
         <Button type="submit">
-          {initialData.id
+          {initialData?.id
             ? "Update Complaint"
             : "Submit Complaint"}
         </Button>

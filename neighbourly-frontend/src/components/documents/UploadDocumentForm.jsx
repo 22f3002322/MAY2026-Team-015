@@ -117,7 +117,7 @@ const UploadDocumentForm = ({
       <Input label="Document Title"
         value={form.title}
         error={errors.title}
-        onChange={(e) = placeholder="Enter Document Title..." >
+        placeholder="Enter Document Title..." onChange={(e) =>
           handleChange(
             "title",
             e.target.value
@@ -180,7 +180,7 @@ const UploadDocumentForm = ({
         <Input label="Uploaded By"
           value={form.uploadedBy}
           error={errors.uploadedBy}
-          onChange={(e) = placeholder="Enter Uploaded By..." >
+          placeholder="Enter Uploaded By..." onChange={(e) =>
             handleChange(
               "uploadedBy",
               e.target.value

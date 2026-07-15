@@ -41,14 +41,14 @@ const ApartmentForm = ({
     >
       <Input label="Flat Number"
         value={form.flat}
-        onChange={(e) = placeholder="Enter Flat Number..." >
+        placeholder="Enter Flat Number..." onChange={(e) =>
           handleChange("flat", e.target.value)
         }
       />
 
       <Input label="Owner"
         value={form.owner}
-        onChange={(e) = placeholder="Enter Owner..." >
+        placeholder="Enter Owner..." onChange={(e) =>
           handleChange("owner", e.target.value)
         }
       />
@@ -57,7 +57,7 @@ const ApartmentForm = ({
 
         <Input label="Block"
           value={form.block}
-          onChange={(e) = placeholder="Enter Block..." >
+          placeholder="Enter Block..." onChange={(e) =>
             handleChange("block", e.target.value)
           }
         />
@@ -65,7 +65,7 @@ const ApartmentForm = ({
         <Input label="Floor"
           type="number"
           value={form.floor}
-          onChange={(e) = placeholder="Enter Floor..." >
+          placeholder="Enter Floor..." onChange={(e) =>
             handleChange("floor", e.target.value)
           }
         />

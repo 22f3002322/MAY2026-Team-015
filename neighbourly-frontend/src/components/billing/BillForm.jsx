@@ -140,11 +140,11 @@ const BillForm = ({
     if (initialData) {
       updateBill({
         ...initialData,
-        ...billData,
+        ...form,
       });
     } else {
       addBill({
-        ...billData,
+        ...form,
         billId: `BILL-${Date.now()}`,
         createdAt: new Date().toISOString(),
       });
@@ -162,7 +162,7 @@ const BillForm = ({
         <Input label="Resident Name"
           value={form.resident}
           error={errors.resident}
-          onChange={(e) = placeholder="Enter Resident Name..." >
+          placeholder="Enter Resident Name..." onChange={(e) =>
             handleChange(
               "resident",
               e.target.value
@@ -173,7 +173,7 @@ const BillForm = ({
         <Input label="Flat Number"
           value={form.flat}
           error={errors.flat}
-          onChange={(e) = placeholder="Enter Flat Number..." >
+          placeholder="Enter Flat Number..." onChange={(e) =>
             handleChange(
               "flat",
               e.target.value
@@ -215,7 +215,7 @@ const BillForm = ({
           label="Amount"
           value={form.amount}
           error={errors.amount}
-          onChange={(e) = placeholder="Enter Amount..." >
+          placeholder="Enter Amount..." onChange={(e) =>
             handleChange(
               "amount",
               e.target.value

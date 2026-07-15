@@ -102,7 +102,7 @@ const ChangePassword = () => {
     toggleKey,
   }) => (
     <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
+      <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-100">
         {label}
       </label>
 
@@ -117,7 +117,7 @@ const ChangePassword = () => {
           value={formData[name]}
           onChange={handleChange}
           required
-          className="h-12 w-full rounded-xl border border-slate-300 pl-11 pr-12 outline-none focus:border-indigo-600"
+          className="h-12 w-full rounded-xl border border-slate-300 pl-11 pr-12 outline-none focus:border-indigo-600 dark:text-slate-100"
         />
 
         <Lock
@@ -145,11 +145,11 @@ const ChangePassword = () => {
   return (
     <Card className="p-6">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-slate-800">
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
           Change Password
         </h3>
 
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Keep your account secure by
           updating your password
           regularly.

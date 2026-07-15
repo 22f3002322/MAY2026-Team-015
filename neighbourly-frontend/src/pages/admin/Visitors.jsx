@@ -1,4 +1,5 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 import Layout from "../../components/layout/Layout";
 
@@ -151,6 +152,7 @@ const Visitors = () => {
                 editingVisitor.id,
                 data
               );
+              toast.success("Visitor updated successfully!");
             } else {
               addVisitor({
                 ...data,
@@ -158,6 +160,7 @@ const Visitors = () => {
                 createdAt:
                   new Date().toISOString(),
               });
+              toast.success("Visitor added successfully!");
             }
 
             setOpenModal(false);

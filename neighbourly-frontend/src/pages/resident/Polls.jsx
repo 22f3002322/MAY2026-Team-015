@@ -414,6 +414,7 @@ const Polls = () => {
           text-2xl
           font-bold
           text-slate-800
+          dark:text-slate-100
           "
         >
 

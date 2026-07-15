@@ -128,6 +128,7 @@ const PreviousPolls = ({
                       text-lg
                       font-bold
                       text-slate-800
+                      dark:text-slate-100
                       "
                     >
 
@@ -164,6 +165,7 @@ const PreviousPolls = ({
                       flex
                       items-center
                       gap-2
+                      dark:text-slate-100
                       "
                     >
 
@@ -180,6 +182,7 @@ const PreviousPolls = ({
                       flex
                       items-center
                       gap-2
+                      dark:text-slate-100
                       "
                     >
 

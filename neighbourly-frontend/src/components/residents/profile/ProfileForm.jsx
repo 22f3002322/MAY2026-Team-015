@@ -15,8 +15,7 @@ const ProfileForm = ({
       block: initialData?.block || "",
       flat: initialData?.flat || "",
       occupancy:
-        initialData?.occupancy ||
-        "Owner",
+        initialData?.occupancy || "Owner",
       avatar:
         initialData?.avatar || "",
       familyMembers:
@@ -26,10 +25,7 @@ const ProfileForm = ({
     });
 
   const handleChange = (e) => {
-    const {
-      name,
-      value,
-    } = e.target;
+    const { name, value } = e.target;
 
     setFormData((prev) => ({
       ...prev,
@@ -43,17 +39,19 @@ const ProfileForm = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     onSubmit(formData);
   };
+
+  const disabledClass =
+    "bg-slate-100 cursor-not-allowed text-slate-500";
 
   return (
     <form
       onSubmit={handleSubmit}
       className="space-y-5"
     >
-      {/* Name */}
 
+      {/* Name */}
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Full Name
@@ -62,15 +60,14 @@ const ProfileForm = ({
         <input
           type="text"
           name="name"
-          required
           value={formData.name}
-          onChange={handleChange}
-          className="h-12 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+          disabled
+          className={`h-12 w-full rounded-xl border border-slate-300 px-4 outline-none ${disabledClass}`}
         />
       </div>
 
-      {/* Email */}
 
+      {/* Email */}
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Email
@@ -86,8 +83,8 @@ const ProfileForm = ({
         />
       </div>
 
-      {/* Phone */}
 
+      {/* Phone */}
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Phone
@@ -96,16 +93,16 @@ const ProfileForm = ({
         <input
           type="tel"
           name="phone"
-          required
           value={formData.phone}
-          onChange={handleChange}
-          className="h-12 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+          disabled
+          className={`h-12 w-full rounded-xl border border-slate-300 px-4 outline-none ${disabledClass}`}
         />
       </div>
 
-      {/* Block & Flat */}
 
+      {/* Block & Flat */}
       <div className="grid gap-5 md:grid-cols-2">
+
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">
             Block
@@ -115,10 +112,11 @@ const ProfileForm = ({
             type="text"
             name="block"
             value={formData.block}
-            onChange={handleChange}
-            className="h-12 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            disabled
+            className={`h-12 w-full rounded-xl border border-slate-300 px-4 outline-none ${disabledClass}`}
           />
         </div>
+
 
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -129,14 +127,15 @@ const ProfileForm = ({
             type="text"
             name="flat"
             value={formData.flat}
-            onChange={handleChange}
-            className="h-12 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            disabled
+            className={`h-12 w-full rounded-xl border border-slate-300 px-4 outline-none ${disabledClass}`}
           />
         </div>
+
       </div>
 
-      {/* Occupancy */}
 
+      {/* Occupancy */}
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Occupancy
@@ -145,8 +144,8 @@ const ProfileForm = ({
         <select
           name="occupancy"
           value={formData.occupancy}
-          onChange={handleChange}
-          className="h-12 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+          disabled
+          className={`h-12 w-full rounded-xl border border-slate-300 px-4 outline-none ${disabledClass}`}
         >
           <option value="Owner">
             Owner
@@ -158,8 +157,8 @@ const ProfileForm = ({
         </select>
       </div>
 
-      {/* Avatar */}
 
+      {/* Avatar */}
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Profile Image URL
@@ -175,9 +174,10 @@ const ProfileForm = ({
         />
       </div>
 
-      {/* Family & Vehicles */}
 
+      {/* Family & Vehicles */}
       <div className="grid gap-5 md:grid-cols-2">
+
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">
             Family Members
@@ -193,6 +193,7 @@ const ProfileForm = ({
           />
         </div>
 
+
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">
             Vehicles
@@ -207,11 +208,13 @@ const ProfileForm = ({
             className="h-12 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
           />
         </div>
+
       </div>
 
-      {/* Buttons */}
 
+      {/* Buttons */}
       <div className="flex justify-end gap-3 pt-2">
+
         <Button
           type="button"
           variant="outline"
@@ -223,7 +226,9 @@ const ProfileForm = ({
         <Button type="submit">
           Save Changes
         </Button>
+
       </div>
+
     </form>
   );
 };

@@ -161,7 +161,7 @@ const Facilities = () => {
 
       <section>
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-slate-800">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
             My Bookings
           </h2>
 

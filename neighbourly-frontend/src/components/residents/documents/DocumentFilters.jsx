@@ -25,7 +25,7 @@ const DocumentFilters = ({
 
   return (
     <Card className="mb-6 p-6">
-      <div className="grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-6">
 
         {/* Search */}
 
@@ -112,7 +112,7 @@ const DocumentFilters = ({
 
         {/* Sort + Reset */}
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 xl:col-span-2">
 
           <select
             value={sort}

@@ -3,6 +3,7 @@ import { useState } from "react";
 import Button from "../../ui/Button";
 
 import useEventStore from "../../../store/eventStore";
+import { toast } from "sonner";
 
 const EventRegistrationForm = ({
   event,
@@ -27,6 +28,7 @@ const EventRegistrationForm = ({
       remarks
     );
 
+    toast.success('Successfully registered for event!');
     onClose();
   };
 

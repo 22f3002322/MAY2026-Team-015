@@ -102,7 +102,7 @@ const VisitorForm = ({
         <Input label="Visitor Name"
           value={form.name}
           error={errors.name}
-          onChange={(e) = placeholder="Enter Visitor Name..." >
+          placeholder="Enter Visitor Name..." onChange={(e) =>
             handleChange("name", e.target.value)
           }
         />
@@ -110,7 +110,7 @@ const VisitorForm = ({
         <Input label="Mobile Number"
           value={form.phone}
           error={errors.phone}
-          onChange={(e) = placeholder="Enter Mobile Number..." >
+          placeholder="Enter Mobile Number..." onChange={(e) =>
             handleChange("phone", e.target.value)
           }
         />
@@ -118,7 +118,7 @@ const VisitorForm = ({
         <Input label="Resident Name"
           value={form.resident}
           error={errors.resident}
-          onChange={(e) = placeholder="Enter Resident Name..." >
+          placeholder="Enter Resident Name..." onChange={(e) =>
             handleChange(
               "resident",
               e.target.value
@@ -129,7 +129,7 @@ const VisitorForm = ({
         <Input label="Flat Number"
           value={form.flat}
           error={errors.flat}
-          onChange={(e) = placeholder="Enter Flat Number..." >
+          placeholder="Enter Flat Number..." onChange={(e) =>
             handleChange("flat", e.target.value)
           }
         />
@@ -137,7 +137,7 @@ const VisitorForm = ({
         <Input label="Purpose"
           value={form.purpose}
           error={errors.purpose}
-          onChange={(e) = placeholder="Enter Purpose..." >
+          placeholder="Enter Purpose..." onChange={(e) =>
             handleChange(
               "purpose",
               e.target.value
@@ -147,7 +147,7 @@ const VisitorForm = ({
 
         <Input label="Vehicle Number (Optional)"
           value={form.vehicle}
-          onChange={(e) = placeholder="Enter Vehicle Number (Optional)..." >
+          placeholder="Enter Vehicle Number (Optional)..." onChange={(e) =>
             handleChange(
               "vehicle",
               e.target.value
@@ -229,7 +229,7 @@ const VisitorForm = ({
         <Input label="ID Number"
           value={form.idNumber}
           error={errors.idNumber}
-          onChange={(e) = placeholder="Enter ID Number..." >
+          placeholder="Enter ID Number..." onChange={(e) =>
             handleChange(
               "idNumber",
               e.target.value

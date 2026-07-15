@@ -153,7 +153,7 @@ const BookingForm = ({
         <Input label="Resident Name"
           value={form.resident}
           error={errors.resident}
-          onChange={(e) = placeholder="Enter Resident Name..." >
+          placeholder="Enter Resident Name..." onChange={(e) =>
             handleChange(
               "resident",
               e.target.value
@@ -164,7 +164,7 @@ const BookingForm = ({
         <Input label="Flat Number"
           value={form.flat}
           error={errors.flat}
-          onChange={(e) = placeholder="Enter Flat Number..." >
+          placeholder="Enter Flat Number..." onChange={(e) =>
             handleChange(
               "flat",
               e.target.value
@@ -252,7 +252,7 @@ const BookingForm = ({
           label="Guests"
           value={form.guests}
           error={errors.guests}
-          onChange={(e) = placeholder="Enter Guests..." >
+          placeholder="Enter Guests..." onChange={(e) =>
             handleChange(
               "guests",
               e.target.value
@@ -264,7 +264,7 @@ const BookingForm = ({
           label="Booking Amount"
           value={form.amount}
           error={errors.amount}
-          onChange={(e) = placeholder="Enter Booking Amount..." >
+          placeholder="Enter Booking Amount..." onChange={(e) =>
             handleChange(
               "amount",
               e.target.value

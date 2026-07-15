@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import Layout from "../../components/layout/Layout";
 
@@ -13,12 +14,16 @@ import VisitorForm from "../../components/residents/visitors/VisitorForm";
 import VisitorDetails from "../../components/residents/visitors/VisitorDetails";
 
 import useVisitorStore from "../../store/visitorStore";
+import useResidentStore from "../../store/residentStore";
 
 const Visitors = () => {
   // Zustand
-
   const visitors = useVisitorStore(
     (state) => state.visitors
+  );
+  
+  const resident = useResidentStore(
+    (state) => state.residents[0]
   );
 
   const addVisitor = useVisitorStore(
@@ -159,8 +164,11 @@ const Visitors = () => {
       >
         <VisitorForm
           onSubmit={(data) => {
-            addVisitor(data);
-
+            addVisitor({
+              ...data,
+              residentFlat: resident ? resident.flat : "101",
+            });
+            toast.success("Visitor added successfully!");
             setOpenModal(false);
           }}
           onClose={() =>
@@ -186,7 +194,7 @@ const Visitors = () => {
               editingVisitor.id,
               data
             );
-
+            toast.success("Visitor updated successfully!");
             setEditModal(false);
             setEditingVisitor(null);
           }}
@@ -218,7 +226,7 @@ const Visitors = () => {
         }
         onConfirm={() => {
           deleteVisitor(deleteItem.id);
-
+          toast.success("Visitor removed successfully!");
           setDeleteItem(null);
         }}
       />

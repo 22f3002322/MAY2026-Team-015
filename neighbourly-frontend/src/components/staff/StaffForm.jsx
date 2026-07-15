@@ -45,7 +45,7 @@ const StaffForm = ({
     >
       <Input label="Full Name"
         value={form.name}
-        onChange={(e) = placeholder="Enter Full Name..." >
+        placeholder="Enter Full Name..." onChange={(e) =>
           handleChange("name", e.target.value)
         }
       />
@@ -77,7 +77,7 @@ const StaffForm = ({
 
         <Input label="Designation"
           value={form.designation}
-          onChange={(e) = placeholder="Enter Designation..." >
+          placeholder="Enter Designation..." onChange={(e) =>
             handleChange(
               "designation",
               e.target.value
@@ -91,7 +91,7 @@ const StaffForm = ({
 
         <Input label="Phone"
           value={form.phone}
-          onChange={(e) = placeholder="Enter Phone..." >
+          placeholder="Enter Phone..." onChange={(e) =>
             handleChange("phone", e.target.value)
           }
         />
@@ -99,7 +99,7 @@ const StaffForm = ({
         <Input label="Email"
           type="email"
           value={form.email}
-          onChange={(e) = placeholder="Enter Email..." >
+          placeholder="Enter Email..." onChange={(e) =>
             handleChange("email", e.target.value)
           }
         />
@@ -129,7 +129,7 @@ const StaffForm = ({
         <Input label="Joining Date"
           type="date"
           value={form.joiningDate}
-          onChange={(e) = placeholder="Enter Joining Date..." >
+          placeholder="Enter Joining Date..." onChange={(e) =>
             handleChange(
               "joiningDate",
               e.target.value
@@ -144,7 +144,7 @@ const StaffForm = ({
         <Input label="Salary"
           type="number"
           value={form.salary}
-          onChange={(e) = placeholder="Enter Salary..." >
+          placeholder="Enter Salary..." onChange={(e) =>
             handleChange("salary", e.target.value)
           }
         />

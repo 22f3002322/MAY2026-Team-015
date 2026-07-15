@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import Layout from "../../components/layout/Layout";
 
@@ -13,10 +14,16 @@ import Modal from "../../components/ui/Modal";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 import useComplaintStore from "../../store/complaintStore";
+import useResidentStore from "../../store/residentStore";
 
 const Complaints = () => {
+  // Zustand Store
   const complaints = useComplaintStore(
     (state) => state.complaints
+  );
+  
+  const resident = useResidentStore(
+    (state) => state.residents[0]
   );
 
   const addComplaint = useComplaintStore(
@@ -161,9 +168,10 @@ const Complaints = () => {
           onSubmit={(data) => {
             addComplaint({
               ...data,
-              resident:
-                "Current Resident",
+              resident: resident ? resident.name : "Current Resident",
+              flat: resident ? resident.flat : "101",
             });
+            toast.success("Complaint submitted successfully!");
 
             setOpenModal(false);
           }}
@@ -194,6 +202,7 @@ const Complaints = () => {
               editingComplaint.id,
               data
             );
+            toast.success("Complaint updated successfully!");
 
             setEditModal(false);
             setEditingComplaint(

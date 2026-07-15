@@ -20,12 +20,6 @@ const Dashboard = () => {
 
       <ResidentStats />
 
-      {/* Quick Actions */}
-
-      <div className="mt-8">
-  // QuickActions component removed
-      </div>
-
       {/* Complaints + Bills */}
 
       <div className="mt-8 grid gap-6 xl:grid-cols-2">

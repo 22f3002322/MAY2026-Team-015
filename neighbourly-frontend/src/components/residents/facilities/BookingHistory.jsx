@@ -64,7 +64,7 @@ const BookingHistory = ({
 
               <div className="mb-3 flex flex-wrap items-center gap-3">
 
-                <h2 className="text-lg font-semibold text-slate-800">
+                <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
                   {booking.facility}
                 </h2>
 
@@ -82,17 +82,17 @@ const BookingHistory = ({
 
               <div className="grid gap-3 text-sm text-slate-600 md:grid-cols-3">
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 dark:text-slate-100">
                   <CalendarDays size={16} />
                   {booking.date}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 dark:text-slate-100">
                   <Clock3 size={16} />
                   {booking.time}
                 </div>
 
-                <div>
+                <div className="dark:text-slate-100">
                   <span className="font-medium">
                     Purpose:
                   </span>{" "}

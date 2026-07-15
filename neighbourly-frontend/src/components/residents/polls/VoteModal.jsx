@@ -12,6 +12,7 @@ import Modal from "../../ui/Modal";
 import Button from "../../ui/Button";
 
 import usePollStore from "../../../store/pollStore";
+import { toast } from "sonner";
 
 
 
@@ -54,9 +55,8 @@ const VoteModal = ({
       selectedOption
     );
 
-
+    toast.success('Vote submitted successfully!');
     onClose();
-
 
   };
 

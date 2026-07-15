@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { CalendarDays } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import Card from "../../ui/Card";
 import Badge from "../../ui/Badge";
@@ -8,6 +9,7 @@ import Button from "../../ui/Button";
 import useFacilityStore from "../../../store/facilityStore";
 
 const FacilityBookings = () => {
+  const navigate = useNavigate();
   const bookings = useFacilityStore(
     (state) => state.bookings
   );
@@ -59,7 +61,7 @@ const FacilityBookings = () => {
           {upcomingBookings.map((booking) => (
             <div
               key={booking.id}
-              className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 transition hover:border-indigo-300 hover:shadow-sm"
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 transition hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-sm"
             >
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="space-y-1">
@@ -94,6 +96,7 @@ const FacilityBookings = () => {
           <Button
             variant="outline"
             className="w-full"
+            onClick={() => navigate("/resident/facilities")}
           >
             View All Bookings
           </Button>

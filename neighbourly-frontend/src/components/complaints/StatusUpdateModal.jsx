@@ -13,6 +13,7 @@ const statusOptions = [
 const StatusUpdateModal = ({
   complaint,
   onClose,
+  onUpdate,
 }) => {
   const [status, setStatus] = useState(
     complaint?.status || "Assigned"
@@ -45,13 +46,11 @@ const StatusUpdateModal = ({
 
     setErrors({});
 
-    console.log({
-      complaint,
-      status,
-      remarks,
-    });
-
-    onClose();
+    if (onUpdate) {
+      onUpdate({ status, remarks });
+    } else {
+      onClose();
+    }
   };
 
   return (

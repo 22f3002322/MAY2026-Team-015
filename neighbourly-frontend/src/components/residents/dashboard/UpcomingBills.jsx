@@ -1,21 +1,23 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { CreditCard } from "lucide-react";
+import { toast } from "sonner";
 
 import Card from "../../ui/Card";
 import Button from "../../ui/Button";
 import Badge from "../../ui/Badge";
+import Modal from "../../ui/Modal";
 
 import useBillingStore from "../../../store/billingStore";
 import useResidentStore from "../../../store/residentStore";
 
 const UpcomingBills = () => {
-  const bills = useBillingStore(
-    (state) => state.bills
-  );
+  const bills = useBillingStore((state) => state.bills);
+  const markPaid = useBillingStore((state) => state.markPaid);
+  const resident = useResidentStore((state) => state.residents[0]);
 
-  const resident = useResidentStore(
-    (state) => state.residents[0]
-  );
+  const [payingBill, setPayingBill] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState("UPI");
+  const [loading, setLoading] = useState(false);
 
   const pendingBills = useMemo(
     () =>
@@ -44,11 +46,12 @@ const UpcomingBills = () => {
   );
 
   return (
+    <>
     <Card
       title="Upcoming Bills"
       subtitle="Pending maintenance and utility payments"
     >
-      <div className="mb-5 flex items-center justify-between rounded-xl bg-indigo-50 p-4">
+      <div className="mb-5 flex items-center justify-between rounded-xl bg-indigo-50 p-4 dark:bg-slate-900">
         <div>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Total Pending
@@ -100,12 +103,8 @@ const UpcomingBills = () => {
                 </Badge>
 
                 <Button
-                  onClick={() =>
-                    console.log(
-                      "Pay Bill",
-                      bill.id
-                    )
-                  }
+                  size="sm"
+                  onClick={() => setPayingBill(bill)}
                 >
                   Pay Now
                 </Button>
@@ -115,6 +114,61 @@ const UpcomingBills = () => {
         )}
       </div>
     </Card>
+
+    {/* Quick Pay Modal */}
+    <Modal
+      open={!!payingBill}
+      title="Quick Pay"
+      onClose={() => setPayingBill(null)}
+    >
+      {payingBill && (
+        <div className="space-y-5">
+          <div className="rounded-xl bg-indigo-50 dark:bg-indigo-950 p-4">
+            <div className="flex justify-between mb-2">
+              <span className="text-sm text-slate-500 dark:text-slate-400">Category</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-100">{payingBill.category}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-slate-500 dark:text-slate-400">Amount</span>
+              <span className="text-lg font-bold text-indigo-600">₹{Number(payingBill.amount).toLocaleString()}</span>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Payment Method</label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="h-12 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-4 outline-none focus:border-indigo-600"
+            >
+              <option>UPI</option>
+              <option>Credit Card</option>
+              <option>Debit Card</option>
+              <option>Net Banking</option>
+              <option>Cash</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setPayingBill(null)}>Cancel</Button>
+            <Button
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                await new Promise((r) => setTimeout(r, 800));
+                markPaid(payingBill.id, paymentMethod);
+                toast.success(`₹${Number(payingBill.amount).toLocaleString()} paid successfully via ${paymentMethod}!`);
+                setLoading(false);
+                setPayingBill(null);
+              }}
+            >
+              {loading ? "Processing..." : `Pay ₹${Number(payingBill.amount).toLocaleString()}`}
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
+    </>
   );
 };
 

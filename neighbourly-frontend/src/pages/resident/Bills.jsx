@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/ui/Card";
@@ -137,6 +138,7 @@ const Bills = () => {
             paymentBill.id,
             paymentMethod
           );
+          toast.success("Payment successful!");
 
           setPaymentOpen(false);
           setPaymentBill(null);

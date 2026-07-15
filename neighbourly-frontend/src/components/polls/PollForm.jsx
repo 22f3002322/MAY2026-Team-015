@@ -4,6 +4,7 @@ import Input from "../ui/Input";
 import Button from "../ui/Button";
 
 import usePollStore from "../../store/pollStore";
+import { toast } from "sonner";
 
 const categories = [
   "Community",
@@ -227,6 +228,7 @@ const PollForm = ({
             })
           ),
       });
+      toast.success('Poll updated successfully!');
     } else {
       addPoll({
         ...pollData,
@@ -244,6 +246,7 @@ const PollForm = ({
             })
           ),
       });
+      toast.success('Poll created successfully!');
     }
 
     onClose();
@@ -256,7 +259,7 @@ const PollForm = ({
       <Input label="Poll Question"
         value={form.question}
         error={errors.question}
-        onChange={(e) = placeholder="Enter Poll Question..." >
+        placeholder="Enter Poll Question..." onChange={(e) =>
           handleChange(
             "question",
             e.target.value
@@ -296,7 +299,7 @@ const PollForm = ({
           min={today}
           value={form.startDate}
           error={errors.startDate}
-          onChange={(e) = placeholder="Enter Start Date..." >
+          placeholder="Enter Start Date..." onChange={(e) =>
             handleChange(
               "startDate",
               e.target.value
@@ -309,7 +312,7 @@ const PollForm = ({
           min={form.startDate || today}
           value={form.endDate}
           error={errors.endDate}
-          onChange={(e) = placeholder="Enter End Date..." >
+          placeholder="Enter End Date..." onChange={(e) =>
             handleChange(
               "endDate",
               e.target.value
