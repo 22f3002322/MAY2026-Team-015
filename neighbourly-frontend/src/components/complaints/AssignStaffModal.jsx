@@ -71,16 +71,16 @@ const AssignStaffModal = ({
         {/* Complaint */}
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Complaint
           </label>
 
-          <div className="rounded-xl border bg-slate-50 p-4">
-            <h4 className="font-semibold">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4">
+            <h4 className="font-semibold text-slate-800 dark:text-slate-200">
               {complaint.ticket}
             </h4>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {complaint.title}
             </p>
           </div>
@@ -89,7 +89,7 @@ const AssignStaffModal = ({
         {/* Staff */}
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Assign Staff
           </label>
 
@@ -105,8 +105,8 @@ const AssignStaffModal = ({
             className={`h-14 w-full rounded-xl border px-4 outline-none ${
               errors.staff
                 ? "border-red-500"
-                : "border-slate-300 focus:border-indigo-600"
-            }`}
+                : "border-slate-300 dark:border-slate-700 focus:border-indigo-600"
+            } bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100`}
           >
             <option value="">
               Select Staff
@@ -132,7 +132,7 @@ const AssignStaffModal = ({
         {/* Deadline */}
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Expected Completion
           </label>
 
@@ -150,8 +150,8 @@ const AssignStaffModal = ({
             className={`h-14 w-full rounded-xl border px-4 outline-none ${
               errors.deadline
                 ? "border-red-500"
-                : "border-slate-300 focus:border-indigo-600"
-            }`}
+                : "border-slate-300 dark:border-slate-700 focus:border-indigo-600"
+            } bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100`}
           />
 
           {errors.deadline && (
@@ -164,7 +164,7 @@ const AssignStaffModal = ({
         {/* Notes */}
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Notes
           </label>
 
@@ -175,7 +175,7 @@ const AssignStaffModal = ({
               setNotes(e.target.value)
             }
             placeholder="Assignment notes..."
-            className="w-full rounded-xl border border-slate-300 p-4 outline-none focus:border-indigo-600"
+            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-4 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
           />
         </div>
 

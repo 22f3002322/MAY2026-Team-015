@@ -83,11 +83,11 @@ const VisitorStats = () => {
 
               <div>
 
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   {item.title}
                 </p>
 
-                <h2 className="mt-3 text-3xl font-bold text-slate-800">
+                <h2 className="mt-3 text-3xl font-bold text-slate-800 dark:text-slate-100">
                   {item.value}
                 </h2>
 

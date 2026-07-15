@@ -36,11 +36,11 @@ const PollTable = ({
       header: "Poll",
       render: (row) => (
         <div>
-          <p className="font-semibold text-slate-800">
+          <p className="font-semibold text-slate-800 dark:text-slate-100">
             {row.question}
           </p>
 
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {row.pollId}
           </p>
         </div>

@@ -44,7 +44,7 @@ const ReportFilters = () => {
         {/* From Date */}
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300 text-slate-700">
             From
           </label>
 
@@ -57,14 +57,14 @@ const ReportFilters = () => {
                 e.target.value
               )
             }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-4 outline-none focus:border-indigo-600"
           />
         </div>
 
         {/* To Date */}
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300 text-slate-700">
             To
           </label>
 
@@ -78,14 +78,14 @@ const ReportFilters = () => {
                 e.target.value
               )
             }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-4 outline-none focus:border-indigo-600"
           />
         </div>
 
         {/* Month */}
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300 text-slate-700">
             Month
           </label>
 
@@ -97,7 +97,7 @@ const ReportFilters = () => {
                 e.target.value
               )
             }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-4 outline-none focus:border-indigo-600"
           >
             <option value="">All Months</option>
 
@@ -119,7 +119,7 @@ const ReportFilters = () => {
         {/* Year */}
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300 text-slate-700">
             Year
           </label>
 
@@ -131,7 +131,7 @@ const ReportFilters = () => {
                 e.target.value
               )
             }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-4 outline-none focus:border-indigo-600"
           >
             {[2023, 2024, 2025, 2026].map((year) => (
               <option

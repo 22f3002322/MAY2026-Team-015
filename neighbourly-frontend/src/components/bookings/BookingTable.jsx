@@ -25,11 +25,11 @@ const BookingTable = ({
           </div>
 
           <div>
-            <p className="font-medium text-slate-800">
+            <p className="font-medium text-slate-800 dark:text-slate-100">
               {row.resident}
             </p>
 
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Flat {row.flat}
             </p>
           </div>
@@ -51,7 +51,7 @@ const BookingTable = ({
             {row.date}
           </p>
 
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {row.slot}
           </p>
         </div>

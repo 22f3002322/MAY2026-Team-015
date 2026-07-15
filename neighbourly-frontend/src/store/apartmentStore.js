@@ -13,10 +13,10 @@ const useApartmentStore = create(
           apartments: [
             ...state.apartments,
             {
-            apartment,
-            id: crypto.randomUUID(),
-            createdAt: new Date().toISOString(),
-            }
+              ...apartment,
+              id: crypto.randomUUID(),
+              createdAt: new Date().toISOString(),
+            },
           ],
         })),
 
@@ -24,7 +24,11 @@ const useApartmentStore = create(
         set((state) => ({
           apartments: state.apartments.map((apartment) =>
             apartment.id === id
-              ? { ...apartment, ...updatedApartment }
+              ? {
+                ...apartment,
+                ...updatedApartment,
+                updatedAt: new Date().toISOString(),
+              }
               : apartment
           ),
         })),

@@ -12,6 +12,7 @@ const ResidentForm = ({
     initialData || {
       name: "",
       email: "",
+      password: "",
       phone: "",
       block: "",
       flat: "",
@@ -29,9 +30,7 @@ const ResidentForm = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     onSubmit(form);
-
     onClose();
   };
 
@@ -40,33 +39,42 @@ const ResidentForm = ({
       onSubmit={handleSubmit}
       className="space-y-5"
     >
-      <Input
-        label="Full Name"
+      <Input label="Full Name"
         name="name"
         value={form.name}
         onChange={handleChange}
-      />
+        required
+       placeholder="Enter Full Name..." />
 
-      <Input
-        label="Email"
-        type="email"
-        name="email"
-        value={form.email}
-        onChange={handleChange}
-      />
+      <div className="grid grid-cols-2 gap-4">
+        <Input label="Email"
+          type="email"
+          name="email"
+          value={form.email}
+          onChange={handleChange}
+          required
+         placeholder="Enter Email..." />
 
-      <Input
-        label="Phone"
+        <Input label="Password (for Resident Login)"
+          type="text"
+          name="password"
+          value={form.password || ""}
+          onChange={handleChange}
+          required
+         placeholder="Enter Password (for Resident Login)..." />
+      </div>
+
+      <Input label="Phone"
         name="phone"
         value={form.phone}
         onChange={handleChange}
-      />
+       placeholder="Enter Phone..." />
 
       <div className="grid grid-cols-2 gap-4">
 
         <div>
 
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Block
           </label>
 
@@ -74,7 +82,7 @@ const ResidentForm = ({
             name="block"
             value={form.block}
             onChange={handleChange}
-            className="h-14 w-full rounded-xl border border-slate-300 px-4"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
           >
             <option value="">Select Block</option>
             <option>A</option>
@@ -85,12 +93,11 @@ const ResidentForm = ({
 
         </div>
 
-        <Input
-          label="Flat"
+        <Input label="Flat"
           name="flat"
           value={form.flat}
           onChange={handleChange}
-        />
+         placeholder="Enter Flat..." />
 
       </div>
 
@@ -98,7 +105,7 @@ const ResidentForm = ({
 
         <div>
 
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Occupancy
           </label>
 
@@ -106,7 +113,7 @@ const ResidentForm = ({
             name="occupancy"
             value={form.occupancy}
             onChange={handleChange}
-            className="h-14 w-full rounded-xl border border-slate-300 px-4"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
           >
             <option>Owner</option>
             <option>Tenant</option>
@@ -116,7 +123,7 @@ const ResidentForm = ({
 
         <div>
 
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Status
           </label>
 
@@ -124,7 +131,7 @@ const ResidentForm = ({
             name="status"
             value={form.status}
             onChange={handleChange}
-            className="h-14 w-full rounded-xl border border-slate-300 px-4"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
           >
             <option>Active</option>
             <option>Inactive</option>

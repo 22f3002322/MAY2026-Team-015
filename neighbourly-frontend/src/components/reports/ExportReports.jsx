@@ -6,6 +6,8 @@ import {
   Mail,
 } from "lucide-react";
 
+import { toast } from "sonner";
+
 import Card from "../ui/Card";
 import Button from "../ui/Button";
 
@@ -59,7 +61,7 @@ const ExportReports = () => {
         "Send the latest report to committee members.",
       icon: Mail,
       action: () => {
-        alert(
+        toast.info(
           "Email service will be connected to the backend."
         );
         console.log("Email Report");

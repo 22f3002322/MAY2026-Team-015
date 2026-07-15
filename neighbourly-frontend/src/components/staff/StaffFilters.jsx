@@ -16,7 +16,7 @@ const StaffFilters = ({
   onAddStaff,
 }) => {
   return (
-    <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+    <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
 
        <div className="grid flex-1 gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
 
@@ -34,7 +34,7 @@ const StaffFilters = ({
           onChange={(e) =>
             setDepartment(e.target.value)
           }
-          className="h-12 rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+          className="h-12 rounded-xl border border-slate-300 dark:border-slate-700 px-4 outline-none focus:border-indigo-600"
         >
           <option value="">
             All Departments
@@ -66,7 +66,7 @@ const StaffFilters = ({
           onChange={(e) =>
             setStatus(e.target.value)
           }
-          className="h-12 rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+          className="h-12 rounded-xl border border-slate-300 dark:border-slate-700 px-4 outline-none focus:border-indigo-600"
         >
           <option value="">
             All Status

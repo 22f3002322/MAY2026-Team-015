@@ -43,10 +43,9 @@ const StaffForm = ({
       onSubmit={handleSubmit}
       className="space-y-5"
     >
-      <Input
-        label="Full Name"
+      <Input label="Full Name"
         value={form.name}
-        onChange={(e) =>
+        onChange={(e) = placeholder="Enter Full Name..." >
           handleChange("name", e.target.value)
         }
       />
@@ -76,10 +75,9 @@ const StaffForm = ({
           </select>
         </div>
 
-        <Input
-          label="Designation"
+        <Input label="Designation"
           value={form.designation}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Designation..." >
             handleChange(
               "designation",
               e.target.value
@@ -91,19 +89,17 @@ const StaffForm = ({
 
       <div className="grid grid-cols-2 gap-4">
 
-        <Input
-          label="Phone"
+        <Input label="Phone"
           value={form.phone}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Phone..." >
             handleChange("phone", e.target.value)
           }
         />
 
-        <Input
-          label="Email"
+        <Input label="Email"
           type="email"
           value={form.email}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Email..." >
             handleChange("email", e.target.value)
           }
         />
@@ -130,11 +126,10 @@ const StaffForm = ({
           </select>
         </div>
 
-        <Input
-          label="Joining Date"
+        <Input label="Joining Date"
           type="date"
           value={form.joiningDate}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Joining Date..." >
             handleChange(
               "joiningDate",
               e.target.value
@@ -146,11 +141,10 @@ const StaffForm = ({
 
       <div className="grid grid-cols-2 gap-4">
 
-        <Input
-          label="Salary"
+        <Input label="Salary"
           type="number"
           value={form.salary}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Salary..." >
             handleChange("salary", e.target.value)
           }
         />

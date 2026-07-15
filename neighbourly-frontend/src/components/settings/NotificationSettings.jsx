@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+
 import Card from "../ui/Card";
 import Button from "../ui/Button";
 
@@ -60,7 +62,7 @@ const NotificationSettings = () => {
   ];
 
   const handleSave = () => {
-    alert(
+    toast.success(
       "Notification settings updated successfully!"
     );
 
@@ -69,7 +71,7 @@ const NotificationSettings = () => {
 
   return (
     <Card className="p-6">
-      <h2 className="mb-6 text-xl font-semibold text-slate-800">
+      <h2 className="mb-6 text-xl font-semibold text-slate-800 dark:text-slate-100">
         Notification Settings
       </h2>
 
@@ -77,14 +79,14 @@ const NotificationSettings = () => {
         {options.map((item) => (
           <div
             key={item.key}
-            className="flex items-center justify-between rounded-xl border border-slate-200 p-4"
+            className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 p-4"
           >
             <div>
-              <h3 className="font-medium text-slate-800">
+              <h3 className="font-medium text-slate-800 dark:text-slate-100">
                 {item.title}
               </h3>
 
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 {item.description}
               </p>
             </div>
@@ -101,7 +103,7 @@ const NotificationSettings = () => {
               }`}
             >
               <span
-                className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+                className={`absolute top-1 h-5 w-5 rounded-full bg-white dark:bg-slate-900 transition ${
                   notifications[item.key]
                     ? "left-8"
                     : "left-1"

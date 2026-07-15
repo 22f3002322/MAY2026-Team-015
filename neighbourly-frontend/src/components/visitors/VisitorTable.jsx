@@ -28,11 +28,11 @@ const VisitorTable = ({
           </div>
 
           <div>
-            <p className="font-medium text-slate-800">
+            <p className="font-medium text-slate-800 dark:text-slate-100">
               {row.name}
             </p>
 
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {row.phone}
             </p>
           </div>
@@ -49,7 +49,7 @@ const VisitorTable = ({
             {row.resident}
           </p>
 
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {row.flat}
           </p>
         </div>
@@ -75,7 +75,7 @@ const VisitorTable = ({
             In : {row.checkIn}
           </p>
 
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Out : {row.checkOut}
           </p>
         </div>

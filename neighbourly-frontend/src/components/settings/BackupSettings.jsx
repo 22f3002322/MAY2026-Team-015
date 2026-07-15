@@ -26,11 +26,11 @@ const BackupSettings = () => {
 
   return (
     <Card className="p-6">
-      <h2 className="mb-6 text-xl font-semibold text-slate-800">
+      <h2 className="mb-6 text-xl font-semibold text-slate-800 dark:text-slate-100">
         Backup & Data Management
       </h2>
 
-      <p className="mb-8 text-slate-500">
+      <p className="mb-8 text-slate-500 dark:text-slate-400">
         Export, import and backup all society records.
         These actions help safeguard important data and
         simplify migration between systems.
@@ -39,12 +39,12 @@ const BackupSettings = () => {
       <div className="grid gap-5 md:grid-cols-2">
         {/* Export */}
 
-        <div className="rounded-2xl border border-slate-200 p-5">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
           <h3 className="text-lg font-semibold">
             Export Data
           </h3>
 
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Download all residents, apartments,
             complaints, visitors and billing records.
           </p>
@@ -59,12 +59,12 @@ const BackupSettings = () => {
 
         {/* Import */}
 
-        <div className="rounded-2xl border border-slate-200 p-5">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
           <h3 className="text-lg font-semibold">
             Import Data
           </h3>
 
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Import existing records from another
             management system.
           </p>
@@ -80,12 +80,12 @@ const BackupSettings = () => {
 
         {/* Backup */}
 
-        <div className="rounded-2xl border border-slate-200 p-5">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
           <h3 className="text-lg font-semibold">
             Create Backup
           </h3>
 
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Generate a complete backup of your society
             database.
           </p>
@@ -100,12 +100,12 @@ const BackupSettings = () => {
 
         {/* Restore */}
 
-        <div className="rounded-2xl border border-slate-200 p-5">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
           <h3 className="text-lg font-semibold">
             Restore Backup
           </h3>
 
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Restore previously downloaded backup files.
           </p>
 

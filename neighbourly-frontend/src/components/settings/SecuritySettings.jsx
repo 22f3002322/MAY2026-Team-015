@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 
 import Card from "../ui/Card";
 import Input from "../ui/Input";
@@ -72,7 +73,7 @@ const SecuritySettings = () => {
       return;
     }
 
-    alert(
+    toast.success(
       "Security settings updated successfully!"
     );
 
@@ -81,7 +82,7 @@ const SecuritySettings = () => {
 
   return (
     <Card className="p-6">
-      <h2 className="mb-6 text-xl font-semibold text-slate-800">
+      <h2 className="mb-6 text-xl font-semibold text-slate-800 dark:text-slate-100">
         Security Settings
       </h2>
 
@@ -132,13 +133,13 @@ const SecuritySettings = () => {
 
         {/* Two Factor */}
 
-        <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4">
+        <div className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 p-4">
           <div>
-            <h3 className="font-medium text-slate-800">
+            <h3 className="font-medium text-slate-800 dark:text-slate-100">
               Two-Factor Authentication
             </h3>
 
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Add an extra layer of security to your
               account.
             </p>
@@ -156,7 +157,7 @@ const SecuritySettings = () => {
             }`}
           >
             <span
-              className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+              className={`absolute top-1 h-5 w-5 rounded-full bg-white dark:bg-slate-900 transition ${
                 security.twoFactor
                   ? "left-8"
                   : "left-1"
@@ -167,13 +168,13 @@ const SecuritySettings = () => {
 
         {/* Auto Logout */}
 
-        <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4">
+        <div className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 p-4">
           <div>
-            <h3 className="font-medium text-slate-800">
+            <h3 className="font-medium text-slate-800 dark:text-slate-100">
               Auto Logout
             </h3>
 
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Automatically log out after inactivity.
             </p>
           </div>
@@ -190,7 +191,7 @@ const SecuritySettings = () => {
             }`}
           >
             <span
-              className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+              className={`absolute top-1 h-5 w-5 rounded-full bg-white dark:bg-slate-900 transition ${
                 security.autoLogout
                   ? "left-8"
                   : "left-1"
@@ -202,7 +203,7 @@ const SecuritySettings = () => {
         {/* Session Timeout */}
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Session Timeout
           </label>
 

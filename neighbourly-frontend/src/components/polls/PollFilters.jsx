@@ -13,7 +13,7 @@ const PollFilters = ({
   onCreate,
 }) => {
   return (
-    <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="mb-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
 
@@ -31,14 +31,14 @@ const PollFilters = ({
 
         <div>
 
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300 text-slate-700">
             Category
           </label>
 
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-4 outline-none transition focus:border-indigo-600"
           >
             <option value="">All Categories</option>
             <option>Community</option>
@@ -53,14 +53,14 @@ const PollFilters = ({
 
         <div>
 
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300 text-slate-700">
             Status
           </label>
 
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-4 outline-none transition focus:border-indigo-600"
           >
             <option value="">All Status</option>
             <option>Active</option>

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 const initialBookings = [
   {
@@ -33,36 +34,44 @@ const initialBookings = [
   },
 ];
 
-const useBookingStore = create((set) => ({
-  bookings: initialBookings,
+const useBookingStore = create(
+  persist(
+    (set) => ({
+      bookings: initialBookings,
 
-  addBooking: (booking) =>
-    set((state) => ({
-      bookings: [
-        ...state.bookings,
-        {
-          ...booking,
-          id: Date.now(),
-          createdAt: new Date().toISOString(),
-        },
-      ],
-    })),
+      addBooking: (booking) =>
+        set((state) => ({
+          bookings: [
+            ...state.bookings,
+            {
+              ...booking,
+              id: booking.id || Date.now(),
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        })),
 
-  updateBooking: (updatedBooking) =>
-    set((state) => ({
-      bookings: state.bookings.map((booking) =>
-        booking.id === updatedBooking.id
-          ? updatedBooking
-          : booking
-      ),
-    })),
+      updateBooking: (updatedBooking) =>
+        set((state) => ({
+          bookings: state.bookings.map((booking) =>
+            booking.id === updatedBooking.id ? updatedBooking : booking
+          ),
+        })),
 
-  deleteBooking: (id) =>
-    set((state) => ({
-      bookings: state.bookings.filter(
-        (booking) => booking.id !== id
-      ),
-    })),
-}));
+      deleteBooking: (id) =>
+        set((state) => ({
+          bookings: state.bookings.filter((booking) => booking.id !== id),
+        })),
+
+      resetBookings: () =>
+        set({
+          bookings: initialBookings,
+        }),
+    }),
+    {
+      name: "booking-storage",
+    }
+  )
+);
 
 export default useBookingStore;

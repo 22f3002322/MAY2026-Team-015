@@ -10,7 +10,7 @@ const ResidentDetails = ({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
 
-      <div className="h-full w-full max-w-md overflow-y-auto bg-white shadow-2xl">
+      <div className="h-full w-full max-w-md overflow-y-auto bg-white dark:bg-slate-900 shadow-2xl">
 
         <div className="border-b p-6">
 
@@ -34,7 +34,7 @@ const ResidentDetails = ({
                 {resident.name}
               </h3>
 
-              <p className="text-slate-500">
+              <p className="text-slate-500 dark:text-slate-400">
                 {resident.email}
               </p>
 
@@ -70,7 +70,7 @@ const ResidentDetails = ({
             />
 
             <div>
-              <p className="mb-1 text-sm text-slate-500">
+              <p className="mb-1 text-sm text-slate-500 dark:text-slate-400">
                 Status
               </p>
 
@@ -113,7 +113,7 @@ const Info = ({
   value,
 }) => (
   <div>
-    <p className="mb-1 text-sm text-slate-500">
+    <p className="mb-1 text-sm text-slate-500 dark:text-slate-400">
       {label}
     </p>
 

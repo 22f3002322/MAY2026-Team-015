@@ -150,11 +150,10 @@ const BookingForm = ({
       className="space-y-5"
     >
       <div className="grid gap-5 md:grid-cols-2">
-        <Input
-          label="Resident Name"
+        <Input label="Resident Name"
           value={form.resident}
           error={errors.resident}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Resident Name..." >
             handleChange(
               "resident",
               e.target.value
@@ -162,11 +161,10 @@ const BookingForm = ({
           }
         />
 
-        <Input
-          label="Flat Number"
+        <Input label="Flat Number"
           value={form.flat}
           error={errors.flat}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Flat Number..." >
             handleChange(
               "flat",
               e.target.value
@@ -250,12 +248,11 @@ const BookingForm = ({
           }
         />
 
-        <Input
-          type="number"
+        <Input type="number"
           label="Guests"
           value={form.guests}
           error={errors.guests}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Guests..." >
             handleChange(
               "guests",
               e.target.value
@@ -263,12 +260,11 @@ const BookingForm = ({
           }
         />
 
-        <Input
-          type="number"
+        <Input type="number"
           label="Booking Amount"
           value={form.amount}
           error={errors.amount}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Booking Amount..." >
             handleChange(
               "amount",
               e.target.value

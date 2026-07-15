@@ -20,18 +20,18 @@ const NoticeDetails = ({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
 
-      <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl">
+      <div className="h-full w-full max-w-xl overflow-y-auto bg-white dark:bg-slate-900 shadow-2xl">
 
         {/* Header */}
 
-        <div className="sticky top-0 flex items-center justify-between border-b bg-white px-6 py-5">
+        <div className="sticky top-0 flex items-center justify-between border-b bg-white dark:bg-slate-900 px-6 py-5">
 
           <div>
-            <h2 className="text-2xl font-bold text-slate-800">
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
               Notice Details
             </h2>
 
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {notice.noticeId}
             </p>
           </div>
@@ -58,11 +58,11 @@ const NoticeDetails = ({
             </div>
 
             <div>
-              <h3 className="text-2xl font-semibold text-slate-800">
+              <h3 className="text-2xl font-semibold text-slate-800 dark:text-slate-100">
                 {notice.title}
               </h3>
 
-              <p className="text-slate-500">
+              <p className="text-slate-500 dark:text-slate-400">
                 {notice.category}
               </p>
             </div>
@@ -143,11 +143,11 @@ const NoticeDetails = ({
 
           <div>
 
-            <h4 className="mb-3 text-lg font-semibold text-slate-800">
+            <h4 className="mb-3 text-lg font-semibold text-slate-800 dark:text-slate-100">
               Description
             </h4>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 leading-7 text-slate-600">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 p-5 leading-7 text-slate-600">
               {notice.description}
             </div>
 
@@ -183,11 +183,11 @@ const Info = ({
     </div>
 
     <div>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         {label}
       </p>
 
-      <p className="font-medium text-slate-800">
+      <p className="font-medium text-slate-800 dark:text-slate-100">
         {value}
       </p>
     </div>

@@ -15,16 +15,16 @@ const StaffDetails = ({
     >
       <div className="space-y-6">
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 p-5">
 
           <div className="flex items-center justify-between">
 
             <div>
-              <h2 className="text-xl font-bold text-slate-800">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
                 {staff.name}
               </h2>
 
-              <p className="mt-1 text-slate-500">
+              <p className="mt-1 text-slate-500 dark:text-slate-400">
                 {staff.designation}
               </p>
             </div>
@@ -95,12 +95,12 @@ const Info = ({
   label,
   value,
 }) => (
-  <div className="rounded-xl border border-slate-200 p-4">
-    <p className="text-xs uppercase tracking-wide text-slate-500">
+  <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
       {label}
     </p>
 
-    <p className="mt-1 font-semibold text-slate-800">
+    <p className="mt-1 font-semibold text-slate-800 dark:text-slate-100">
       {value || "-"}
     </p>
   </div>

@@ -114,11 +114,10 @@ const UploadDocumentForm = ({
       onSubmit={handleSubmit}
       className="space-y-6"
     >
-      <Input
-        label="Document Title"
+      <Input label="Document Title"
         value={form.title}
         error={errors.title}
-        onChange={(e) =>
+        onChange={(e) = placeholder="Enter Document Title..." >
           handleChange(
             "title",
             e.target.value
@@ -178,11 +177,10 @@ const UploadDocumentForm = ({
           </select>
         </div>
 
-        <Input
-          label="Uploaded By"
+        <Input label="Uploaded By"
           value={form.uploadedBy}
           error={errors.uploadedBy}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Uploaded By..." >
             handleChange(
               "uploadedBy",
               e.target.value

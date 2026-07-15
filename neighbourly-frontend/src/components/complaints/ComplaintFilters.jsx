@@ -19,7 +19,7 @@ const ComplaintFilters = ({
   onRaiseComplaint,
 }) => {
   return (
-    <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="mb-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
 
       <div className="grid grid-cols-12 gap-5 items-end">
 
@@ -34,14 +34,14 @@ const ComplaintFilters = ({
         </div>
 
         <div className="col-span-12 md:col-span-4 xl:col-span-2">
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Category
           </label>
 
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="h-14 w-full rounded-xl border border-slate-300 px-4"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
           >
             <option value="">All</option>
             <option>Electrical</option>
@@ -53,14 +53,14 @@ const ComplaintFilters = ({
         </div>
 
         <div className="col-span-12 md:col-span-4 xl:col-span-2">
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Priority
           </label>
 
           <select
             value={priority}
             onChange={(e) => setPriority(e.target.value)}
-            className="h-14 w-full rounded-xl border border-slate-300 px-4"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
           >
             <option value="">All</option>
             <option>Low</option>
@@ -71,14 +71,14 @@ const ComplaintFilters = ({
         </div>
 
         <div className="col-span-12 md:col-span-4 xl:col-span-2">
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Status
           </label>
 
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="h-14 w-full rounded-xl border border-slate-300 px-4"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
           >
             <option value="">All</option>
             <option>Open</option>

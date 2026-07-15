@@ -59,18 +59,18 @@ const CheckInOutModal = ({
         onSubmit={handleSubmit}
         className="space-y-6"
       >
-        <div className="rounded-xl border bg-slate-50 p-4">
-          <h3 className="font-semibold">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4">
+          <h3 className="font-semibold text-slate-800 dark:text-slate-200">
             {visitor.name}
           </h3>
 
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {visitor.visitorId}
           </p>
 
           <p className="mt-2 text-sm">
             Visiting :
-            <span className="font-medium">
+            <span className="font-medium text-slate-800 dark:text-slate-200">
               {" "}
               {visitor.resident}
             </span>
@@ -78,7 +78,7 @@ const CheckInOutModal = ({
 
           <p className="text-sm">
             Flat :
-            <span className="font-medium">
+            <span className="font-medium text-slate-800 dark:text-slate-200">
               {" "}
               {visitor.flat}
             </span>
@@ -86,7 +86,7 @@ const CheckInOutModal = ({
 
           <p className="mt-2 text-sm">
             Current Status :
-            <span className="font-semibold">
+            <span className="font-semibold text-slate-800 dark:text-slate-200">
               {" "}
               {visitor.status}
             </span>
@@ -94,7 +94,7 @@ const CheckInOutModal = ({
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Remarks
           </label>
 
@@ -109,7 +109,7 @@ const CheckInOutModal = ({
                 ? "Security notes..."
                 : "Exit remarks..."
             }
-            className="w-full rounded-xl border border-slate-300 p-4 outline-none focus:border-indigo-600"
+            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-4 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
           />
         </div>
 

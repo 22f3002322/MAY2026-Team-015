@@ -9,10 +9,9 @@ const Card = ({
   return (
     <div
       className={`
-        bg-white
+        bg-white dark:bg-slate-900
         rounded-xl
-        border
-        border-slate-200
+        border border-slate-200 dark:border-slate-800
         shadow-sm
         ${padding}
         ${className}
@@ -22,13 +21,13 @@ const Card = ({
         <div className="flex items-start justify-between mb-5">
           <div>
             {title && (
-              <h3 className="text-lg font-semibold text-slate-800">
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
                 {title}
               </h3>
             )}
 
             {subtitle && (
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 {subtitle}
               </p>
             )}

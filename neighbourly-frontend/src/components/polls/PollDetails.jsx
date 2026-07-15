@@ -34,16 +34,16 @@ const PollDetails = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
-      <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl">
+      <div className="h-full w-full max-w-xl overflow-y-auto bg-white dark:bg-slate-900 shadow-2xl">
         {/* Header */}
 
-        <div className="sticky top-0 flex items-center justify-between border-b bg-white px-6 py-5">
+        <div className="sticky top-0 flex items-center justify-between border-b bg-white dark:bg-slate-900 px-6 py-5">
           <div>
-            <h2 className="text-2xl font-bold text-slate-800">
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
               Poll Details
             </h2>
 
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {poll.pollId}
             </p>
           </div>
@@ -60,7 +60,7 @@ const PollDetails = ({
 
         <div className="space-y-8 p-6">
           <div>
-            <h3 className="text-xl font-semibold text-slate-800">
+            <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100">
               {poll.question}
             </h3>
 
@@ -118,7 +118,7 @@ const PollDetails = ({
           {/* Poll Results */}
 
           <div>
-            <h4 className="mb-5 text-lg font-semibold text-slate-800">
+            <h4 className="mb-5 text-lg font-semibold text-slate-800 dark:text-slate-100">
               Poll Results
             </h4>
 
@@ -143,7 +143,7 @@ const PollDetails = ({
                           {item.option}
                         </span>
 
-                        <span className="text-slate-500">
+                        <span className="text-slate-500 dark:text-slate-400">
                           {item.votes} votes
                         </span>
                       </div>
@@ -157,7 +157,7 @@ const PollDetails = ({
                         />
                       </div>
 
-                      <div className="mt-1 flex justify-between text-xs text-slate-500">
+                      <div className="mt-1 flex justify-between text-xs text-slate-500 dark:text-slate-400">
                         <span>
                           {percentage}% of
                           total votes
@@ -180,7 +180,7 @@ const PollDetails = ({
           {(poll.createdAt ||
             poll.updatedAt) && (
             <div className="rounded-xl border bg-slate-50 p-4">
-              <h4 className="mb-3 font-semibold text-slate-800">
+              <h4 className="mb-3 font-semibold text-slate-800 dark:text-slate-100">
                 Activity
               </h4>
 
@@ -234,11 +234,11 @@ const Info = ({
     </div>
 
     <div>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         {label}
       </p>
 
-      <p className="font-medium text-slate-800">
+      <p className="font-medium text-slate-800 dark:text-slate-100">
         {value}
       </p>
     </div>

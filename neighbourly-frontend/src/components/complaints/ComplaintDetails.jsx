@@ -36,18 +36,18 @@ const ComplaintDetails = ({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
 
-      <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl">
+      <div className="h-full w-full max-w-xl overflow-y-auto bg-white dark:bg-slate-900 shadow-2xl">
 
         {/* Header */}
 
-        <div className="sticky top-0 flex items-center justify-between border-b bg-white px-6 py-5">
+        <div className="sticky top-0 flex items-center justify-between border-b bg-white dark:bg-slate-900 px-6 py-5">
 
           <div>
-            <h2 className="text-2xl font-bold text-slate-800">
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
               Complaint Details
             </h2>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {complaint.ticket}
             </p>
           </div>
@@ -172,7 +172,7 @@ const ComplaintDetails = ({
 
           {/* Feedback */}
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 p-5">
 
             <h3 className="font-semibold">
               Resident Feedback
@@ -217,11 +217,11 @@ const Info = ({
 
     <div>
 
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         {label}
       </p>
 
-      <p className="font-medium text-slate-800">
+      <p className="font-medium text-slate-800 dark:text-slate-100">
         {value}
       </p>
 
@@ -243,7 +243,7 @@ const TimelineItem = ({
         className={`flex h-8 w-8 items-center justify-center rounded-full ${
           active
             ? "bg-green-500 text-white"
-            : "bg-slate-200 text-slate-500"
+            : "bg-slate-200 text-slate-500 dark:text-slate-400"
         }`}
       >
         <CheckCircle2 size={16} />
@@ -259,7 +259,7 @@ const TimelineItem = ({
         {title}
       </h4>
 
-      <p className="mt-1 flex items-center gap-2 text-sm text-slate-500">
+      <p className="mt-1 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
         <Clock3 size={14} />
         {time}
       </p>

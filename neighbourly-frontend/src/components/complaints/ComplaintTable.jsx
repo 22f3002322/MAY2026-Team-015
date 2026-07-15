@@ -64,11 +64,11 @@ const ComplaintTable = ({
             header: "Ticket",
             render: (row) => (
                 <div>
-                    <p className="font-semibold text-slate-800">
+                    <p className="font-semibold text-slate-800 dark:text-slate-100">
                         {row.ticket}
                     </p>
 
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                         {row.createdAt}
                     </p>
                 </div>
@@ -84,7 +84,7 @@ const ComplaintTable = ({
                         {row.title}
                     </p>
 
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                         {row.category}
                     </p>
                 </div>
@@ -100,7 +100,7 @@ const ComplaintTable = ({
                         {row.resident}
                     </p>
 
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                         {row.flat}
                     </p>
                 </div>

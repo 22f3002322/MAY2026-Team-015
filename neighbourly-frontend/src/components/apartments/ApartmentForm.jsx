@@ -39,37 +39,33 @@ const ApartmentForm = ({
       onSubmit={handleSubmit}
       className="space-y-5"
     >
-      <Input
-        label="Flat Number"
+      <Input label="Flat Number"
         value={form.flat}
-        onChange={(e) =>
+        onChange={(e) = placeholder="Enter Flat Number..." >
           handleChange("flat", e.target.value)
         }
       />
 
-      <Input
-        label="Owner"
+      <Input label="Owner"
         value={form.owner}
-        onChange={(e) =>
+        onChange={(e) = placeholder="Enter Owner..." >
           handleChange("owner", e.target.value)
         }
       />
 
       <div className="grid grid-cols-2 gap-4">
 
-        <Input
-          label="Block"
+        <Input label="Block"
           value={form.block}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Block..." >
             handleChange("block", e.target.value)
           }
         />
 
-        <Input
-          label="Floor"
+        <Input label="Floor"
           type="number"
           value={form.floor}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Floor..." >
             handleChange("floor", e.target.value)
           }
         />

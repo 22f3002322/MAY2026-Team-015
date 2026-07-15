@@ -159,11 +159,10 @@ const BillForm = ({
       className="space-y-6"
     >
       <div className="grid gap-5 md:grid-cols-2">
-        <Input
-          label="Resident Name"
+        <Input label="Resident Name"
           value={form.resident}
           error={errors.resident}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Resident Name..." >
             handleChange(
               "resident",
               e.target.value
@@ -171,11 +170,10 @@ const BillForm = ({
           }
         />
 
-        <Input
-          label="Flat Number"
+        <Input label="Flat Number"
           value={form.flat}
           error={errors.flat}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Flat Number..." >
             handleChange(
               "flat",
               e.target.value
@@ -213,12 +211,11 @@ const BillForm = ({
           )}
         </div>
 
-        <Input
-          type="number"
+        <Input type="number"
           label="Amount"
           value={form.amount}
           error={errors.amount}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Amount..." >
             handleChange(
               "amount",
               e.target.value

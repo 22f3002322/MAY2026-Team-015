@@ -253,11 +253,10 @@ const PollForm = ({
       onSubmit={handleSubmit}
       className="space-y-6"
     >
-      <Input
-        label="Poll Question"
+      <Input label="Poll Question"
         value={form.question}
         error={errors.question}
-        onChange={(e) =>
+        onChange={(e) = placeholder="Enter Poll Question..." >
           handleChange(
             "question",
             e.target.value
@@ -292,13 +291,12 @@ const PollForm = ({
           </select>
         </div>
 
-        <Input
-          label="Start Date"
+        <Input label="Start Date"
           type="date"
           min={today}
           value={form.startDate}
           error={errors.startDate}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Start Date..." >
             handleChange(
               "startDate",
               e.target.value
@@ -306,13 +304,12 @@ const PollForm = ({
           }
         />
 
-        <Input
-          label="End Date"
+        <Input label="End Date"
           type="date"
           min={form.startDate || today}
           value={form.endDate}
           error={errors.endDate}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter End Date..." >
             handleChange(
               "endDate",
               e.target.value

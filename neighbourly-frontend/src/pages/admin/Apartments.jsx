@@ -50,17 +50,23 @@ const Apartments = () => {
 
   // Filter
 
+  const query = search.toLowerCase();
+
   const filteredApartments = apartments.filter((flat) => {
     const matchesSearch =
-      flat.flat.toLowerCase().includes(search.toLowerCase()) ||
-      flat.owner.toLowerCase().includes(search.toLowerCase());
+      String(flat?.flat ?? "")
+        .toLowerCase()
+        .includes(query) ||
+      String(flat?.owner ?? "")
+        .toLowerCase()
+        .includes(query);
 
     const matchesBlock =
-      block === "" || flat.block === block;
+      block === "" || flat?.block === block;
 
     const matchesOccupancy =
       occupancy === "" ||
-      flat.occupancy === occupancy;
+      flat?.occupancy === occupancy;
 
     return (
       matchesSearch &&

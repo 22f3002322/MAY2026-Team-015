@@ -65,23 +65,23 @@ const StatusUpdateModal = ({
         className="space-y-6"
       >
         <div>
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Complaint
           </label>
 
-          <div className="rounded-xl border bg-slate-50 p-4">
-            <h4 className="font-semibold">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4">
+            <h4 className="font-semibold text-slate-800 dark:text-slate-200">
               {complaint.ticket}
             </h4>
 
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {complaint.title}
             </p>
           </div>
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Status
           </label>
 
@@ -97,8 +97,8 @@ const StatusUpdateModal = ({
             className={`h-14 w-full rounded-xl border px-4 ${
               errors.status
                 ? "border-red-500"
-                : "border-slate-300"
-            }`}
+                : "border-slate-300 dark:border-slate-700"
+            } bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600`}
           >
             {statusOptions.map((item) => (
               <option
@@ -118,7 +118,7 @@ const StatusUpdateModal = ({
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Progress Remarks
           </label>
 
@@ -136,8 +136,8 @@ const StatusUpdateModal = ({
             className={`w-full rounded-xl border p-4 ${
               errors.remarks
                 ? "border-red-500"
-                : "border-slate-300"
-            }`}
+                : "border-slate-300 dark:border-slate-700"
+            } bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600`}
           />
 
           {errors.remarks && (

@@ -116,11 +116,10 @@ const NoticeForm = ({
       onSubmit={handleSubmit}
       className="space-y-6"
     >
-      <Input
-        label="Notice Title"
+      <Input label="Notice Title"
         value={form.title}
         error={errors.title}
-        onChange={(e) =>
+        onChange={(e) = placeholder="Enter Notice Title..." >
           handleChange(
             "title",
             e.target.value
@@ -200,11 +199,10 @@ const NoticeForm = ({
           </select>
         </div>
 
-        <Input
-          label="Author"
+        <Input label="Author"
           value={form.author}
           error={errors.author}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Author..." >
             handleChange(
               "author",
               e.target.value

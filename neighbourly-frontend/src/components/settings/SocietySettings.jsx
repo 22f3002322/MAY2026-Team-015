@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 
 import Card from "../ui/Card";
 import Input from "../ui/Input";
@@ -64,14 +65,14 @@ const SocietySettings = () => {
       return;
     }
 
-    alert("Society settings updated successfully!");
+    toast.success("Society settings updated successfully!");
 
     console.log(society);
   };
 
   return (
     <Card className="p-6">
-      <h2 className="mb-6 text-xl font-semibold text-slate-800">
+      <h2 className="mb-6 text-xl font-semibold text-slate-800 dark:text-slate-100">
         Society Settings
       </h2>
 
@@ -131,7 +132,7 @@ const SocietySettings = () => {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Society Address
           </label>
 

@@ -36,16 +36,16 @@ const BillDetails = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
-      <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl">
+      <div className="h-full w-full max-w-xl overflow-y-auto bg-white dark:bg-slate-900 shadow-2xl">
         {/* Header */}
 
-        <div className="sticky top-0 flex items-center justify-between border-b bg-white px-6 py-5">
+        <div className="sticky top-0 flex items-center justify-between border-b bg-white dark:bg-slate-900 px-6 py-5">
           <div>
-            <h2 className="text-2xl font-bold text-slate-800">
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
               Bill Details
             </h2>
 
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {bill.billId}
             </p>
           </div>
@@ -71,7 +71,7 @@ const BillDetails = ({
                 {bill.resident}
               </h3>
 
-              <p className="text-slate-500">
+              <p className="text-slate-500 dark:text-slate-400">
                 Flat {bill.flat}
               </p>
             </div>
@@ -152,7 +152,7 @@ const BillDetails = ({
           </div>
 
           <div>
-            <h4 className="mb-2 font-semibold text-slate-800">
+            <h4 className="mb-2 font-semibold text-slate-800 dark:text-slate-100">
               Description
             </h4>
 
@@ -186,11 +186,11 @@ const Info = ({
     </div>
 
     <div>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         {label}
       </p>
 
-      <p className="font-medium text-slate-800">
+      <p className="font-medium text-slate-800 dark:text-slate-100">
         {value}
       </p>
     </div>

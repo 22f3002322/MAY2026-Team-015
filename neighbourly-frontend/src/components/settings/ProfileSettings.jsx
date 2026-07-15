@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 
 import Card from "../ui/Card";
 import Input from "../ui/Input";
@@ -58,14 +59,14 @@ const ProfileSettings = () => {
       return;
     }
 
-    alert("Profile updated successfully!");
+    toast.success("Profile updated successfully!");
 
     console.log(profile);
   };
 
   return (
     <Card className="p-6">
-      <h2 className="mb-6 text-xl font-semibold text-slate-800">
+      <h2 className="mb-6 text-xl font-semibold text-slate-800 dark:text-slate-100">
         Profile Settings
       </h2>
 
@@ -92,7 +93,7 @@ const ProfileSettings = () => {
               className="block text-sm"
             />
 
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               JPG, PNG up to 5MB
             </p>
           </div>

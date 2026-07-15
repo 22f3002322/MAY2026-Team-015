@@ -99,29 +99,26 @@ const VisitorForm = ({
     >
       <div className="grid gap-5 md:grid-cols-2">
 
-        <Input
-          label="Visitor Name"
+        <Input label="Visitor Name"
           value={form.name}
           error={errors.name}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Visitor Name..." >
             handleChange("name", e.target.value)
           }
         />
 
-        <Input
-          label="Mobile Number"
+        <Input label="Mobile Number"
           value={form.phone}
           error={errors.phone}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Mobile Number..." >
             handleChange("phone", e.target.value)
           }
         />
 
-        <Input
-          label="Resident Name"
+        <Input label="Resident Name"
           value={form.resident}
           error={errors.resident}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Resident Name..." >
             handleChange(
               "resident",
               e.target.value
@@ -129,20 +126,18 @@ const VisitorForm = ({
           }
         />
 
-        <Input
-          label="Flat Number"
+        <Input label="Flat Number"
           value={form.flat}
           error={errors.flat}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Flat Number..." >
             handleChange("flat", e.target.value)
           }
         />
 
-        <Input
-          label="Purpose"
+        <Input label="Purpose"
           value={form.purpose}
           error={errors.purpose}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Purpose..." >
             handleChange(
               "purpose",
               e.target.value
@@ -150,10 +145,9 @@ const VisitorForm = ({
           }
         />
 
-        <Input
-          label="Vehicle Number (Optional)"
+        <Input label="Vehicle Number (Optional)"
           value={form.vehicle}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter Vehicle Number (Optional)..." >
             handleChange(
               "vehicle",
               e.target.value
@@ -232,11 +226,10 @@ const VisitorForm = ({
           </select>
         </div>
 
-        <Input
-          label="ID Number"
+        <Input label="ID Number"
           value={form.idNumber}
           error={errors.idNumber}
-          onChange={(e) =>
+          onChange={(e) = placeholder="Enter ID Number..." >
             handleChange(
               "idNumber",
               e.target.value

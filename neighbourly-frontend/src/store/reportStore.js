@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { toast } from "sonner";
 
 const currentYear = new Date().getFullYear();
 
@@ -105,11 +106,11 @@ const useReportStore = create((set) => ({
     },
 
     exportExcel: () => {
-        alert("Excel export will be connected to backend.");
+        toast.info("Excel export will be connected to backend.");
     },
 
     exportCSV: () => {
-        alert("CSV export will be connected to backend.");
+        toast.info("CSV export will be connected to backend.");
     },
 
     setComplaintData: (data) =>

@@ -4,6 +4,7 @@ import {
   Download,
   Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
@@ -48,7 +49,7 @@ const DocumentTable = ({
 
       URL.revokeObjectURL(url);
     } else {
-      alert("No file available.");
+      toast.error("No file available.");
     }
   };
 
@@ -58,11 +59,11 @@ const DocumentTable = ({
       header: "Document",
       render: (row) => (
         <div>
-          <p className="font-semibold text-slate-800">
+          <p className="font-semibold text-slate-800 dark:text-slate-100">
             {row.title}
           </p>
 
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {row.documentId}
           </p>
         </div>

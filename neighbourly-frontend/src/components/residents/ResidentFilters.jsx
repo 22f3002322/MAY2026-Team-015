@@ -14,12 +14,12 @@ const ResidentFilters = ({
   onAddResident,
 }) => {
   return (
-    <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="mb-6 rounded-2xl border border-slate-200 dark:border-slate-700 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
 
         <div>
-  <label className="mb-2 block text-sm font-medium text-slate-700">
+  <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200 dark:text-slate-300 text-slate-700 dark:text-slate-200">
     Search
   </label>
 
@@ -34,20 +34,20 @@ const ResidentFilters = ({
       placeholder="Search resident..."
       value={search}
       onChange={(e) => setSearch(e.target.value)}
-      className="h-12 w-full rounded-xl border border-slate-300 pl-12 pr-4 outline-none transition focus:border-indigo-600"
+      className="h-12 w-full rounded-xl border border-slate-300 dark:border-slate-700 pl-12 pr-4 outline-none transition focus:border-indigo-600"
     />
   </div>
 </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200 dark:text-slate-300 text-slate-700 dark:text-slate-200">
             Block
           </label>
 
           <select
             value={block}
             onChange={(e) => setBlock(e.target.value)}
-            className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-indigo-600"
+            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-3 bg-slate-100 dark:bg-slate-800 dark:text-slate-200 outline-none focus:border-indigo-600"
           >
             <option value="">All Blocks</option>
             <option>A</option>
@@ -58,14 +58,14 @@ const ResidentFilters = ({
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200 dark:text-slate-300 text-slate-700 dark:text-slate-200">
             Occupancy
           </label>
 
           <select
             value={occupancy}
             onChange={(e) => setOccupancy(e.target.value)}
-            className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-indigo-600"
+            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-3 outline-none focus:border-indigo-600"
           >
             <option value="">All</option>
             <option>Owner</option>

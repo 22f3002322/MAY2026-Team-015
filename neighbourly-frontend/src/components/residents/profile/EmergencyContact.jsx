@@ -1,0 +1,176 @@
+import { useState } from "react";
+
+import {
+  User,
+  Phone,
+  HeartHandshake,
+  Pencil,
+  Save,
+  X,
+} from "lucide-react";
+
+import Card from "../../ui/Card";
+import Button from "../../ui/Button";
+
+import useProfileStore from "../../../store/profileStore";
+
+const EmergencyContacts = () => {
+  const profile = useProfileStore(
+    (state) => state.profile
+  );
+
+  const updateEmergencyContact =
+    useProfileStore(
+      (state) =>
+        state.updateEmergencyContact
+    );
+
+  const [editing, setEditing] =
+    useState(false);
+
+  const [contact, setContact] =
+    useState(
+      profile.emergencyContact
+    );
+
+  const handleChange = (e) => {
+    const {
+      name,
+      value,
+    } = e.target;
+
+    setContact((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSave = () => {
+    updateEmergencyContact(contact);
+    setEditing(false);
+  };
+
+  return (
+    <Card className="p-6">
+
+      <div className="mb-6 flex items-center justify-between">
+
+        <div>
+
+          <h3 className="text-lg font-semibold text-slate-800">
+            Emergency Contact
+          </h3>
+
+          <p className="text-sm text-slate-500">
+            Person to contact during emergencies
+          </p>
+
+        </div>
+
+        {!editing ? (
+          <Button
+            variant="outline"
+            onClick={() =>
+              setEditing(true)
+            }
+          >
+            <Pencil size={16} />
+            Edit
+          </Button>
+        ) : (
+          <div className="flex gap-2">
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                setContact(
+                  profile.emergencyContact
+                );
+                setEditing(false);
+              }}
+            >
+              <X size={16} />
+              Cancel
+            </Button>
+
+            <Button
+              onClick={handleSave}
+            >
+              <Save size={16} />
+              Save
+            </Button>
+
+          </div>
+        )}
+
+      </div>
+
+      <div className="space-y-5">
+
+        {/* Name */}
+
+        <div>
+
+          <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700">
+            <User size={16} />
+            Contact Name
+          </label>
+
+          <input
+            type="text"
+            name="name"
+            disabled={!editing}
+            value={contact.name}
+            onChange={handleChange}
+            className="h-12 w-full rounded-xl border border-slate-300 px-4 outline-none disabled:bg-slate-100"
+          />
+
+        </div>
+
+        {/* Relation */}
+
+        <div>
+
+          <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700">
+            <HeartHandshake size={16} />
+            Relation
+          </label>
+
+          <input
+            type="text"
+            name="relation"
+            disabled={!editing}
+            value={contact.relation}
+            onChange={handleChange}
+            className="h-12 w-full rounded-xl border border-slate-300 px-4 outline-none disabled:bg-slate-100"
+          />
+
+        </div>
+
+        {/* Phone */}
+
+        <div>
+
+          <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700">
+            <Phone size={16} />
+            Phone Number
+          </label>
+
+          <input
+            type="tel"
+            name="phone"
+            disabled={!editing}
+            value={contact.phone}
+            onChange={handleChange}
+            className="h-12 w-full rounded-xl border border-slate-300 px-4 outline-none disabled:bg-slate-100"
+          />
+
+        </div>
+
+      </div>
+
+    </Card>
+  );
+};
+
+export default EmergencyContacts;

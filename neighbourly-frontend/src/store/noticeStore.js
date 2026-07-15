@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 const initialNotices = [
   {
@@ -45,45 +46,56 @@ const initialNotices = [
   },
 ];
 
-const useNoticeStore = create((set) => ({
-  notices: initialNotices,
+const useNoticeStore = create(
+  persist(
+    (set, get) => ({
+      notices: initialNotices,
 
-  addNotice: (notice) =>
-    set((state) => ({
-      notices: [
-        {
-          ...notice,
-          id: Date.now(),
-          noticeId: `NOT-${Date.now()
-            .toString()
-            .slice(-5)}`,
-          createdAt: new Date().toISOString(),
-          updatedAt: null,
-        },
-        ...state.notices,
-      ],
-    })),
-
-  updateNotice: (notice) =>
-    set((state) => ({
-      notices: state.notices.map((item) =>
-        item.id === notice.id
-          ? {
-              ...item,
+      addNotice: (notice) =>
+        set((state) => ({
+          notices: [
+            {
               ...notice,
-              updatedAt:
-                new Date().toISOString(),
-            }
-          : item
-      ),
-    })),
+              id: notice.id || Date.now(),
+              noticeId: notice.noticeId || `NOT-${Date.now().toString().slice(-5)}`,
+              createdAt: new Date().toISOString(),
+              updatedAt: null,
+            },
+            ...state.notices,
+          ],
+        })),
 
-  deleteNotice: (id) =>
-    set((state) => ({
-      notices: state.notices.filter(
-        (notice) => notice.id !== id
-      ),
-    })),
-}));
+      updateNotice: (updatedNotice) =>
+        set((state) => ({
+          notices: state.notices.map((notice) =>
+            notice.id === updatedNotice.id
+              ? {
+                  ...notice,
+                  ...updatedNotice,
+                  updatedAt: new Date().toISOString(),
+                }
+              : notice
+          ),
+        })),
+
+      deleteNotice: (id) =>
+        set((state) => ({
+          notices: state.notices.filter((notice) => notice.id !== id),
+        })),
+
+      getNoticeById: (id) => {
+        return get().notices.find((notice) => notice.id === id);
+      },
+
+      resetNotices: () =>
+        set({
+          notices: initialNotices,
+        }),
+    }),
+    {
+      name: "notice-storage",
+    }
+  )
+);
 
 export default useNoticeStore;
