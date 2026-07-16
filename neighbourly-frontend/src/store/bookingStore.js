@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import useFacilityStore from "./facilityStore";
 
 const initialBookings = [
   {
@@ -34,38 +35,62 @@ const initialBookings = [
   },
 ];
 
+const syncToFacilityStore = (bookings) => {
+  const facilityBookings = bookings.map((b) => ({
+    id: b.id,
+    facilityId: b.facility === "Club House" ? 1 : b.facility === "Swimming Pool" ? 2 : b.facility === "Gym" ? 3 : 4,
+    facility: b.facility,
+    date: b.date,
+    time: b.time || b.slot,
+    purpose: b.description || b.purpose,
+    status: b.status,
+    createdAt: b.createdAt,
+    updatedAt: new Date().toISOString(),
+    bookedBy: b.resident,
+    flat: b.flat,
+  }));
+  useFacilityStore.setState({ bookings: facilityBookings });
+};
+
 const useBookingStore = create(
   persist(
     (set) => ({
       bookings: initialBookings,
 
       addBooking: (booking) =>
-        set((state) => ({
-          bookings: [
+        set((state) => {
+          const newBookings = [
             ...state.bookings,
             {
               ...booking,
               id: booking.id || Date.now(),
               createdAt: new Date().toISOString(),
             },
-          ],
-        })),
+          ];
+          setTimeout(() => syncToFacilityStore(newBookings), 0);
+          return { bookings: newBookings };
+        }),
 
       updateBooking: (updatedBooking) =>
-        set((state) => ({
-          bookings: state.bookings.map((booking) =>
+        set((state) => {
+          const newBookings = state.bookings.map((booking) =>
             booking.id === updatedBooking.id ? updatedBooking : booking
-          ),
-        })),
+          );
+          setTimeout(() => syncToFacilityStore(newBookings), 0);
+          return { bookings: newBookings };
+        }),
 
       deleteBooking: (id) =>
-        set((state) => ({
-          bookings: state.bookings.filter((booking) => booking.id !== id),
-        })),
+        set((state) => {
+          const newBookings = state.bookings.filter((booking) => booking.id !== id);
+          setTimeout(() => syncToFacilityStore(newBookings), 0);
+          return { bookings: newBookings };
+        }),
 
       resetBookings: () =>
-        set({
-          bookings: initialBookings,
+        set(() => {
+          setTimeout(() => syncToFacilityStore(initialBookings), 0);
+          return { bookings: initialBookings };
         }),
     }),
     {

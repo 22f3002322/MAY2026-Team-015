@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import useBookingStore from "./bookingStore";
 
 const initialFacilities = [
   {
@@ -65,25 +66,48 @@ const initialBookings = [
     id: 1,
     facilityId: 1,
     facility: "Club House",
-    date: "2026-07-20",
-    time: "06:00 PM - 09:00 PM",
+    date: "15 Jul 2026",
+    time: "10:00 AM - 12:00 PM",
     purpose: "Birthday Party",
     status: "Approved",
     createdAt: new Date().toISOString(),
     updatedAt: null,
+    bookedBy: "Rahul Sharma",
+    flat: "A-101",
   },
   {
     id: 2,
     facilityId: 2,
     facility: "Swimming Pool",
-    date: "2026-07-22",
-    time: "07:00 AM - 08:00 AM",
-    purpose: "Morning Session",
+    date: "18 Jul 2026",
+    time: "05:00 PM - 07:00 PM",
+    purpose: "Family Swimming",
     status: "Pending",
     createdAt: new Date().toISOString(),
     updatedAt: null,
+    bookedBy: "Aisha Khan",
+    flat: "B-203",
   },
 ];
+
+const syncToBookingStore = (bookings) => {
+  const adminBookings = bookings.map((b) => ({
+    id: b.id,
+    bookingId: b.bookingId || `BK-${b.id}`,
+    resident: b.bookedBy || b.resident || "Resident",
+    flat: b.flat || "A-101",
+    facility: b.facility,
+    date: b.date,
+    time: b.time || b.slot,
+    guests: b.guests || 1,
+    amount: b.amount || 200,
+    status: b.status,
+    paymentStatus: b.paymentStatus || (b.status === "Approved" ? "Paid" : "Pending"),
+    description: b.purpose || b.description,
+    createdAt: b.createdAt,
+  }));
+  useBookingStore.setState({ bookings: adminBookings });
+};
 
 const useFacilityStore = create(
   persist(
@@ -93,92 +117,83 @@ const useFacilityStore = create(
       bookings: initialBookings,
 
       addBooking: (booking) =>
-        set((state) => ({
-          bookings: [
+        set((state) => {
+          const newBookings = [
             ...state.bookings,
             {
-              id: crypto.randomUUID(),
+              id: booking.id || crypto.randomUUID(),
               status: "Pending",
-              createdAt:
-                new Date().toISOString(),
+              createdAt: new Date().toISOString(),
               updatedAt: null,
               ...booking,
             },
-          ],
-        })),
+          ];
+          setTimeout(() => syncToBookingStore(newBookings), 0);
+          return { bookings: newBookings };
+        }),
 
-      updateBooking: (
-        id,
-        updatedBooking
-      ) =>
-        set((state) => ({
-          bookings: state.bookings.map(
-            (booking) =>
-              booking.id === id
-                ? {
-                    ...booking,
-                    ...updatedBooking,
-                    updatedAt:
-                      new Date().toISOString(),
-                  }
-                : booking
-          ),
-        })),
+      updateBooking: (id, updatedBooking) =>
+        set((state) => {
+          const newBookings = state.bookings.map((booking) =>
+            booking.id === id
+              ? {
+                  ...booking,
+                  ...updatedBooking,
+                  updatedAt: new Date().toISOString(),
+                }
+              : booking
+          );
+          setTimeout(() => syncToBookingStore(newBookings), 0);
+          return { bookings: newBookings };
+        }),
 
       deleteBooking: (id) =>
-        set((state) => ({
-          bookings:
-            state.bookings.filter(
-              (booking) =>
-                booking.id !== id
-            ),
-        })),
+        set((state) => {
+          const newBookings = state.bookings.filter((booking) => booking.id !== id);
+          setTimeout(() => syncToBookingStore(newBookings), 0);
+          return { bookings: newBookings };
+        }),
 
       approveBooking: (id) =>
-        set((state) => ({
-          bookings: state.bookings.map(
-            (booking) =>
-              booking.id === id
-                ? {
-                    ...booking,
-                    status: "Approved",
-                    updatedAt:
-                      new Date().toISOString(),
-                  }
-                : booking
-          ),
-        })),
+        set((state) => {
+          const newBookings = state.bookings.map((booking) =>
+            booking.id === id
+              ? {
+                  ...booking,
+                  status: "Approved",
+                  updatedAt: new Date().toISOString(),
+                }
+              : booking
+          );
+          setTimeout(() => syncToBookingStore(newBookings), 0);
+          return { bookings: newBookings };
+        }),
 
       rejectBooking: (id) =>
-        set((state) => ({
-          bookings: state.bookings.map(
-            (booking) =>
-              booking.id === id
-                ? {
-                    ...booking,
-                    status: "Rejected",
-                    updatedAt:
-                      new Date().toISOString(),
-                  }
-                : booking
-          ),
-        })),
+        set((state) => {
+          const newBookings = state.bookings.map((booking) =>
+            booking.id === id
+              ? {
+                  ...booking,
+                  status: "Rejected",
+                  updatedAt: new Date().toISOString(),
+                }
+              : booking
+          );
+          setTimeout(() => syncToBookingStore(newBookings), 0);
+          return { bookings: newBookings };
+        }),
 
       getBookingById: (id) =>
-        get().bookings.find(
-          (booking) =>
-            booking.id === id
-        ),
+        get().bookings.find((booking) => booking.id === id),
 
       getFacilityById: (id) =>
-        get().facilities.find(
-          (facility) =>
-            facility.id === id
-        ),
+        get().facilities.find((facility) => facility.id === id),
 
       resetBookings: () =>
-        set({
-          bookings: initialBookings,
+        set(() => {
+          setTimeout(() => syncToBookingStore(initialBookings), 0);
+          return { bookings: initialBookings };
         }),
     }),
     {
