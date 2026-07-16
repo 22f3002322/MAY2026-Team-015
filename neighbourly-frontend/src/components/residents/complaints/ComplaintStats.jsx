@@ -9,13 +9,21 @@ import {
 import Card from "../../ui/Card";
 
 import useComplaintStore from "../../../store/complaintStore";
+import useAuthStore from "../../../store/authStore";
 
 const ComplaintStats = () => {
-  const complaints = useComplaintStore(
+  const allComplaints = useComplaintStore(
     (state) => state.complaints
   );
 
+  const user = useAuthStore((state) => state.user);
+
   const stats = useMemo(() => {
+    // Filter to only show the logged-in resident's complaints
+    const complaints = allComplaints.filter(
+      (c) => c.flat === user?.flat
+    );
+
     const total = complaints.length;
 
     const open = complaints.filter(
@@ -56,7 +64,7 @@ const ComplaintStats = () => {
         color: "bg-emerald-100 text-emerald-600",
       },
     ];
-  }, [complaints]);
+  }, [allComplaints, user]);
 
   return (
     <div className="mb-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">

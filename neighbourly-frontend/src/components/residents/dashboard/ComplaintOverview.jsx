@@ -13,7 +13,7 @@ import Card from "../../ui/Card";
 import Badge from "../../ui/Badge";
 
 import useComplaintStore from "../../../store/complaintStore";
-import useResidentStore from "../../../store/residentStore";
+import useAuthStore from "../../../store/authStore";
 
 const COLORS = [
   "#EF4444",
@@ -27,18 +27,18 @@ const ComplaintOverview = () => {
     (state) => state.complaints
   );
 
-  // Temporary logged-in resident
-  const resident = useResidentStore(
-    (state) => state.residents[0]
+  // Use logged-in user from authStore
+  const user = useAuthStore(
+    (state) => state.user
   );
 
   const myComplaints = useMemo(
     () =>
       complaints.filter(
         (complaint) =>
-          complaint.flat === resident?.flat
+          complaint.flat === user?.flat
       ),
-    [complaints, resident]
+    [complaints, user]
   );
 
   const chartData = useMemo(

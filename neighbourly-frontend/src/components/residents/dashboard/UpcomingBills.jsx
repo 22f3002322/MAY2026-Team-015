@@ -8,12 +8,12 @@ import Badge from "../../ui/Badge";
 import Modal from "../../ui/Modal";
 
 import useBillingStore from "../../../store/billingStore";
-import useResidentStore from "../../../store/residentStore";
+import useAuthStore from "../../../store/authStore";
 
 const UpcomingBills = () => {
   const bills = useBillingStore((state) => state.bills);
   const markPaid = useBillingStore((state) => state.markPaid);
-  const resident = useResidentStore((state) => state.residents[0]);
+  const user = useAuthStore((state) => state.user);
 
   const [payingBill, setPayingBill] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("UPI");
@@ -24,7 +24,7 @@ const UpcomingBills = () => {
       bills
         .filter(
           (bill) =>
-            bill.flat === resident?.flat &&
+            bill.flat === user?.flat &&
             bill.status === "Pending"
         )
         .sort(
@@ -32,7 +32,7 @@ const UpcomingBills = () => {
             new Date(a.dueDate) -
             new Date(b.dueDate)
         ),
-    [bills, resident]
+    [bills, user]
   );
 
   const totalPending = useMemo(

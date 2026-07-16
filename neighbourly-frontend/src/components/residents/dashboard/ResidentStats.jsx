@@ -9,17 +9,14 @@ import { useMemo } from "react";
 
 import Card from "../../ui/Card";
 
-import useResidentStore from "../../../store/residentStore";
+import useAuthStore from "../../../store/authStore";
 import useComplaintStore from "../../../store/complaintStore";
 import useBillingStore from "../../../store/billingStore";
 import useFacilityStore from "../../../store/facilityStore";
 
 const ResidentStats = () => {
-  // TODO:
-  // Replace this with authStore after login is implemented
-  const resident = useResidentStore(
-    (state) => state.residents[0]
-  );
+  // Use logged-in user from authStore
+  const user = useAuthStore((state) => state.user);
 
   const complaints = useComplaintStore(
     (state) => state.complaints
@@ -35,24 +32,24 @@ const ResidentStats = () => {
 
   const stats = useMemo(() => {
     const myComplaints = complaints.filter(
-      (c) => c.flat === resident?.flat
+      (c) => c.flat === user?.flat
     );
 
     const pendingBills = bills.filter(
       (bill) =>
-        bill.flat === resident?.flat &&
+        bill.flat === user?.flat &&
         bill.status === "Pending"
     );
 
     const myBookings = bookings.filter(
-      (booking) => booking.flat === resident?.flat
+      (booking) => booking.flat === user?.flat
     );
 
     return [
       {
         title: "My Apartment",
-        value: resident?.flat || "--",
-        subtitle: resident?.occupancy || "",
+        value: user?.flat || "--",
+        subtitle: user?.occupancy || "",
         icon: Home,
       },
       {
@@ -75,7 +72,7 @@ const ResidentStats = () => {
       },
     ];
   }, [
-    resident,
+    user,
     complaints,
     bills,
     bookings,

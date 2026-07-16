@@ -8,15 +8,15 @@ import Button from "../../ui/Button";
 import VisitorDetails from "../visitors/VisitorDetails"; // Adjust the path if needed
 
 import useVisitorStore from "../../../store/visitorStore";
-import useResidentStore from "../../../store/residentStore";
+import useAuthStore from "../../../store/authStore";
 
 const VisitorOverview = () => {
   const visitors = useVisitorStore(
     (state) => state.visitors
   );
 
-  const resident = useResidentStore(
-    (state) => state.residents[0]
+  const user = useAuthStore(
+    (state) => state.user
   );
 
   const [selectedVisitor, setSelectedVisitor] =
@@ -27,7 +27,7 @@ const VisitorOverview = () => {
       visitors
         .filter(
           (visitor) =>
-            visitor.residentFlat === resident?.flat
+            visitor.residentFlat === user?.flat
         )
         .sort(
           (a, b) =>
@@ -39,7 +39,7 @@ const VisitorOverview = () => {
             )
         )
         .slice(0, 5),
-    [visitors, resident]
+    [visitors, user]
   );
 
   return (

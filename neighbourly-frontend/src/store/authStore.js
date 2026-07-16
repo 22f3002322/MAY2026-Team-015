@@ -24,7 +24,7 @@ const useAuthStore = create(
         // Hardcoded demo resident login (fallback for local storage issues)
         if (email === "william@example.com" && password === "password123") {
           set({
-            user: { name: "William Alexander", email },
+            user: { name: "William Alexander", email, flat: "A-203", block: "A", phone: "+91 9876543210", occupancy: "Owner" },
             role: "resident",
             isAuthenticated: true,
           });

@@ -75,15 +75,20 @@ const Complaints = () => {
 
   const filteredComplaints =
     useMemo(() => {
-      return complaints.filter(
+      return complaints
+        .filter(
+          (complaint) =>
+            complaint.flat === user?.flat
+        )
+        .filter(
         (complaint) => {
           const matchesSearch =
-            complaint.title
+            (complaint.title || "")
               .toLowerCase()
               .includes(
                 search.toLowerCase()
               ) ||
-            complaint.description
+            (complaint.description || "")
               ?.toLowerCase()
               .includes(
                 search.toLowerCase()
@@ -107,6 +112,7 @@ const Complaints = () => {
       );
     }, [
       complaints,
+      user,
       search,
       status,
       category,
