@@ -1,0 +1,67 @@
+export const documents = [
+  {
+    id: 1,
+    documentId: "DOC-1001",
+    title: "Society Bye Laws",
+    category: "Legal",
+    type: "PDF",
+    size: "2.4 MB",
+    uploadedBy: "Admin",
+    uploadDate: "15 Jul 2026",
+    description:
+      "Official society bye laws and regulations.",
+    fileName: "bye-laws.pdf",
+  },
+  {
+    id: 2,
+    documentId: "DOC-1002",
+    title: "Maintenance Invoice",
+    category: "Finance",
+    type: "PDF",
+    size: "850 KB",
+    uploadedBy: "Treasurer",
+    uploadDate: "18 Jul 2026",
+    description:
+      "Monthly maintenance invoice for July.",
+    fileName: "invoice-july.pdf",
+  },
+  {
+    id: 3,
+    documentId: "DOC-1003",
+    title: "Parking Allocation",
+    category: "Parking",
+    type: "Excel",
+    size: "1.2 MB",
+    uploadedBy: "Admin",
+    uploadDate: "20 Jul 2026",
+    description:
+      "Parking slot allocation sheet.",
+    fileName: "parking.xlsx",
+  },
+  {
+    id: 4,
+    documentId: "DOC-1004",
+    title: "Fire Safety Manual",
+    category: "Safety",
+    type: "PDF",
+    size: "3.8 MB",
+    uploadedBy: "Security Head",
+    uploadDate: "22 Jul 2026",
+    description:
+      "Fire evacuation and emergency procedures.",
+    fileName: "fire-manual.pdf",
+  },
+  {
+    id: 5,
+    documentId: "DOC-1005",
+    title: "Clubhouse Rules",
+    category: "General",
+    type: "DOCX",
+    size: "540 KB",
+    uploadedBy: "Admin",
+    uploadDate: "23 Jul 2026",
+    description:
+      "Guidelines for using the clubhouse.",
+    fileName: "clubhouse-rules.docx",
+  },
+];
