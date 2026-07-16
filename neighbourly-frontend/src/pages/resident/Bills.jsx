@@ -5,7 +5,7 @@ import Layout from "../../components/layout/Layout";
 import Card from "../../components/ui/Card";
 
 import BillStats from "../../components/residents/bills/BillStats";
-import BillFilters from "../../components/residents/bills/BillFilters";
+import BillFilters from "../../components/residents/bills/Billfilters"; 
 import BillTable from "../../components/residents/bills/BillTable";
 import BillDetails from "../../components/residents/bills/BillDetails";
 import PaymentModal from "../../components/residents/bills/PaymentModal";
