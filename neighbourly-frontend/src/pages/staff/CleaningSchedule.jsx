@@ -13,8 +13,11 @@ const CleaningSchedule = () => {
 
   const sortedSchedule = useMemo(() => {
     return cleaningTasks.filter((t) => {
-      // Filter housekeeping staff
-      return t.assignedTo === user?.name || t.assignedTo?.toLowerCase() === "geeta" || t.assignedTo?.toLowerCase() === "ramu" || t.assignedTo?.toLowerCase() === "sita" || t.assignedTo?.toLowerCase() === "geeta devi";
+      const staffName = (user?.name || "").toLowerCase();
+      const assignedName = (t.assignedTo || "").toLowerCase();
+      return staffName === assignedName || 
+             (assignedName && staffName.includes(assignedName)) || 
+             (staffName && assignedName.includes(assignedName));
     }).sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
   }, [cleaningTasks, user]);
 

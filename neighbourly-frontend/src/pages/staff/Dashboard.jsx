@@ -31,6 +31,54 @@ const StaffDashboard = () => {
 
   const todayStr = new Date().toISOString().split("T")[0];
 
+  // Helper to dynamically calculate schedule status based on current time
+  const deriveScheduleStatus = (timeRange) => {
+    if (!timeRange) return "upcoming";
+    const parts = timeRange.split("-").map((p) => p.trim());
+    if (parts.length !== 2) return "upcoming";
+
+    const now = new Date();
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
+    const currentMinsTotal = currentHours * 60 + currentMinutes;
+
+    const parseTime = (tStr) => {
+      const isPM = tStr.toUpperCase().includes("PM");
+      const isAM = tStr.toUpperCase().includes("AM");
+      let [h, m] = tStr.replace(/(AM|PM)/gi, "").trim().split(":").map(Number);
+      if (isNaN(h)) h = 0;
+      if (isNaN(m)) m = 0;
+      if (isPM && h < 12) h += 12;
+      if (isAM && h === 12) h = 0;
+      return h * 60 + m;
+    };
+
+    const startMins = parseTime(parts[0]);
+    const endMins = parseTime(parts[1]);
+
+    if (currentMinsTotal < startMins) {
+      return "upcoming";
+    } else if (currentMinsTotal >= startMins && currentMinsTotal <= endMins) {
+      return "active";
+    } else {
+      return "completed";
+    }
+  };
+
+  // Filter and derive status for schedule items assigned to this specific staff member
+  const filteredSchedule = useMemo(() => {
+    const staffName = (user?.name || "").toLowerCase();
+    return schedule
+      .filter((item) => {
+        const assignedName = (item.assignedTo || "").toLowerCase();
+        return !item.assignedTo || assignedName === staffName || staffName.includes(assignedName) || assignedName.includes(staffName);
+      })
+      .map((item) => ({
+        ...item,
+        status: deriveScheduleStatus(item.time),
+      }));
+  }, [schedule, user]);
+
   // Derive stats based on role
   const stats = useMemo(() => {
     if (staffRole === "security") {
@@ -117,11 +165,11 @@ const StaffDashboard = () => {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Schedule */}
           <Card title="Today's Schedule" className="xl:col-span-2">
-            {schedule.length === 0 ? (
+            {filteredSchedule.length === 0 ? (
               <p className="text-sm text-slate-500 dark:text-slate-400 py-4">No tasks scheduled for today.</p>
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {schedule.map((item) => (
+                {filteredSchedule.map((item) => (
                   <div key={item.id} className="flex items-center justify-between py-3.5 first:pt-0 last:pb-0">
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">

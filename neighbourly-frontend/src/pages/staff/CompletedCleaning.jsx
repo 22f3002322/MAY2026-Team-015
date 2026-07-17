@@ -18,7 +18,11 @@ const CompletedCleaning = () => {
 
   const completedTasks = useMemo(() => {
     return cleaningTasks.filter((t) => {
-      const matchesUser = t.assignedTo === user?.name || t.assignedTo?.toLowerCase() === "geeta" || t.assignedTo?.toLowerCase() === "ramu" || t.assignedTo?.toLowerCase() === "sita" || t.assignedTo?.toLowerCase() === "geeta devi";
+      const staffName = (user?.name || "").toLowerCase();
+      const assignedName = (t.assignedTo || "").toLowerCase();
+      const matchesUser = staffName === assignedName || 
+                          (assignedName && staffName.includes(assignedName)) || 
+                          (staffName && assignedName.includes(assignedName));
       if (!matchesUser || t.status !== "Completed") return false;
 
       return (

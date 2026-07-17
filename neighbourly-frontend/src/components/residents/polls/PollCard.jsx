@@ -56,7 +56,7 @@ const PollCard = ({
             "
           >
 
-            {poll.title}
+            {poll.title || poll.question}
 
           </h2>
 
@@ -118,7 +118,7 @@ const PollCard = ({
         "
       >
 
-        {poll.description}
+        {poll.description || ""}
 
       </p>
 
@@ -137,13 +137,13 @@ const PollCard = ({
       >
 
         {
-          poll.options.map(
-            (option)=>(
+          (poll.options || []).map(
+            (option, index)=>(
 
 
               <div
                 key={
-                  option.id
+                  option.id || index
                 }
               >
 
@@ -160,7 +160,7 @@ const PollCard = ({
                     className="font-medium"
                   >
 
-                    {option.text}
+                    {option.text || option.option}
 
                   </span>
 
@@ -169,7 +169,7 @@ const PollCard = ({
                     className="text-slate-500 dark:text-slate-400"
                   >
 
-                    {option.votes}
+                    {option.votes || 0}
 
                   </span>
 
@@ -200,7 +200,7 @@ const PollCard = ({
                       totalVotes
                       ?
                       `${(
-                        option.votes /
+                        (option.votes || 0) /
                         totalVotes
                       ) * 100}%`
                       :
@@ -277,7 +277,7 @@ const PollCard = ({
 
             Ends:
             {" "}
-            {poll.expiryDate}
+            {poll.expiryDate || poll.endDate}
 
           </span>
 

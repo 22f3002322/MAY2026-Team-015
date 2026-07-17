@@ -20,18 +20,23 @@ const BookingForm = ({
   );
 
   const [form, setForm] = useState(
-    initialData || {
-      resident: "",
-      flat: "",
-      facility: "",
-      date: "",
-      slot: "",
-      guests: "",
-      amount: "",
-      status: "Pending",
-      paymentStatus: "Pending",
-      notes: "",
-    }
+    initialData
+      ? {
+          ...initialData,
+          slot: initialData.slot || initialData.time || "",
+        }
+      : {
+          resident: "",
+          flat: "",
+          facility: "",
+          date: "",
+          slot: "",
+          guests: "",
+          amount: "",
+          status: "Pending",
+          paymentStatus: "Pending",
+          notes: "",
+        }
   );
 
   const [errors, setErrors] = useState({});
@@ -124,6 +129,8 @@ const BookingForm = ({
       guests: Number(form.guests),
       amount: Number(form.amount),
       date: formatDate(form.date),
+      slot: form.slot || "",
+      time: form.slot || "",
     };
 
     const isNowApproved = bookingData.status === "Approved" && (!initialData || initialData.status !== "Approved");

@@ -53,7 +53,12 @@ const AssignedComplaints = () => {
   const filteredComplaints = useMemo(() => {
     return complaints.filter((c) => {
       // Filter only complaints assigned to this staff or with match
-      const isAssigned = c.assignedTo === user?.name || c.assignedTo?.toLowerCase() === "maintenance team";
+      const staffName = (user?.name || "").toLowerCase();
+      const assignedName = (c.assignedTo || "").toLowerCase();
+      const isAssigned = assignedName === staffName || 
+                         (assignedName && staffName.includes(assignedName)) || 
+                         (staffName && assignedName.includes(staffName)) ||
+                         (user?.staffRole === "maintenance" && assignedName === "maintenance team");
       const isPendingOrActive = c.status === "Assigned" || c.status === "In Progress";
       if (!isAssigned || !isPendingOrActive) return false;
 

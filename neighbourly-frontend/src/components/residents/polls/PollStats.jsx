@@ -31,7 +31,7 @@ const PollStats = () => {
   const totalVotes =
     polls.reduce(
       (sum, poll) =>
-        sum + poll.totalVotes,
+        sum + (poll.totalVotes || 0),
       0
     );
 

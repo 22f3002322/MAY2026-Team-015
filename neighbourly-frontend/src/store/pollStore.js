@@ -544,24 +544,24 @@ options:
 
 poll.options.map(
 
-(option)=>
+(option)=>{
+    const isMatch = (option.id !== undefined && option.id === optionId) ||
+                    (option.id === undefined && (option.text || option.option) === optionId);
+    return isMatch
+    ?
 
-option.id===optionId
+    {
 
-?
+      ...option,
 
-{
+      votes: (option.votes || 0) + 1,
 
-...option,
+    }
 
-votes:
-option.votes+1,
+    :
 
-}
-
-:
-
-option
+    option;
+  }
 
 
 )
