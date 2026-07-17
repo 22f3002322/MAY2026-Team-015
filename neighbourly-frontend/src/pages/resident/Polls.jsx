@@ -95,7 +95,7 @@ const Polls = () => {
         data =
           data.filter(
             (poll)=>
-              poll.title
+              (poll.title || poll.question || "")
               .toLowerCase()
               .includes(query)
           );

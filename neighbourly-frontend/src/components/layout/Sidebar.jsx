@@ -40,6 +40,7 @@ const adminMenuItems = [
   { title: "Polls", icon: Vote, path: "/admin/polls" },
   { title: "Reports", icon: FileBarChart2, path: "/admin/reports" },
   { title: "Staff", icon: Users, path: "/admin/staff" },
+  { title: "Staff Schedules", icon: Calendar, path: "/admin/staff-schedules" },
   { title: "Settings", icon: Settings, path: "/admin/settings" },
 ];
 

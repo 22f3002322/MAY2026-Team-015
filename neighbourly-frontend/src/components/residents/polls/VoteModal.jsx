@@ -97,7 +97,7 @@ const VoteModal = ({
             "
           >
 
-            {poll.title}
+            {poll.title || poll.question}
 
           </h2>
 
@@ -110,7 +110,7 @@ const VoteModal = ({
             "
           >
 
-            {poll.description}
+            {poll.description || ""}
 
           </p>
 
@@ -132,82 +132,82 @@ const VoteModal = ({
 
 
           {
-            poll.options.map(
-              (option)=>(
+            (poll.options || []).map(
+              (option, index)=>{
+                const optId = option.id !== undefined ? option.id : (option.text || option.option);
+                const optText = option.text || option.option;
+                return (
+                  <label
 
-
-                <label
-
-                  key={
-                    option.id
-                  }
-
-                  className={`
-                  flex
-                  cursor-pointer
-                  items-center
-                  gap-4
-                  rounded-xl
-                  border
-                  p-4
-                  transition
-
-                  ${
-                    selectedOption === option.id
-
-                    ?
-                    "border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30"
-
-                    :
-                    "border-slate-200 dark:border-slate-700 dark:bg-slate-800/50"
-                  }
-
-                  `}
-
-                >
-
-
-                  <input
-
-                    type="radio"
-
-                    name="poll"
-
-                    checked={
-                      selectedOption === option.id
+                    key={
+                      option.id || index
                     }
 
-                    onChange={() =>
-                      setSelectedOption(
-                        option.id
-                      )
+                    className={`
+                    flex
+                    cursor-pointer
+                    items-center
+                    gap-4
+                    rounded-xl
+                    border
+                    p-4
+                    transition
+
+                    ${
+                      selectedOption === optId
+
+                      ?
+                      "border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30"
+
+                      :
+                      "border-slate-200 dark:border-slate-700 dark:bg-slate-800/50"
                     }
 
-                    className="
-                    h-5
-                    w-5
-                    "
-                  />
+                    `}
 
-
-
-                  <span
-                    className="
-                    font-medium
-                    text-slate-700
-                    dark:text-slate-200
-                    "
                   >
 
-                    {option.text}
 
-                  </span>
+                    <input
+
+                      type="radio"
+
+                      name="poll"
+
+                      checked={
+                        selectedOption === optId
+                      }
+
+                      onChange={() =>
+                        setSelectedOption(
+                          optId
+                        )
+                      }
+
+                      className="
+                      h-5
+                      w-5
+                      "
+                    />
 
 
-                </label>
+
+                    <span
+                      className="
+                      font-medium
+                      text-slate-700
+                      dark:text-slate-200
+                      "
+                    >
+
+                      {optText}
+
+                    </span>
 
 
-              )
+                  </label>
+                );
+              }
             )
 
           }

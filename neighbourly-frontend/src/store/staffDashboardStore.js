@@ -39,11 +39,11 @@ const initialCleaningTasks = [
 ];
 
 const initialSchedule = [
-  { id: generateId(), title: "Morning Patrol - A Block", time: "06:00 - 08:00", type: "patrol", status: "completed" },
-  { id: generateId(), title: "Gate Duty - Main Entrance", time: "08:00 - 12:00", type: "gate", status: "active" },
-  { id: generateId(), title: "Visitor Verification Round", time: "12:00 - 13:00", type: "verification", status: "upcoming" },
-  { id: generateId(), title: "Afternoon Patrol - B & C Block", time: "14:00 - 16:00", type: "patrol", status: "upcoming" },
-  { id: generateId(), title: "Evening Gate Duty", time: "16:00 - 20:00", type: "gate", status: "upcoming" },
+  { id: generateId(), title: "Morning Patrol - A Block", time: "06:00 - 08:00", type: "patrol", status: "completed", assignedTo: "Rajesh Kumar" },
+  { id: generateId(), title: "Gate Duty - Main Entrance", time: "08:00 - 12:00", type: "gate", status: "active", assignedTo: "Rajesh Kumar" },
+  { id: generateId(), title: "Visitor Verification Round", time: "12:00 - 13:00", type: "verification", status: "upcoming", assignedTo: "Rajesh Kumar" },
+  { id: generateId(), title: "Afternoon Patrol - B & C Block", time: "14:00 - 16:00", type: "patrol", status: "upcoming", assignedTo: "Rajesh Kumar" },
+  { id: generateId(), title: "Evening Gate Duty", time: "16:00 - 20:00", type: "gate", status: "upcoming", assignedTo: "Rajesh Kumar" },
 ];
 
 const initialNotifications = [
@@ -146,6 +146,16 @@ const useStaffDashboardStore = create(
       deleteEmergencyContact: (id) =>
         set((state) => ({
           emergencyContacts: state.emergencyContacts.filter((c) => c.id !== id),
+        })),
+
+      // Schedule actions
+      addSchedule: (scheduleItem) =>
+        set((state) => ({
+          schedule: [...state.schedule, { ...scheduleItem, id: generateId(), status: "upcoming" }],
+        })),
+      deleteSchedule: (id) =>
+        set((state) => ({
+          schedule: state.schedule.filter((s) => s.id !== id),
         })),
 
       // Reset
