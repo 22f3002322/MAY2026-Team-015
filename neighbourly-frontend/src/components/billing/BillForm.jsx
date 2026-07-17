@@ -140,11 +140,11 @@ const BillForm = ({
     if (initialData) {
       updateBill({
         ...initialData,
-        ...form,
+        ...billData,
       });
     } else {
       addBill({
-        ...form,
+        ...billData,
         billId: `BILL-${Date.now()}`,
         createdAt: new Date().toISOString(),
       });

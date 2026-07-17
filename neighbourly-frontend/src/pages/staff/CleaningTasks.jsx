@@ -74,8 +74,11 @@ const CleaningTasks = () => {
 
   const filteredTasks = useMemo(() => {
     return cleaningTasks.filter((t) => {
-      // Filter tasks assigned to this user or housekeeping general staff
-      const matchesUser = t.assignedTo === user?.name || t.assignedTo?.toLowerCase() === "geeta" || t.assignedTo?.toLowerCase() === "ramu" || t.assignedTo?.toLowerCase() === "sita" || t.assignedTo?.toLowerCase() === "geeta devi";
+      const staffName = (user?.name || "").toLowerCase();
+      const assignedName = (t.assignedTo || "").toLowerCase();
+      const matchesUser = staffName === assignedName || 
+                          (assignedName && staffName.includes(assignedName)) || 
+                          (staffName && assignedName.includes(assignedName));
       if (!matchesUser) return false;
 
       const matchesSearch = 

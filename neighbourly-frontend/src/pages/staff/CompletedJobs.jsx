@@ -19,7 +19,12 @@ const CompletedJobs = () => {
   const filteredJobs = useMemo(() => {
     return complaints.filter((c) => {
       // Filter only jobs resolved or closed by this staff
-      const isAssigned = c.assignedTo === user?.name || c.assignedTo?.toLowerCase() === "maintenance team";
+      const staffName = (user?.name || "").toLowerCase();
+      const assignedName = (c.assignedTo || "").toLowerCase();
+      const isAssigned = assignedName === staffName || 
+                         (assignedName && staffName.includes(assignedName)) || 
+                         (staffName && assignedName.includes(staffName)) ||
+                         (user?.staffRole === "maintenance" && assignedName === "maintenance team");
       const isResolved = c.status === "Resolved" || c.status === "Closed";
       if (!isAssigned || !isResolved) return false;
 

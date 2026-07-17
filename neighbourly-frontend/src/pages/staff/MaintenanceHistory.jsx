@@ -20,7 +20,12 @@ const MaintenanceHistory = () => {
   const filteredHistory = useMemo(() => {
     return complaints.filter((c) => {
       // Filter history assigned to this maintenance operator
-      const isAssigned = c.assignedTo === user?.name || c.assignedTo?.toLowerCase() === "maintenance team";
+      const staffName = (user?.name || "").toLowerCase();
+      const assignedName = (c.assignedTo || "").toLowerCase();
+      const isAssigned = assignedName === staffName || 
+                         (assignedName && staffName.includes(assignedName)) || 
+                         (staffName && assignedName.includes(staffName)) ||
+                         (user?.staffRole === "maintenance" && assignedName === "maintenance team");
       if (!isAssigned) return false;
 
       const matchesSearch = 

@@ -26,10 +26,10 @@ const PollResults = ({
 
 
   const winner =
-    poll.options.reduce(
+    (poll.options || []).reduce(
       (prev,current)=>
-        prev.votes >
-        current.votes
+        (prev.votes || 0) >
+        (current.votes || 0)
         ? prev
         : current
     );
@@ -69,7 +69,7 @@ const PollResults = ({
             "
           >
 
-            {poll.title}
+            {poll.title || poll.question}
 
           </h2>
 
@@ -81,7 +81,7 @@ const PollResults = ({
             "
           >
 
-            {poll.description}
+            {poll.description || ""}
 
           </p>
 
@@ -202,7 +202,7 @@ const PollResults = ({
                   "
                 >
 
-                  {winner.text}
+                  {winner.text || winner.option}
 
                 </h3>
 
@@ -233,13 +233,13 @@ const PollResults = ({
 
 
           {
-            poll.options.map(
-              (option)=>(
+            (poll.options || []).map(
+              (option, index)=>(
 
 
                 <div
                   key={
-                    option.id
+                    option.id || index
                   }
                 >
 
@@ -259,7 +259,7 @@ const PollResults = ({
                       "
                     >
 
-                      {option.text}
+                      {option.text || option.option}
 
                     </span>
 
@@ -271,7 +271,7 @@ const PollResults = ({
                       "
                     >
 
-                      {option.votes}
+                      {option.votes || 0}
                       {" "}
                       votes
 

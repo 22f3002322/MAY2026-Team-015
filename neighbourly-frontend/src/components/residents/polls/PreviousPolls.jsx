@@ -132,7 +132,7 @@ const PreviousPolls = ({
                       "
                     >
 
-                      {poll.title}
+                      {poll.title || poll.question}
 
                     </h2>
 
@@ -171,7 +171,7 @@ const PreviousPolls = ({
 
                       <CalendarDays size={16}/>
 
-                      {poll.expiryDate}
+                      {poll.expiryDate || poll.endDate}
 
                     </span>
 
@@ -257,13 +257,24 @@ const PreviousPolls = ({
                               prev,
                               current
                             ) =>
-                              prev.votes >
-                              current.votes
+                              (prev.votes || 0) >
+                              (current.votes || 0)
                               ?
                               prev
                               :
                               current
-                          ).text
+                          ).text || poll.options.reduce(
+                            (
+                              prev,
+                              current
+                            ) =>
+                              (prev.votes || 0) >
+                              (current.votes || 0)
+                              ?
+                              prev
+                              :
+                              current
+                          ).option
                         }
 
                       </p>

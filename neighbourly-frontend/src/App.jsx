@@ -18,6 +18,7 @@ import AdminPolls from "./pages/admin/Polls";
 import AdminSettings from "./pages/admin/Settings";
 import AdminReports from "./pages/admin/Reports";
 import AdminStaff from "./pages/admin/Staff";
+import StaffSchedules from "./pages/admin/StaffSchedules";
 
 // Resident Pages
 import ResidentDashboard from "./pages/resident/Dashboard";
@@ -75,6 +76,7 @@ function App() {
       <Route path="/admin/settings" element={<RoleRoute requiredRole="admin"><AdminSettings /></RoleRoute>} />
       <Route path="/admin/reports" element={<RoleRoute requiredRole="admin"><AdminReports /></RoleRoute>} />
       <Route path="/admin/staff" element={<RoleRoute requiredRole="admin"><AdminStaff /></RoleRoute>} />
+      <Route path="/admin/staff-schedules" element={<RoleRoute requiredRole="admin"><StaffSchedules /></RoleRoute>} />
 
       {/* Resident Routes */}
       <Route path="/resident/dashboard" element={<RoleRoute requiredRole="resident"><ResidentDashboard /></RoleRoute>} />
