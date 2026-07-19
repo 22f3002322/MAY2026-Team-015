@@ -318,22 +318,22 @@ const Dashboard = () => {
         <QuickActions
           onRaiseComplaint={() =>
             navigate(
-              "/complaints"
+              "/admin/complaints"
             )
           }
           onAddResident={() =>
             navigate(
-              "/residents"
+              "/admin/residents"
             )
           }
           onRegisterVisitor={() =>
             navigate(
-              "/visitors"
+              "/admin/visitors"
             )
           }
           onBookFacility={() =>
             navigate(
-              "/facilities"
+              "/admin/bookings"
             )
           }
         />
