@@ -6,7 +6,7 @@ Neighbourly is a role-based apartment management platform that simplifies commun
 
 ## Live Demo
 
-Frontend deployment: [https://may-2026-team-015-dwgj-git-main-safwan-humayuns-projects.vercel.app/](https://may-2026-team-015-dwgj-git-main-safwan-humayuns-projects.vercel.app/)
+Frontend deployment: [https://may-2026-team-015-dwgj-git-main-safwan-humayuns-projects.vercel.app/](https://may-2026-team-015-dwgj.vercel.app/)
 
 ## Table of Contents
 
@@ -43,10 +43,10 @@ For frontend-focused setup details, see [frontend/README.md](frontend/README.md)
 
 | Name           | Roll Number | Role                              |
 | -------------- | ----------- | --------------------------------- |
-| YASH KARSH     | 22f3002322  | Project Architect                 |
+| Yash Karsh     | 22f3002322  | Project Architect                 |
 | Juhi Parekh    | 23f2005473  | Scrum Master                      |
-| SAFWAN HUMAYUN | 24f1001022  | Frontend Developer                |
-| SANIYA NAAZ    | 23f2002592  | Backend Developer                 |
+| Safwan Humayun | 24f1001022  | Frontend Developer                |
+| Saniya Naaz    | 23f2002592  | Backend Developer                 |
 | Saumya Sarkar  | 21f3001551  | Backend Developer/Software Tester |
 
 
