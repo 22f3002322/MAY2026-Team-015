@@ -6,7 +6,7 @@ Neighbourly is a role-based apartment management platform that simplifies commun
 
 ## Live Demo
 
-Frontend deployment: [https://may-2026-team-015-dwgj-git-main-safwan-humayuns-projects.vercel.app/](https://may-2026-team-015-dwgj.vercel.app/)
+Frontend deployment: [https://may-2026-team-015.vercel.app/]
 
 ## Table of Contents
 
