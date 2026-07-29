@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -15,7 +17,8 @@ from app.schemas.auth_schema import (
     RefreshRequest,
     ResetPasswordRequest,
     SignupRequest,
-    SignupResponse
+    SignupResponse,
+    VerifyUserRequest
 )
 from app.schemas.user_schema import MaintenanceProfileOut, MeResponse, ResidentProfileOut, SecurityProfileOut
 from app.services import auth_service
@@ -154,6 +157,18 @@ def pending_verifications(committee: User = Depends(require_committee), db: Sess
 
 
 @router.post("/verify/{user_id}")
-def verify(user_id: int, committee: User = Depends(require_committee), db: Session = Depends(get_db)):
-    user = auth_service.verify_user(db, user_id)
+def verify(
+    user_id: int,
+    payload: Optional[VerifyUserRequest] = None,
+    _committee: User = Depends(require_committee),
+    db: Session = Depends(get_db),
+):
+    """Verifies the account. If the user is a Resident who selected a
+    flat at signup, this is also the moment they're officially moved in
+    (occupancy_history row created, flat flipped to occupied) --
+    optionally pass {"occupancy_type": "Owner"|"Rental"} in the body;
+    defaults to "Owner" if omitted. Ignored for Maintenance/Security or a
+    Resident with no flat_id set."""
+    occupancy_type = payload.occupancy_type if payload else None
+    user = auth_service.verify_user(db, user_id, occupancy_type=occupancy_type)
     return success_response(data=_to_me_response(user), message="User verified successfully.")

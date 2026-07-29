@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import require_resident
-from app.models.resident_profile import ResidentProfile
+from app.models.apartment import ResidentProfile
 from app.models.auth import User
 from app.schemas.user_schema import ResidentProfileOut
 from app.services import profile_service

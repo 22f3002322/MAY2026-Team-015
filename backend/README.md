@@ -67,10 +67,13 @@ is used only for *workflow* framing, not table structure.
 
 - `roles` — role_id, role_name
 - `users` — user_id, role_id, full_name, phone, email, password_hash, is_active, is_verified, last_login, created_at, updated_at
+- `blocks` — block_id, block_name, total_flats *(Module 2)*
+- `flats` — flat_id, block_id, flat_number, floor_number, flat_type, occupancy_status *(Module 2, derived status)*
 - `resident_profiles` — resident_id, user_id, flat_id, emergency_contact, alternate_phone, occupation, profile_image, created_at, updated_at
+- `occupancy_history` — occupancy_id, resident_id, flat_id, occupancy_type, move_in_date, move_out_date, is_current, created_at, updated_at *(Module 2)*
 - `maintenance_staff` — staff_id, user_id, specialization, experience_years, is_available, created_at, updated_at
 - `security_guards` — guard_id, user_id, gate_assigned, shift, created_at, updated_at
-- `refresh_tokens` — token_id, user_id, token_hash, issued_at, expires_at, revoked, revoked_at, replaced_by_token_id *(new this round)*
+- `refresh_tokens` — token_id, user_id, token_hash, issued_at, expires_at, revoked, revoked_at, replaced_by_token_id
 
 full_name / phone / is_active / is_verified / last_login all live on
 `users` per `user.py` — not duplicated onto the profile tables.
@@ -204,7 +207,92 @@ in-memory stand-ins for Postgres/Redis before delivery, not kept in the
 repo. Please still run your own end-to-end pass (`uvicorn` + real
 Postgres/Redis) before treating this as production-ready.
 
+## Module 2 — User & Apartment Management
+
+Covers component design doc section 1.2 in full: blocks, flats, resident
+directory, resident profile edits by staff, and move-in/move-out
+occupancy tracking. `blocks`, `flats`, and `occupancy_history` were
+already in `er-dbml.txt` (Module 1 called this out as what
+`resident_profiles.flat_id` was waiting on) -- this module is what
+actually populates and maintains them.
+
+### The flat-selection workflow (revised from the original plan)
+
+Originally I had signup accept no `flat_id` at all, forcing every
+assignment through an Admin/Committee-driven move-in after the fact.
+Revised per your direction to a more realistic flow instead:
+
+1. **Committee registers the building structure first** --
+   `POST /api/v1/blocks`, `POST /api/v1/flats` (Admin/Committee only).
+2. **A resident picks their flat at signup.** The signup form lets them
+   type a flat number; the frontend resolves it to a `flat_id` by
+   calling `GET /api/v1/flats?block_id=..&flat_number=..` -- **this
+   endpoint (and `GET /api/v1/blocks`) is deliberately public**, since a
+   not-yet-registered user has no token yet. Only structural data is
+   returned there (flat number/floor/type/status) -- no resident names,
+   so nothing sensitive leaks. `POST /api/v1/auth/signup` then stores
+   that `flat_id` on `resident_profiles` immediately, but backend
+   re-validates it's a real flat (`NotFound` if not) -- never trust the
+   frontend's check alone. At this point it's still just a *request*:
+   no `occupancy_history` row exists yet, and the flat's
+   `occupancy_status` hasn't changed.
+3. **Verification IS the move-in.** When a Committee member calls
+   `POST /api/v1/auth/verify/{user_id}`, if that user is a Resident who
+   picked a `flat_id` at signup, this is now the moment
+   `apartment_service.move_in()` actually runs: it creates the
+   `occupancy_history` row (`move_in_date` = the moment of verification,
+   not signup) and flips the flat to `occupied`. Optionally pass
+   `{"occupancy_type": "Owner"|"Rental"}` in the verify request body;
+   defaults to `"Owner"` if omitted. Re-verifying (or verifying someone
+   an Admin already moved in manually beforehand) is a safe no-op, not a
+   duplicate move-in.
+4. **After that**, an Admin/Committee can still transfer or move a
+   resident out at any time via the dedicated endpoints below --
+   `resident_profiles.flat_id` is otherwise treated as read-only outside
+   of `apartment_service.move_in()`/`move_out()`.
+
+A flat can hold more than one current resident (family members) --
+`occupancy_status` is derived as "occupied" iff *any* resident has a
+current (`is_current=True`) `occupancy_history` row for that flat, not
+tied to a single occupant.
+
+### New endpoints
+
+**Blocks** (`/api/v1/blocks`)
+- `POST /` (Admin/Committee) -- create
+- `GET /`, `GET /{block_id}` (public) -- list/detail, incl. computed `flat_count`
+- `PATCH /{block_id}` (Admin/Committee) -- rename / resize; refuses to
+  shrink `total_flats` below the number of flats already registered
+- `DELETE /{block_id}` (Admin/Committee) -- refuses if it still has flats
+
+**Flats** (`/api/v1/flats`)
+- `POST /` (Admin/Committee) -- create; refuses if the block is already
+  at its `total_flats` allotment, or the flat_number is already taken in
+  that block
+- `GET /` (public, filters: `block_id`, `flat_number`, `occupancy_status`)
+- `GET /{flat_id}` (authenticated, any role) -- includes
+  `current_residents` (names/phone/email), which is why this one isn't
+  public
+- `PATCH /{flat_id}` (Admin/Committee) -- `occupancy_status` isn't
+  editable here, it's derived
+
+**Residents** (`/api/v1/residents`, Admin/Committee -- distinct from
+`/api/v1/residents/me/...` in Module 1, which is a Resident managing
+their own profile picture)
+- `GET /` -- directory (filters: `block_id`, `flat_id`)
+- `GET /{resident_id}` -- single resident's full profile + flat/block
+- `PATCH /{resident_id}` -- edit `emergency_contact`/`alternate_phone`/
+  `occupation` (not `flat_id` -- that's move-in/move-out only)
+- `POST /{resident_id}/move-in` -- assign/transfer to a flat
+  (`{flat_id, occupancy_type, move_in_date?}`); auto-closes any existing
+  current occupancy as a transfer rather than erroring
+- `POST /{resident_id}/move-out` -- close out their current occupancy
+  (`{move_out_date?}`)
+- `GET /{resident_id}/occupancy-history` -- full move-in/move-out history
+
 ## Next module
 
-Module 2 — Apartment & Resident Management (`blocks`, `flats`,
-`occupancy_history`) is what `resident_profiles.flat_id` is waiting on.
+Module 3 — Complaint Management (component design doc section 1.3):
+`complaint_categories`, `complaints`, `complaint_images`,
+`complaint_assignments`, `maintenance_tasks`, `complaint_comments` are
+all already in `er-dbml.txt`, waiting on this module.
