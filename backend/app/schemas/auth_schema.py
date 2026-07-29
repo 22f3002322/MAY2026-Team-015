@@ -61,6 +61,15 @@ class CreateCommitteeResponse(BaseModel):
 # matching `role` is used.
 # --------------------------------------------------------------------------
 class ResidentProfileIn(BaseModel):
+    # The resident picks an existing flat at signup (frontend resolves a
+    # flat_number the resident types into a flat_id via
+    # GET /api/v1/flats?flat_number=..., which is public precisely so a
+    # not-yet-authenticated signup flow can call it). Backend still
+    # validates flat_id refers to a real flat -- see
+    # auth_service.signup_user. This is only a "requested" flat until a
+    # Committee member verifies the account: that's what actually creates
+    # the occupancy_history row and flips the flat to occupied -- see
+    # auth_service.verify_user / app/services/apartment_service.move_in.
     flat_id: Optional[int] = None
     emergency_contact: Optional[str] = None
     alternate_phone: Optional[str] = None
@@ -106,6 +115,16 @@ class SignupResponse(BaseModel):
 # --------------------------------------------------------------------------
 # Committee verification workflow
 # --------------------------------------------------------------------------
+class VerifyUserRequest(BaseModel):
+    # Only meaningful when verifying a Resident who selected a flat_id at
+    # signup -- that's the moment it becomes an official move-in (see
+    # auth_service.verify_user). Defaults to "Owner" if omitted; pass
+    # "Rental" explicitly when that's the actual arrangement. Ignored
+    # entirely for Maintenance/Security verification or a Resident with
+    # no flat_id set.
+    occupancy_type: Optional[str] = Field(default=None, pattern="^(Owner|Rental)$")
+
+
 class PendingUserOut(BaseModel):
     user_id: int
     full_name: Optional[str] = None
