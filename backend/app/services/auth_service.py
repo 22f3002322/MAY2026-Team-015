@@ -43,7 +43,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.staff import MaintenanceStaff, SecurityGuard
 from app.models.mixins import ist_now
-from app.models.resident_profile import ResidentProfile
+from app.models.apartment import OccupancyHistory, ResidentProfile
 from app.models.auth import Role, RoleEnum, User, RefreshToken
 from app.schemas.auth_schema import (
     CreateCommitteeRequest,
@@ -52,6 +52,7 @@ from app.schemas.auth_schema import (
     SecurityProfileIn,
     SignupRequest,
 )
+from app.services import apartment_service
 from app.utils.api_error import (
     BadRequest,
     Conflict,
@@ -67,6 +68,12 @@ from app.utils.security import create_access_token, generate_opaque_token, hash_
 logger = logging.getLogger("neighbourly.auth")
 
 SELF_REGISTERABLE_ROLES = {RoleEnum.RESIDENT, RoleEnum.MAINTENANCE, RoleEnum.SECURITY}
+
+# Applied at verification time if a Committee member doesn't specify
+# otherwise -- see verify_user(). Most self-registered residents in a
+# typical building are owners, so this keeps the common case a one-click
+# verification while still allowing an explicit override for tenants.
+DEFAULT_OCCUPANCY_TYPE = "Owner"
 
 REFRESH_TOKEN_TTL = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 RESET_TTL_SECONDS = settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES * 60
@@ -110,6 +117,10 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
 # --------------------------------------------------------------------------
 # Token issuance / rotation / revocation (refresh tokens -> Postgres)
 # --------------------------------------------------------------------------
+def _resolve_flat_id(user: User) -> int | None:
+    if user.role.role_name == RoleEnum.RESIDENT and user.resident_profile:
+        return user.resident_profile.flat_id
+    return None
 
 
 def access_token_payload(user: User) -> dict:
@@ -244,6 +255,8 @@ def signup_user(db: Session, payload: SignupRequest) -> User:
 
     if role_enum == RoleEnum.RESIDENT:
         p = payload.resident_profile or ResidentProfileIn()
+        if p.flat_id is not None:
+            apartment_service.get_flat(db, p.flat_id)  # raises NotFound if it doesn't exist
         db.add(
             ResidentProfile(
                 user_id=user.user_id,
@@ -297,7 +310,7 @@ def list_pending_verifications(db: Session) -> list[User]:
     )
 
 
-def verify_user(db: Session, user_id: int) -> User:
+def verify_user(db: Session, user_id: int, occupancy_type: str | None = None) -> User:
     user = get_user_by_id(db, user_id)
     if user is None:
         raise NotFound("User not found.")
@@ -305,9 +318,40 @@ def verify_user(db: Session, user_id: int) -> User:
     if user.role.role_name not in SELF_REGISTERABLE_ROLES:
         raise BadRequest("This role does not go through verification.")
 
+    # If this Resident selected a flat at signup (resident_profiles.flat_id
+    # was set then, but no occupancy_history row exists yet -- see
+    # signup_user), this is the moment that request becomes official:
+    # verification IS the move-in, dated to right now. Guarded by
+    # `already_current` so re-verifying (or verifying someone an Admin
+    # already moved in manually beforehand) is a harmless no-op rather
+    # than a duplicate/conflicting move-in.
+    needs_move_in = False
+    profile = user.resident_profile
+    if user.role.role_name == RoleEnum.RESIDENT and profile is not None and profile.flat_id is not None:
+        already_current = (
+            db.query(OccupancyHistory)
+            .filter(
+                OccupancyHistory.resident_id == profile.resident_id,
+                OccupancyHistory.is_current.is_(True),
+            )
+            .first()
+        )
+        needs_move_in = already_current is None
+
     user.is_verified = True
     db.commit()
     db.refresh(user)
+
+    if needs_move_in:
+        apartment_service.move_in(
+            db,
+            profile.resident_id,
+            profile.flat_id,
+            occupancy_type or DEFAULT_OCCUPANCY_TYPE,
+            ist_now().date(),
+        )
+        db.refresh(user)
+
     return user
 
 

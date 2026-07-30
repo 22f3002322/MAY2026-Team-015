@@ -26,7 +26,7 @@ import uuid
 from fastapi import UploadFile
 
 from app.core.config import settings
-from app.models.resident_profile import ResidentProfile
+from app.models.apartment import ResidentProfile
 from app.utils.api_error import BadRequest
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
