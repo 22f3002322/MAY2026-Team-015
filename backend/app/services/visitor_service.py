@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.visitor import Visitor, VisitorRequest, VisitorLog
 from app.models.staff import SecurityGuard
 from app.models.apartment import ResidentProfile
-from app.schemas.visitor import (
+from backend.app.schemas.visitor_schema import (
     VisitorCreate,
     VisitorRequestCreate,
     VisitorRequestOut,

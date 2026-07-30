@@ -6,6 +6,7 @@ from app.core.database import get_db
 from app.models.auth import User, RoleEnum
 from app.utils.api_error import Deactivated, NotAuthenticated, NotAuthorized
 from app.utils.security import verify_access_token
+from app.models.apartment import ResidentProfile
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/api/v1/auth/login"
@@ -55,6 +56,21 @@ def require_roles(*roles):
         return current_user
 
     return checker
+
+
+def get_resident_profile(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ResidentProfile:
+    profile = (
+        db.query(ResidentProfile)
+        .filter(ResidentProfile.user_id == user.user_id)
+        .first()
+    )
+    if not profile:
+        raise NotAuthorized("No resident profile linked to this account")
+
+    return profile
 
 require_admin = require_roles(RoleEnum.ADMIN.value)
 

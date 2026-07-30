@@ -6,12 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_admin, require_resident, require_security
-from app.deps import get_resident_profile
+from app.core.dependencies import get_resident_profile
 from app.models.auth import User
 from app.models.apartment import ResidentProfile
 from app.models.visitor import Visitor
 from app.services import visitor_service
-from app.schemas.visitor import (
+from backend.app.schemas.visitor_schema import (
     VisitorOut,
     VisitorRequestCreate,
     VisitorRequestOut,
@@ -41,7 +41,7 @@ async def pre_register_visitor(
         await db.flush()
     visitor_id = visitor.visitor_id
 
-    from app.schemas.visitor import VisitorRequestCreate
+    from backend.app.schemas.visitor_schema import VisitorRequestCreate
     payload = VisitorRequestCreate(
         resident_id=profile.resident_id,
         visitor_id=visitor_id,

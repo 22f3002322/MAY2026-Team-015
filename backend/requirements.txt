@@ -6,3 +6,5 @@ PyJWT
 redis
 python-multipart
 tzdata
+pytest
+pytest-asyncio

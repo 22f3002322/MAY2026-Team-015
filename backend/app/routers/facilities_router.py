@@ -3,12 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_admin, require_committee, require_resident
-from app.deps import get_resident_profile
+from app.core.dependencies import get_resident_profile
 from app.models.auth import User
 from app.models.apartment import ResidentProfile
-from app.models.role import RoleEnum
+from app.models.auth import RoleEnum
 from app.services import booking_service
-from app.schemas.facility import (
+from app.schemas.facility_schema import (
     FacilityCreate,
     FacilityOut,
     FacilityUpdate,
@@ -53,7 +53,7 @@ router_bookings = APIRouter(prefix="/api/v1/facility-bookings", tags=["facility-
 async def create_booking(payload: FacilityBookingCreate, current_user: User = Depends(require_resident), profile: ResidentProfile = Depends(get_resident_profile), db: AsyncSession = Depends(get_db)):
     payload_dict = payload.model_dump()
     payload_dict["resident_id"] = profile.resident_id
-    from app.schemas.facility import FacilityBookingCreate
+    from app.schemas.facility_schema import FacilityBookingCreate
     new_payload = FacilityBookingCreate(**payload_dict)
     return await booking_service.create_booking(db, new_payload)
 
