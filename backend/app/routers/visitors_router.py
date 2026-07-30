@@ -11,7 +11,7 @@ from app.models.auth import User
 from app.models.apartment import ResidentProfile
 from app.models.visitor import Visitor
 from app.services import visitor_service
-from backend.app.schemas.visitor_schema import (
+from app.schemas.visitor_schema import (
     VisitorOut,
     VisitorRequestCreate,
     VisitorRequestOut,

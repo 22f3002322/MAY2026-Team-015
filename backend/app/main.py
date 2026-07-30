@@ -13,6 +13,9 @@ from app.routers import auth_router
 from app.routers import blocks_router
 from app.routers import flats_router
 from app.routers import profile_router
+from app.routers import complaint_router
+from app.routers import facilities_router
+from app.routers import visitors_router
 from app.utils.api_error import AppError
 from app.utils.api_response import success_response
 
@@ -83,6 +86,9 @@ def create_app() -> FastAPI:
     app.include_router(profile_router.router)
     app.include_router(blocks_router.router)
     app.include_router(flats_router.router)
+    app.include_router(complaint_router.router)
+    app.include_router(facilities_router.router)
+    app.include_router(visitors_router.router)
 
     # Serve uploaded media (resident profile pictures, etc.) statically.
     os.makedirs(settings.MEDIA_ROOT, exist_ok=True)

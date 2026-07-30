@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.facility import Facility, FacilityBooking
 from app.models.apartment import ResidentProfile
-from backend.app.schemas.facility_schema import FacilityCreate, FacilityUpdate, FacilityBookingCreate, FacilityBookingUpdate
+from app.schemas.facility_schema import FacilityCreate, FacilityUpdate, FacilityBookingCreate, FacilityBookingUpdate
 
 
 async def create_facility(db: AsyncSession, payload: FacilityCreate) -> Facility:
