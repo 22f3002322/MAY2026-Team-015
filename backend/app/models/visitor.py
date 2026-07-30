@@ -1,10 +1,12 @@
-from sqlalchemy import Column, Integer, String, Boolean, Date, Time, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Boolean, Date, Time, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
+from app.models.mixins import TimestampMixin
+from app.models.mixins import ist_now
 
 
-class Visitor(Base):
+class Visitor(Base, TimestampMixin):
     __tablename__ = "visitors"
 
     visitor_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -16,7 +18,7 @@ class Visitor(Base):
     logs = relationship("VisitorLog", back_populates="visitor", cascade="all, delete-orphan")
 
 
-class VisitorRequest(Base):
+class VisitorRequest(Base, TimestampMixin):
     __tablename__ = "visitor_requests"
 
     request_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -27,7 +29,7 @@ class VisitorRequest(Base):
     status = Column(String, default="expected")
     approved_at = Column(DateTime)
     otp = Column(String)
-    created_at = Column(DateTime, server_default=func.now())
+
 
     resident = relationship("ResidentProfile", back_populates="visitor_requests")
     visitor = relationship("Visitor", back_populates="requests")
@@ -45,7 +47,7 @@ class VisitorLog(Base):
     otp_verified = Column(Boolean, default=False)
     entry_time = Column(DateTime)
     exit_time = Column(DateTime)
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, server_default=ist_now)
 
     visitor = relationship("Visitor", back_populates="logs")
     resident = relationship("ResidentProfile")

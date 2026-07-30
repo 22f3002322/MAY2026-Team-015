@@ -1,10 +1,11 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, Date, Time, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Text, Boolean, Date, Time, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
+from app.models.mixins import TimestampMixin
 
 
-class Facility(Base):
+class Facility(Base, TimestampMixin):
     __tablename__ = "facilities"
 
     facility_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -20,7 +21,7 @@ class Facility(Base):
     bookings = relationship("FacilityBooking", back_populates="facility", cascade="all, delete-orphan")
 
 
-class FacilityBooking(Base):
+class FacilityBooking(Base, TimestampMixin):
     __tablename__ = "facility_bookings"
 
     booking_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -33,8 +34,6 @@ class FacilityBooking(Base):
     approved_at = Column(DateTime)
     cancelled_by = Column(Integer, ForeignKey("users.user_id"))
     cancelled_at = Column(DateTime)
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, onupdate=func.now())
 
     facility = relationship("Facility", back_populates="bookings")
     resident = relationship("ResidentProfile", back_populates="bookings")

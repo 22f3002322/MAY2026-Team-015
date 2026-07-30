@@ -8,8 +8,9 @@ from sqlalchemy import select
 
 from app.models.visitor import Visitor, VisitorRequest, VisitorLog
 from app.models.staff import SecurityGuard
-from app.models.role import RoleEnum
+from app.models.auth import RoleEnum
 from tests.conftest import create_test_user, create_test_resident
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class TestVisitors:

@@ -8,10 +8,11 @@ from sqlalchemy import select
 
 from app.models.facility import Facility, FacilityBooking
 from app.models.apartment import Flat, ResidentProfile, Block
-from app.models.role import RoleEnum
+from app.models.auth import RoleEnum
 from app.models.auth import User, Role
 from app.models.staff import MaintenanceStaff
 from tests.conftest import create_test_resident, create_test_user
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class TestFacilityCRUD:
