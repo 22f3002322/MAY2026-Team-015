@@ -94,8 +94,15 @@ class ResidentProfile(Base, TimestampMixin):
     profile_image = Column(String(255), nullable=True)
 
     user = relationship("User", back_populates="resident_profile")
-    flat = relationship("Flat", back_populates="residents")
+    flat = relationship("Flat", back_populates="resident_profiles")
     occupancy_history = relationship("OccupancyHistory", back_populates="resident")
+
+    visitor_requests = relationship("VisitorRequest", back_populates="resident")
+    past_visitors = relationship("VisitorLog", back_populates="resident")
+
+    bookings = relationship("FacilityBooking", back_populates="resident")
+
+    complaints = relationship("Complaint", back_populates="resident")
 
 
 
@@ -121,4 +128,4 @@ class OccupancyHistory(Base, TimestampMixin):
     is_current = Column(Boolean, nullable=False, default=True)
 
     resident = relationship("ResidentProfile", back_populates="occupancy_history")
-    flat = relationship("Flat", back_populates="occupancy_records")
+    flat = relationship("Flat", back_populates="occupancy_history")

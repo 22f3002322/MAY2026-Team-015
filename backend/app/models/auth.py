@@ -61,6 +61,7 @@ class User(Base, TimestampMixin):
         cascade="all, delete-orphan",
         foreign_keys="RefreshToken.user_id",
     )
+    complaint_comments = relationship("ComplaintComment", back_populates="user")
 
 
 class RefreshToken(Base):
