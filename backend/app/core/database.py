@@ -8,12 +8,13 @@ from app.core.config import settings
 # SQLAlchemy Engine
 engine = create_engine(
     settings.DATABASE_URL,
-    echo = True,           # Logs all executed SQL queries to standard output (great for debugging)
+    echo = False,          # Logs all executed SQL queries to standard output (great for debugging)
     pool_size = 10,        # Number of connections to keep open in the pool
     max_overflow = 20,     # Extra connections allowed beyond pool_size under heavy load
     pool_recycle = 3600,   # Recycles connections after 1 hour (prevents stale connections)
     pool_pre_ping = True   # Checks if connections are alive before using them, preventing errors from stale connections
 )
+#  echo = True - Logs all executed SQL queries to standard output (great for debugging)
 
 
 # Session Factory

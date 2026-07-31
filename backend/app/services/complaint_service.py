@@ -1,10 +1,10 @@
-from datetime import datetime
 from typing import Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+from app.models.mixins import ist_now
+from sqlalchemy.orm import Session
 
 from app.models.complaint import (
     Complaint,
@@ -34,7 +34,7 @@ VALID_TRANSITIONS = {
 }
 
 
-async def create_complaint(db: AsyncSession, payload: ComplaintCreate, resident_id: int) -> Complaint:
+def create_complaint(db: Session, payload: ComplaintCreate, resident_id: int) -> Complaint:
     complaint = Complaint(
         resident_id=resident_id,
         category_id=payload.category_id,
@@ -43,13 +43,13 @@ async def create_complaint(db: AsyncSession, payload: ComplaintCreate, resident_
         status=payload.status,
     )
     db.add(complaint)
-    await db.flush()
+    db.flush()
 
     for url in payload.image_urls or []:
         db.add(ComplaintImage(complaint_id=complaint.complaint_id, url=url))
 
-    await db.commit()
-    result = await db.execute(
+    db.commit()
+    result = db.execute(
         select(Complaint)
         .where(Complaint.complaint_id == complaint.complaint_id)
         .options(
@@ -62,7 +62,7 @@ async def create_complaint(db: AsyncSession, payload: ComplaintCreate, resident_
     return result.scalar_one()
 
 
-async def list_complaints(db: AsyncSession, resident_id: Optional[int] = None) -> list[Complaint]:
+def list_complaints(db: Session, resident_id: Optional[int] = None) -> list[Complaint]:
     stmt = select(Complaint).options(
         selectinload(Complaint.images),
         selectinload(Complaint.assignments),
@@ -71,12 +71,12 @@ async def list_complaints(db: AsyncSession, resident_id: Optional[int] = None) -
     )
     if resident_id is not None:
         stmt = stmt.where(Complaint.resident_id == resident_id)
-    result = await db.execute(stmt.order_by(Complaint.created_at.desc()))
+    result = db.execute(stmt.order_by(Complaint.created_at.desc()))
     return list(result.scalars().all())
 
 
-async def get_complaint(db: AsyncSession, complaint_id: int) -> Optional[Complaint]:
-    result = await db.execute(
+def get_complaint(db: Session, complaint_id: int) -> Optional[Complaint]:
+    result = db.execute(
         select(Complaint)
         .where(Complaint.complaint_id == complaint_id)
         .options(
@@ -89,8 +89,8 @@ async def get_complaint(db: AsyncSession, complaint_id: int) -> Optional[Complai
     return result.scalar_one_or_none()
 
 
-async def update_complaint(db: AsyncSession, complaint_id: int, payload: ComplaintUpdate, user_role: str) -> Complaint:
-    complaint = await get_complaint(db, complaint_id)
+def update_complaint(db: Session, complaint_id: int, payload: ComplaintUpdate, user_role: str) -> Complaint:
+    complaint = get_complaint(db, complaint_id)
     if complaint is None:
         raise ValueError("Complaint not found")
 
@@ -105,12 +105,12 @@ async def update_complaint(db: AsyncSession, complaint_id: int, payload: Complai
         setattr(complaint, field, value)
 
     if new_status == "resolved" and old_status != "resolved":
-        complaint.resolved_at = datetime.utcnow()
+        complaint.resolved_at = ist_now()
     if new_status == "closed" and old_status != "closed":
-        complaint.closed_at = datetime.utcnow()
+        complaint.closed_at = ist_now()
 
-    await db.commit()
-    result = await db.execute(
+    db.commit()
+    result = db.execute(
         select(Complaint)
         .where(Complaint.complaint_id == complaint_id)
         .options(
@@ -123,16 +123,16 @@ async def update_complaint(db: AsyncSession, complaint_id: int, payload: Complai
     return result.scalar_one()
 
 
-async def assign_complaint(db: AsyncSession, complaint_id: int, staff_id: int) -> ComplaintAssignment:
+def assign_complaint(db: Session, complaint_id: int, staff_id: int) -> ComplaintAssignment:
     assignment = ComplaintAssignment(complaint_id=complaint_id, assigned_to=staff_id)
     db.add(assignment)
-    await db.commit()
-    await db.refresh(assignment)
+    db.commit()
+    db.refresh(assignment)
     return assignment
 
 
-async def add_comment(db: AsyncSession, complaint_id: int, user_id: int, feedback: str, rating: Optional[int] = None) -> ComplaintComment:
-    complaint = await get_complaint(db, complaint_id)
+def add_comment(db: Session, complaint_id: int, user_id: int, feedback: str, rating: Optional[int] = None) -> ComplaintComment:
+    complaint = get_complaint(db, complaint_id)
     if complaint is None:
         raise ValueError("Complaint not found")
     if complaint.status != "resolved" and rating is not None:
@@ -145,6 +145,6 @@ async def add_comment(db: AsyncSession, complaint_id: int, user_id: int, feedbac
         rating=rating,
     )
     db.add(comment)
-    await db.commit()
-    await db.refresh(comment)
+    db.commit()
+    db.refresh(comment)
     return comment

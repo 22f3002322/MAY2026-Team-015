@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     # Password reset
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int
 
+    # OTP generation for Visitor Requests
+    OTP_HASH_SECRET: str
+
     # Bootstrap admin (used only by scripts/seed.py)
     ADMIN_EMAIL: str
     ADMIN_PASSWORD: str

@@ -256,7 +256,9 @@ def signup_user(db: Session, payload: SignupRequest) -> User:
     if role_enum == RoleEnum.RESIDENT:
         p = payload.resident_profile or ResidentProfileIn()
         if p.flat_id is not None:
-            apartment_service.get_flat(db, p.flat_id)  # raises NotFound if it doesn't exist
+            flat = apartment_service.get_flat(db, p.flat_id)  # raises NotFound if it doesn't exist
+            if flat.occupancy_status != "vacant":
+                raise Conflict(f"Flat '{flat.flat_number}' is already occupied.")
         db.add(
             ResidentProfile(
                 user_id=user.user_id,
@@ -267,6 +269,7 @@ def signup_user(db: Session, payload: SignupRequest) -> User:
                 profile_image=p.profile_image,
             )
         )
+    
     elif role_enum == RoleEnum.MAINTENANCE:
         p = payload.maintenance_profile or MaintenanceProfileIn()
         db.add(
@@ -276,6 +279,7 @@ def signup_user(db: Session, payload: SignupRequest) -> User:
                 experience_years=p.experience_years,
             )
         )
+    
     elif role_enum == RoleEnum.SECURITY:
         p = payload.security_profile or SecurityProfileIn()
         db.add(

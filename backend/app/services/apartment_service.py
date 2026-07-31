@@ -230,27 +230,22 @@ def move_in(
     occupancy_type: str,
     move_in_date: date_type | None,
 ) -> OccupancyHistory:
+   
     profile = get_resident_profile(db, resident_id)
     flat = get_flat(db, flat_id)
 
-    effective_date = move_in_date or ist_now().date()
-
-    # A resident occupies one flat at a time. If they already have an
-    # open occupancy record (elsewhere), this is a transfer: close the
-    # old record out before opening the new one, rather than requiring a
-    # separate move-out call first.
-    current = (
+    existing_current = (
         db.query(OccupancyHistory)
         .filter(OccupancyHistory.resident_id == resident_id, OccupancyHistory.is_current.is_(True))
         .first()
     )
-    previous_flat = None
-    if current is not None:
-        if current.flat_id == flat_id:
-            raise BadRequest("This resident is already assigned to this flat.")
-        current.is_current = False
-        current.move_out_date = current.move_out_date or effective_date
-        previous_flat = get_flat(db, current.flat_id)
+    if existing_current is not None:
+        raise BadRequest("This resident already has a current flat assignment. Move them out first.")
+
+    if flat.occupancy_status != "vacant":
+        raise Conflict(f"Flat '{flat.flat_number}' is not vacant.")
+
+    effective_date = move_in_date or ist_now().date()
 
     occupancy = OccupancyHistory(
         resident_id=resident_id,
@@ -262,11 +257,9 @@ def move_in(
     db.add(occupancy)
 
     profile.flat_id = flat_id
-    db.flush()  # occupancy needs its PK before the status-sync queries below can see it
+    db.flush()  # occupancy needs its PK before the status-sync query below
 
     _sync_flat_occupancy_status(db, flat)
-    if previous_flat is not None:
-        _sync_flat_occupancy_status(db, previous_flat)
 
     db.commit()
     db.refresh(occupancy)
