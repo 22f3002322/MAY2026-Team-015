@@ -23,8 +23,8 @@ class Complaint(Base, TimestampMixin):
     description = Column(Text, nullable=False)
     priority = Column(String, default="medium")
     status = Column(String, default="open")
-    resolved_at = Column(DateTime)
-    closed_at = Column(DateTime)
+    resolved_at = Column(DateTime(timezone = True))
+    closed_at = Column(DateTime(timezone = True))
 
     resident = relationship("ResidentProfile", back_populates="complaints")
     category = relationship("ComplaintCategory", back_populates="complaints")
@@ -40,7 +40,7 @@ class ComplaintImage(Base):
     image_id = Column(Integer, primary_key=True, autoincrement=True)
     complaint_id = Column(Integer, ForeignKey("complaints.complaint_id"), nullable=False)
     url = Column(String, nullable=False)
-    uploaded_at = Column(DateTime, default=ist_now)
+    uploaded_at = Column(DateTime(timezone = True), default=ist_now)
 
     complaint = relationship("Complaint", back_populates="images")
 
@@ -51,7 +51,7 @@ class ComplaintAssignment(Base):
     assignment_id = Column(Integer, primary_key=True, autoincrement=True)
     complaint_id = Column(Integer, ForeignKey("complaints.complaint_id"), nullable=False)
     assigned_to = Column(Integer, ForeignKey("maintenance_staff.staff_id"), nullable=False)
-    assigned_at = Column(DateTime, default=ist_now)
+    assigned_at = Column(DateTime(timezone = True), default=ist_now)
 
     complaint = relationship("Complaint", back_populates="assignments")
     assigned_to_staff = relationship("MaintenanceStaff", back_populates="assignments")
@@ -64,10 +64,10 @@ class MaintenanceTask(Base, TimestampMixin):
     complaint_id = Column(Integer, ForeignKey("complaints.complaint_id"), nullable=False)
     staff_id = Column(Integer, ForeignKey("maintenance_staff.staff_id"), nullable=False)
     status = Column(String, default="accepted")
-    accepted_at = Column(DateTime)
-    scheduled_at = Column(DateTime)
-    started_at = Column(DateTime)
-    completed_at = Column(DateTime)
+    accepted_at = Column(DateTime(timezone = True))
+    scheduled_at = Column(DateTime(timezone = True))
+    started_at = Column(DateTime(timezone = True))
+    completed_at = Column(DateTime(timezone = True))
 
     complaint = relationship("Complaint", back_populates="tasks")
     staff = relationship("MaintenanceStaff", back_populates="tasks")
@@ -81,7 +81,7 @@ class ComplaintComment(Base):
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     feedback = Column(Text, nullable=False)
     rating = Column(Integer)
-    created_at = Column(DateTime, default=ist_now)
+    created_at = Column(DateTime(timezone = True), default=ist_now)
 
     complaint = relationship("Complaint", back_populates="comments")
     user = relationship("User", back_populates="complaint_comments")

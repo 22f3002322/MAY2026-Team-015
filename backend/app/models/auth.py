@@ -38,7 +38,7 @@ class User(Base, TimestampMixin):
     password_hash = Column(String(255), nullable=False)
     is_active = Column(Boolean, nullable=False, default=True)
     is_verified = Column(Boolean, nullable=False, default=False)
-    last_login = Column(DateTime, nullable=True)
+    last_login = Column(DateTime(timezone = True), nullable=True)
 
 
     # Relationships
@@ -88,11 +88,11 @@ class RefreshToken(Base):
 
     token_hash = Column(String(64), unique=True, nullable=False, index=True)
 
-    issued_at = Column(DateTime, default=ist_now, nullable=False)
-    expires_at = Column(DateTime, nullable=False)
+    issued_at = Column(DateTime(timezone = True), default=ist_now, nullable=False)
+    expires_at = Column(DateTime(timezone = True), nullable=False)
 
     revoked = Column(Boolean, default=False, nullable=False)
-    revoked_at = Column(DateTime, nullable=True)
+    revoked_at = Column(DateTime(timezone = True), nullable=True)
 
     # Rotation chain: refresh tokens are single-use (see
     # auth_service.rotate_refresh_token). When one is redeemed, this row
