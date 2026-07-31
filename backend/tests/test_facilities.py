@@ -12,13 +12,13 @@ from app.models.auth import RoleEnum
 from app.models.auth import User, Role
 from app.models.staff import MaintenanceStaff
 from tests.conftest import create_test_resident, create_test_user
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 
 class TestFacilityCRUD:
     @pytest.mark.asyncio
-    async def test_committee_can_create_facility(self, client: AsyncClient, seeded_db: AsyncSession):
-        _, committee_token = await create_test_user(seeded_db, RoleEnum.COMMITTEE.value, email="committee_fac@test.com")
+    async def test_committee_can_create_facility(self, client: AsyncClient, seeded_db: Session):
+        _, committee_token = create_test_user(seeded_db, RoleEnum.COMMITTEE.name, email="committee_fac@test.com")
         response = await client.post("/api/v1/admin/facilities", headers={"Authorization": f"Bearer {committee_token}"}, json={
             "facility_name": "Pool",
             "description": "Outdoor swimming pool",
@@ -35,8 +35,8 @@ class TestFacilityCRUD:
         assert "facility_id" in data
 
     @pytest.mark.asyncio
-    async def test_committee_can_list_facilities(self, client: AsyncClient, seeded_db: AsyncSession):
-        _, committee_token = await create_test_user(seeded_db, RoleEnum.COMMITTEE.value, email="committee_listfac@test.com")
+    async def test_committee_can_list_facilities(self, client: AsyncClient, seeded_db: Session):
+        _, committee_token = create_test_user(seeded_db, RoleEnum.COMMITTEE.name, email="committee_listfac@test.com")
         facility = Facility(
             facility_name="Gym",
             description="",
@@ -48,8 +48,8 @@ class TestFacilityCRUD:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
+        seeded_db.commit()
+        seeded_db.refresh(facility)
         response = await client.get("/api/v1/admin/facilities", headers={"Authorization": f"Bearer {committee_token}"})
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -57,7 +57,7 @@ class TestFacilityCRUD:
         assert any(f["facility_name"] == "Gym" for f in data)
 
     @pytest.mark.asyncio
-    async def test_committee_can_get_facility(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_committee_can_get_facility(self, client: AsyncClient, seeded_db: Session):
         facility = Facility(
             facility_name="Tennis Court",
             description="Outdoor court",
@@ -69,15 +69,15 @@ class TestFacilityCRUD:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
-        _, committee_token = await create_test_user(seeded_db, RoleEnum.COMMITTEE.value, email="committee_getfac@test.com")
+        seeded_db.commit()
+        seeded_db.refresh(facility)
+        _, committee_token = create_test_user(seeded_db, RoleEnum.COMMITTEE.name, email="committee_getfac@test.com")
         response = await client.get(f"/api/v1/admin/facilities/{facility.facility_id}", headers={"Authorization": f"Bearer {committee_token}"})
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["facility_name"] == "Tennis Court"
 
     @pytest.mark.asyncio
-    async def test_committee_can_update_facility(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_committee_can_update_facility(self, client: AsyncClient, seeded_db: Session):
         facility = Facility(
             facility_name="Old Name",
             description="",
@@ -89,9 +89,9 @@ class TestFacilityCRUD:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
-        _, committee_token = await create_test_user(seeded_db, RoleEnum.COMMITTEE.value, email="committee_updfac@test.com")
+        seeded_db.commit()
+        seeded_db.refresh(facility)
+        _, committee_token = create_test_user(seeded_db, RoleEnum.COMMITTEE.name, email="committee_updfac@test.com")
         response = await client.patch(f"/api/v1/admin/facilities/{facility.facility_id}", headers={"Authorization": f"Bearer {committee_token}"}, json={
             "facility_name": "New Name"
         })
@@ -99,22 +99,22 @@ class TestFacilityCRUD:
         assert response.json()["facility_name"] == "New Name"
 
     @pytest.mark.asyncio
-    async def test_committee_get_facility_404(self, client: AsyncClient, seeded_db: AsyncSession):
-        _, committee_token = await create_test_user(seeded_db, RoleEnum.COMMITTEE.value, email="committee_no_fac@test.com")
+    async def test_committee_get_facility_404(self, client: AsyncClient, seeded_db: Session):
+        _, committee_token = create_test_user(seeded_db, RoleEnum.COMMITTEE.name, email="committee_no_fac@test.com")
         response = await client.get("/api/v1/admin/facilities/99999", headers={"Authorization": f"Bearer {committee_token}"})
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     @pytest.mark.asyncio
-    async def test_committee_update_facility_404(self, client: AsyncClient, seeded_db: AsyncSession):
-        _, committee_token = await create_test_user(seeded_db, RoleEnum.COMMITTEE.value, email="committee_upd_404@test.com")
+    async def test_committee_update_facility_404(self, client: AsyncClient, seeded_db: Session):
+        _, committee_token = create_test_user(seeded_db, RoleEnum.COMMITTEE.name, email="committee_upd_404@test.com")
         response = await client.patch("/api/v1/admin/facilities/99999", headers={"Authorization": f"Bearer {committee_token}"}, json={
             "facility_name": "Won't exist"
         })
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     @pytest.mark.asyncio
-    async def test_admin_cannot_create_facility(self, client: AsyncClient, seeded_db: AsyncSession):
-        _, admin_token = await create_test_user(seeded_db, RoleEnum.ADMIN.value, email="admin_fac@test.com")
+    async def test_admin_cannot_create_facility(self, client: AsyncClient, seeded_db: Session):
+        _, admin_token = create_test_user(seeded_db, RoleEnum.ADMIN.name, email="admin_fac@test.com")
         response = await client.post("/api/v1/admin/facilities", headers={"Authorization": f"Bearer {admin_token}"}, json={
             "facility_name": "Pool",
             "description": "",
@@ -127,13 +127,13 @@ class TestFacilityCRUD:
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     @pytest.mark.asyncio
-    async def test_admin_cannot_list_facilities(self, client: AsyncClient, seeded_db: AsyncSession):
-        _, admin_token = await create_test_user(seeded_db, RoleEnum.ADMIN.value, email="admin_listfac@test.com")
+    async def test_admin_cannot_list_facilities(self, client: AsyncClient, seeded_db: Session):
+        _, admin_token = create_test_user(seeded_db, RoleEnum.ADMIN.name, email="admin_listfac@test.com")
         response = await client.get("/api/v1/admin/facilities", headers={"Authorization": f"Bearer {admin_token}"})
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     @pytest.mark.asyncio
-    async def test_admin_cannot_get_facility(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_admin_cannot_get_facility(self, client: AsyncClient, seeded_db: Session):
         facility = Facility(
             facility_name="Tennis Court",
             description="Outdoor court",
@@ -145,14 +145,14 @@ class TestFacilityCRUD:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
-        _, admin_token = await create_test_user(seeded_db, RoleEnum.ADMIN.value, email="admin_getfac2@test.com")
+        seeded_db.commit()
+        seeded_db.refresh(facility)
+        _, admin_token = create_test_user(seeded_db, RoleEnum.ADMIN.name, email="admin_getfac2@test.com")
         response = await client.get(f"/api/v1/admin/facilities/{facility.facility_id}", headers={"Authorization": f"Bearer {admin_token}"})
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     @pytest.mark.asyncio
-    async def test_admin_cannot_update_facility(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_admin_cannot_update_facility(self, client: AsyncClient, seeded_db: Session):
         facility = Facility(
             facility_name="Old Name",
             description="",
@@ -164,17 +164,17 @@ class TestFacilityCRUD:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
-        _, admin_token = await create_test_user(seeded_db, RoleEnum.ADMIN.value, email="admin_updfac2@test.com")
+        seeded_db.commit()
+        seeded_db.refresh(facility)
+        _, admin_token = create_test_user(seeded_db, RoleEnum.ADMIN.name, email="admin_updfac2@test.com")
         response = await client.patch(f"/api/v1/admin/facilities/{facility.facility_id}", headers={"Authorization": f"Bearer {admin_token}"}, json={
             "facility_name": "New Name"
         })
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     @pytest.mark.asyncio
-    async def test_resident_cannot_create_facility(self, client: AsyncClient, seeded_db: AsyncSession):
-        _, _, resident_token = await create_test_resident(seeded_db, flat_number="ResFac-101", email="resident_fac@test.com")
+    async def test_resident_cannot_create_facility(self, client: AsyncClient, seeded_db: Session):
+        _, _, resident_token = create_test_resident(seeded_db, flat_number="ResFac-101", email="resident_fac@test.com")
         response = await client.post("/api/v1/admin/facilities", headers={"Authorization": f"Bearer {resident_token}"}, json={
             "facility_name": "Pool",
             "description": "",
@@ -187,13 +187,13 @@ class TestFacilityCRUD:
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     @pytest.mark.asyncio
-    async def test_resident_cannot_list_facilities(self, client: AsyncClient, seeded_db: AsyncSession):
-        _, _, resident_token = await create_test_resident(seeded_db, flat_number="ResFac-102", email="resident_fac2@test.com")
+    async def test_resident_cannot_list_facilities(self, client: AsyncClient, seeded_db: Session):
+        _, _, resident_token = create_test_resident(seeded_db, flat_number="ResFac-102", email="resident_fac2@test.com")
         response = await client.get("/api/v1/admin/facilities", headers={"Authorization": f"Bearer {resident_token}"})
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     @pytest.mark.asyncio
-    async def test_resident_cannot_get_facility(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_resident_cannot_get_facility(self, client: AsyncClient, seeded_db: Session):
         facility = Facility(
             facility_name="Tennis Court",
             description="Outdoor court",
@@ -205,14 +205,14 @@ class TestFacilityCRUD:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
-        _, _, resident_token = await create_test_resident(seeded_db, flat_number="ResFac-103", email="resident_fac3@test.com")
+        seeded_db.commit()
+        seeded_db.refresh(facility)
+        _, _, resident_token = create_test_resident(seeded_db, flat_number="ResFac-103", email="resident_fac3@test.com")
         response = await client.get(f"/api/v1/admin/facilities/{facility.facility_id}", headers={"Authorization": f"Bearer {resident_token}"})
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     @pytest.mark.asyncio
-    async def test_resident_cannot_update_facility(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_resident_cannot_update_facility(self, client: AsyncClient, seeded_db: Session):
         facility = Facility(
             facility_name="Old Name",
             description="",
@@ -224,9 +224,9 @@ class TestFacilityCRUD:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
-        _, _, resident_token = await create_test_resident(seeded_db, flat_number="ResFac-104", email="resident_fac4@test.com")
+        seeded_db.commit()
+        seeded_db.refresh(facility)
+        _, _, resident_token = create_test_resident(seeded_db, flat_number="ResFac-104", email="resident_fac4@test.com")
         response = await client.patch(f"/api/v1/admin/facilities/{facility.facility_id}", headers={"Authorization": f"Bearer {resident_token}"}, json={
             "facility_name": "New Name"
         })
@@ -235,16 +235,16 @@ class TestFacilityCRUD:
 
 class TestFacilityBookings:
     @pytest.mark.asyncio
-    async def test_resident_can_create_booking(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_resident_can_create_booking(self, client: AsyncClient, seeded_db: Session):
         block = Block(block_name="Block BK", total_flats=100)
         seeded_db.add(block)
-        await seeded_db.commit()
-        await seeded_db.refresh(block)
+        seeded_db.commit()
+        seeded_db.refresh(block)
 
         flat = Flat(flat_number="BK-101", floor_number=1, occupancy_status="occupied", block_id=block.block_id)
         seeded_db.add(flat)
-        await seeded_db.commit()
-        await seeded_db.refresh(flat)
+        seeded_db.commit()
+        seeded_db.refresh(flat)
 
         facility = Facility(
             facility_name="Pool",
@@ -257,10 +257,10 @@ class TestFacilityBookings:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
+        seeded_db.commit()
+        seeded_db.refresh(facility)
 
-        _, profile, token = await create_test_resident(seeded_db, flat_number="BK-101")
+        _, profile, token = create_test_resident(seeded_db, flat_number="BK-101")
 
         response = await client.post("/api/v1/facility-bookings", headers={"Authorization": f"Bearer {token}"}, json={
             "facility_id": facility.facility_id,
@@ -276,16 +276,16 @@ class TestFacilityBookings:
         assert data["status"] == "booked"
 
     @pytest.mark.asyncio
-    async def test_booking_rejects_overlapping_slots(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_booking_rejects_overlapping_slots(self, client: AsyncClient, seeded_db: Session):
         block = Block(block_name="Block OLAP", total_flats=100)
         seeded_db.add(block)
-        await seeded_db.commit()
-        await seeded_db.refresh(block)
+        seeded_db.commit()
+        seeded_db.refresh(block)
 
         flat = Flat(flat_number="OLAP-101", floor_number=1, occupancy_status="occupied", block_id=block.block_id)
         seeded_db.add(flat)
-        await seeded_db.commit()
-        await seeded_db.refresh(flat)
+        seeded_db.commit()
+        seeded_db.refresh(flat)
 
         facility = Facility(
             facility_name="Gym",
@@ -298,10 +298,10 @@ class TestFacilityBookings:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
+        seeded_db.commit()
+        seeded_db.refresh(facility)
 
-        _, profile, token = await create_test_resident(seeded_db, flat_number="OLAP-101")
+        _, profile, token = create_test_resident(seeded_db, flat_number="OLAP-101")
 
         resp1 = await client.post("/api/v1/facility-bookings", headers={"Authorization": f"Bearer {token}"}, json={
             "facility_id": facility.facility_id,
@@ -322,16 +322,16 @@ class TestFacilityBookings:
         assert resp2.status_code == status.HTTP_409_CONFLICT
 
     @pytest.mark.asyncio
-    async def test_booking_rejects_end_before_start(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_booking_rejects_end_before_start(self, client: AsyncClient, seeded_db: Session):
         block = Block(block_name="Block EST", total_flats=100)
         seeded_db.add(block)
-        await seeded_db.commit()
-        await seeded_db.refresh(block)
+        seeded_db.commit()
+        seeded_db.refresh(block)
 
         flat = Flat(flat_number="EST-101", floor_number=1, occupancy_status="occupied", block_id=block.block_id)
         seeded_db.add(flat)
-        await seeded_db.commit()
-        await seeded_db.refresh(flat)
+        seeded_db.commit()
+        seeded_db.refresh(flat)
 
         facility = Facility(
             facility_name="Library",
@@ -344,10 +344,10 @@ class TestFacilityBookings:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
+        seeded_db.commit()
+        seeded_db.refresh(facility)
 
-        _, profile, token = await create_test_resident(seeded_db, flat_number="EST-101")
+        _, profile, token = create_test_resident(seeded_db, flat_number="EST-101")
 
         response = await client.post("/api/v1/facility-bookings", headers={"Authorization": f"Bearer {token}"}, json={
             "facility_id": facility.facility_id,
@@ -359,16 +359,16 @@ class TestFacilityBookings:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     @pytest.mark.asyncio
-    async def test_booking_rejects_exceeding_max_duration(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_booking_rejects_exceeding_max_duration(self, client: AsyncClient, seeded_db: Session):
         block = Block(block_name="Block MAXDUR", total_flats=100)
         seeded_db.add(block)
-        await seeded_db.commit()
-        await seeded_db.refresh(block)
+        seeded_db.commit()
+        seeded_db.refresh(block)
 
         flat = Flat(flat_number="MAXDUR-101", floor_number=1, occupancy_status="occupied", block_id=block.block_id)
         seeded_db.add(flat)
-        await seeded_db.commit()
-        await seeded_db.refresh(flat)
+        seeded_db.commit()
+        seeded_db.refresh(flat)
 
         facility = Facility(
             facility_name="Meeting Room",
@@ -381,10 +381,10 @@ class TestFacilityBookings:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
+        seeded_db.commit()
+        seeded_db.refresh(facility)
 
-        _, profile, token = await create_test_resident(seeded_db, flat_number="MAXDUR-101")
+        _, profile, token = create_test_resident(seeded_db, flat_number="MAXDUR-101")
 
         response = await client.post("/api/v1/facility-bookings", headers={"Authorization": f"Bearer {token}"}, json={
             "facility_id": facility.facility_id,
@@ -396,19 +396,19 @@ class TestFacilityBookings:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     @pytest.mark.asyncio
-    async def test_resident_sees_only_own_bookings(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_resident_sees_only_own_bookings(self, client: AsyncClient, seeded_db: Session):
         block = Block(block_name="Block OwnBook", total_flats=100)
         seeded_db.add(block)
-        await seeded_db.commit()
-        await seeded_db.refresh(block)
+        seeded_db.commit()
+        seeded_db.refresh(block)
 
         flat1 = Flat(flat_number="OwnBook-101", floor_number=1, occupancy_status="occupied", block_id=block.block_id)
         flat2 = Flat(flat_number="OwnBook-102", floor_number=1, occupancy_status="occupied", block_id=block.block_id)
         seeded_db.add_all([flat1, flat2])
-        await seeded_db.commit()
+        seeded_db.commit()
 
         for f in [flat1, flat2]:
-            await seeded_db.refresh(f)
+            seeded_db.refresh(f)
 
         facility = Facility(
             facility_name="Basketball Court",
@@ -421,11 +421,11 @@ class TestFacilityBookings:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
+        seeded_db.commit()
+        seeded_db.refresh(facility)
 
-        _, profile1, token1 = await create_test_resident(seeded_db, flat_number="OwnBook-101", email="ob1@test.com")
-        await create_test_resident(seeded_db, flat_number="OwnBook-102", email="ob2@test.com")
+        _, profile1, token1 = create_test_resident(seeded_db, flat_number="OwnBook-101", email="ob1@test.com")
+        create_test_resident(seeded_db, flat_number="OwnBook-102", email="ob2@test.com")
 
         booking1 = FacilityBooking(
             facility_id=facility.facility_id,
@@ -436,8 +436,8 @@ class TestFacilityBookings:
             status="booked",
         )
         seeded_db.add(booking1)
-        await seeded_db.commit()
-        await seeded_db.refresh(booking1)
+        seeded_db.commit()
+        seeded_db.refresh(booking1)
 
         response = await client.get("/api/v1/facility-bookings", headers={"Authorization": f"Bearer {token1}"})
         assert response.status_code == status.HTTP_200_OK
@@ -446,23 +446,23 @@ class TestFacilityBookings:
             assert b["resident_id"] == profile1.resident_id
 
     @pytest.mark.asyncio
-    async def test_resident_sees_empty_bookings(self, client: AsyncClient, seeded_db: AsyncSession):
-        _, _, token = await create_test_resident(seeded_db, flat_number="EmptyBK-101", email="emptybk@test.com")
+    async def test_resident_sees_empty_bookings(self, client: AsyncClient, seeded_db: Session):
+        _, _, token = create_test_resident(seeded_db, flat_number="EmptyBK-101", email="emptybk@test.com")
         response = await client.get("/api/v1/facility-bookings", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == []
 
     @pytest.mark.asyncio
-    async def test_committee_sees_all_bookings(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_committee_sees_all_bookings(self, client: AsyncClient, seeded_db: Session):
         block = Block(block_name="Block ComBK", total_flats=100)
         seeded_db.add(block)
-        await seeded_db.commit()
-        await seeded_db.refresh(block)
+        seeded_db.commit()
+        seeded_db.refresh(block)
 
         flat = Flat(flat_number="ComBK-101", floor_number=1, occupancy_status="occupied", block_id=block.block_id)
         seeded_db.add(flat)
-        await seeded_db.commit()
-        await seeded_db.refresh(flat)
+        seeded_db.commit()
+        seeded_db.refresh(flat)
 
         facility = Facility(
             facility_name="Committee Facility",
@@ -475,10 +475,10 @@ class TestFacilityBookings:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
+        seeded_db.commit()
+        seeded_db.refresh(facility)
 
-        _, profile, token = await create_test_resident(seeded_db, flat_number="ComBK-101")
+        _, profile, token = create_test_resident(seeded_db, flat_number="ComBK-101")
 
         create_resp = await client.post("/api/v1/facility-bookings", headers={"Authorization": f"Bearer {token}"}, json={
             "facility_id": facility.facility_id,
@@ -490,7 +490,7 @@ class TestFacilityBookings:
         assert create_resp.status_code == status.HTTP_200_OK
         booking_id = create_resp.json()["booking_id"]
 
-        _, committee_token = await create_test_user(seeded_db, RoleEnum.COMMITTEE.value, email="committee_bk@test.com")
+        _, committee_token = create_test_user(seeded_db, RoleEnum.COMMITTEE.name, email="committee_bk@test.com")
         response = await client.get("/api/v1/facility-bookings", headers={"Authorization": f"Bearer {committee_token}"})
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -498,16 +498,16 @@ class TestFacilityBookings:
         assert any(b["booking_id"] == booking_id for b in data)
 
     @pytest.mark.asyncio
-    async def test_admin_sees_all_bookings(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_admin_sees_all_bookings(self, client: AsyncClient, seeded_db: Session):
         block = Block(block_name="Block AdminBK", total_flats=100)
         seeded_db.add(block)
-        await seeded_db.commit()
-        await seeded_db.refresh(block)
+        seeded_db.commit()
+        seeded_db.refresh(block)
 
         flat = Flat(flat_number="AdminBK-101", floor_number=1, occupancy_status="occupied", block_id=block.block_id)
         seeded_db.add(flat)
-        await seeded_db.commit()
-        await seeded_db.refresh(flat)
+        seeded_db.commit()
+        seeded_db.refresh(flat)
 
         facility = Facility(
             facility_name="Admin Facility",
@@ -520,10 +520,10 @@ class TestFacilityBookings:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
+        seeded_db.commit()
+        seeded_db.refresh(facility)
 
-        _, profile, token = await create_test_resident(seeded_db, flat_number="AdminBK-101")
+        _, profile, token = create_test_resident(seeded_db, flat_number="AdminBK-101")
 
         create_resp = await client.post("/api/v1/facility-bookings", headers={"Authorization": f"Bearer {token}"}, json={
             "facility_id": facility.facility_id,
@@ -535,7 +535,7 @@ class TestFacilityBookings:
         assert create_resp.status_code == status.HTTP_200_OK
         booking_id = create_resp.json()["booking_id"]
 
-        _, admin_token = await create_test_user(seeded_db, RoleEnum.ADMIN.value, email="admin_bk@test.com")
+        _, admin_token = create_test_user(seeded_db, RoleEnum.ADMIN.name, email="admin_bk@test.com")
         response = await client.get("/api/v1/facility-bookings", headers={"Authorization": f"Bearer {admin_token}"})
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -543,22 +543,22 @@ class TestFacilityBookings:
         assert any(b["booking_id"] == booking_id for b in data)
 
     @pytest.mark.asyncio
-    async def test_get_booking_returns_404(self, client: AsyncClient, seeded_db: AsyncSession):
-        _, token = await create_test_user(seeded_db, RoleEnum.RESIDENT.value, email="nobk404@test.com")
+    async def test_get_booking_returns_404(self, client: AsyncClient, seeded_db: Session):
+        _, token = create_test_user(seeded_db, RoleEnum.RESIDENT.name, email="nobk404@test.com")
         response = await client.get("/api/v1/facility-bookings/99999", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     @pytest.mark.asyncio
-    async def test_resident_can_get_own_booking(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_resident_can_get_own_booking(self, client: AsyncClient, seeded_db: Session):
         block = Block(block_name="Block GetBK", total_flats=100)
         seeded_db.add(block)
-        await seeded_db.commit()
-        await seeded_db.refresh(block)
+        seeded_db.commit()
+        seeded_db.refresh(block)
 
         flat = Flat(flat_number="GetBK-101", floor_number=1, occupancy_status="occupied", block_id=block.block_id)
         seeded_db.add(flat)
-        await seeded_db.commit()
-        await seeded_db.refresh(flat)
+        seeded_db.commit()
+        seeded_db.refresh(flat)
 
         facility = Facility(
             facility_name="Get Facility",
@@ -571,10 +571,10 @@ class TestFacilityBookings:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
+        seeded_db.commit()
+        seeded_db.refresh(facility)
 
-        _, profile, token = await create_test_resident(seeded_db, flat_number="GetBK-101")
+        _, profile, token = create_test_resident(seeded_db, flat_number="GetBK-101")
 
         create_resp = await client.post("/api/v1/facility-bookings", headers={"Authorization": f"Bearer {token}"}, json={
             "facility_id": facility.facility_id,
@@ -591,16 +591,16 @@ class TestFacilityBookings:
         assert response.json()["booking_id"] == booking_id
 
     @pytest.mark.asyncio
-    async def test_committee_can_update_booking(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_committee_can_update_booking(self, client: AsyncClient, seeded_db: Session):
         block = Block(block_name="Block UpdBK", total_flats=100)
         seeded_db.add(block)
-        await seeded_db.commit()
-        await seeded_db.refresh(block)
+        seeded_db.commit()
+        seeded_db.refresh(block)
 
         flat = Flat(flat_number="UpdBK-101", floor_number=1, occupancy_status="occupied", block_id=block.block_id)
         seeded_db.add(flat)
-        await seeded_db.commit()
-        await seeded_db.refresh(flat)
+        seeded_db.commit()
+        seeded_db.refresh(flat)
 
         facility = Facility(
             facility_name="Upd Facility",
@@ -613,10 +613,10 @@ class TestFacilityBookings:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
+        seeded_db.commit()
+        seeded_db.refresh(facility)
 
-        _, profile, token = await create_test_resident(seeded_db, flat_number="UpdBK-101")
+        _, profile, token = create_test_resident(seeded_db, flat_number="UpdBK-101")
 
         create_resp = await client.post("/api/v1/facility-bookings", headers={"Authorization": f"Bearer {token}"}, json={
             "facility_id": facility.facility_id,
@@ -628,7 +628,7 @@ class TestFacilityBookings:
         assert create_resp.status_code == status.HTTP_200_OK
         booking_id = create_resp.json()["booking_id"]
 
-        _, committee_token = await create_test_user(seeded_db, RoleEnum.COMMITTEE.value, email="committee_updbk@test.com")
+        _, committee_token = create_test_user(seeded_db, RoleEnum.COMMITTEE.name, email="committee_updbk@test.com")
         response = await client.patch(f"/api/v1/facility-bookings/{booking_id}", headers={"Authorization": f"Bearer {committee_token}"}, json={
             "status": "cancelled"
         })
@@ -636,16 +636,16 @@ class TestFacilityBookings:
         assert response.json()["status"] == "cancelled"
 
     @pytest.mark.asyncio
-    async def test_admin_cannot_update_booking(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_admin_cannot_update_booking(self, client: AsyncClient, seeded_db: Session):
         block = Block(block_name="Block AdminUpd", total_flats=100)
         seeded_db.add(block)
-        await seeded_db.commit()
-        await seeded_db.refresh(block)
+        seeded_db.commit()
+        seeded_db.refresh(block)
 
         flat = Flat(flat_number="AdminUpd-101", floor_number=1, occupancy_status="occupied", block_id=block.block_id)
         seeded_db.add(flat)
-        await seeded_db.commit()
-        await seeded_db.refresh(flat)
+        seeded_db.commit()
+        seeded_db.refresh(flat)
 
         facility = Facility(
             facility_name="Admin Facility",
@@ -658,10 +658,10 @@ class TestFacilityBookings:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
+        seeded_db.commit()
+        seeded_db.refresh(facility)
 
-        _, profile, token = await create_test_resident(seeded_db, flat_number="AdminUpd-101")
+        _, profile, token = create_test_resident(seeded_db, flat_number="AdminUpd-101")
 
         create_resp = await client.post("/api/v1/facility-bookings", headers={"Authorization": f"Bearer {token}"}, json={
             "facility_id": facility.facility_id,
@@ -673,23 +673,23 @@ class TestFacilityBookings:
         assert create_resp.status_code == status.HTTP_200_OK
         booking_id = create_resp.json()["booking_id"]
 
-        _, admin_token = await create_test_user(seeded_db, RoleEnum.ADMIN.value, email="admin_cannot_upd@test.com")
+        _, admin_token = create_test_user(seeded_db, RoleEnum.ADMIN.name, email="admin_cannot_upd@test.com")
         response = await client.patch(f"/api/v1/facility-bookings/{booking_id}", headers={"Authorization": f"Bearer {admin_token}"}, json={
             "status": "cancelled"
         })
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     @pytest.mark.asyncio
-    async def test_booking_update_rejects_overlapping(self, client: AsyncClient, seeded_db: AsyncSession):
+    async def test_booking_update_rejects_overlapping(self, client: AsyncClient, seeded_db: Session):
         block = Block(block_name="Block UpdOLAP", total_flats=100)
         seeded_db.add(block)
-        await seeded_db.commit()
-        await seeded_db.refresh(block)
+        seeded_db.commit()
+        seeded_db.refresh(block)
 
         flat = Flat(flat_number="UpdOLAP-101", floor_number=1, occupancy_status="occupied", block_id=block.block_id)
         seeded_db.add(flat)
-        await seeded_db.commit()
-        await seeded_db.refresh(flat)
+        seeded_db.commit()
+        seeded_db.refresh(flat)
 
         facility = Facility(
             facility_name="Conf Room",
@@ -702,10 +702,10 @@ class TestFacilityBookings:
             is_active=True,
         )
         seeded_db.add(facility)
-        await seeded_db.commit()
-        await seeded_db.refresh(facility)
+        seeded_db.commit()
+        seeded_db.refresh(facility)
 
-        _, profile, token = await create_test_resident(seeded_db, flat_number="UpdOLAP-101")
+        _, profile, token = create_test_resident(seeded_db, flat_number="UpdOLAP-101")
 
         b1 = await client.post("/api/v1/facility-bookings", headers={"Authorization": f"Bearer {token}"}, json={
             "facility_id": facility.facility_id,
@@ -727,7 +727,7 @@ class TestFacilityBookings:
         assert b2_resp.status_code == status.HTTP_200_OK
         booking2_id = b2_resp.json()["booking_id"]
 
-        _, committee_token = await create_test_user(seeded_db, RoleEnum.COMMITTEE.value, email="committee_olap@test.com")
+        _, committee_token = create_test_user(seeded_db, RoleEnum.COMMITTEE.name, email="committee_olap@test.com")
         response = await client.patch(f"/api/v1/facility-bookings/{booking2_id}", headers={"Authorization": f"Bearer {committee_token}"}, json={
             "start_time": "09:30:00",
             "end_time": "10:30:00",
@@ -735,8 +735,8 @@ class TestFacilityBookings:
         assert response.status_code == status.HTTP_409_CONFLICT
 
     @pytest.mark.asyncio
-    async def test_committee_update_booking_404(self, client: AsyncClient, seeded_db: AsyncSession):
-        _, committee_token = await create_test_user(seeded_db, RoleEnum.COMMITTEE.value, email="committee_upd404@test.com")
+    async def test_committee_update_booking_404(self, client: AsyncClient, seeded_db: Session):
+        _, committee_token = create_test_user(seeded_db, RoleEnum.COMMITTEE.name, email="committee_upd404@test.com")
         response = await client.patch("/api/v1/facility-bookings/99999", headers={"Authorization": f"Bearer {committee_token}"}, json={
             "status": "cancelled"
         })

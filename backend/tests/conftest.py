@@ -1,12 +1,12 @@
 import asyncio
 import os
-from collections.abc import AsyncGenerator
+from collections.abc import Generator
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import sessionmaker, Session
 
 os.environ["DEBUG"] = "false"
 
@@ -14,8 +14,8 @@ from app.core.config import Settings, SettingsConfigDict
 from app.core import config
 
 class TestSettings(Settings):
-    model_config = SettingsConfigDict(env_file=None)
-    DATABASE_URL: str = "sqlite+aiosqlite:///./test.db"
+    DATABASE_URL: str = "sqlite:///./test.db"
+    OTP_HASH_SECRET: str = "test-secret-key-for-otp-hashing"
 
 config.settings = TestSettings()
 
@@ -38,27 +38,27 @@ def event_loop():
     loop.close()
 
 
-@pytest_asyncio.fixture
-async def engine():
-    eng = create_async_engine("sqlite+aiosqlite:///./test.db", echo=False)
-    async with eng.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+@pytest.fixture(scope="session")
+def engine():
+    eng = create_engine("sqlite:///./test.db", echo=False)
+    Base.metadata.create_all(eng)
     yield eng
-    async with eng.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await eng.dispose()
+    Base.metadata.drop_all(eng)
+    eng.dispose()
+
+
+@pytest.fixture
+def db_session(engine) -> Generator[Session, None, None]:
+    SessionLocal = sessionmaker(bind=engine)
+    session = SessionLocal()
+    yield session
+    session.rollback()
+    session.close()
 
 
 @pytest_asyncio.fixture
-async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
-    async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-    async with async_session() as session:
-        yield session
-
-
-@pytest_asyncio.fixture
-async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    async def override_get_db():
+async def client(db_session: Session) -> Generator[AsyncClient, None]:
+    def override_get_db():
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
@@ -67,19 +67,23 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     app.dependency_overrides.clear()
 
 
-@pytest_asyncio.fixture
-async def seeded_db(db_session: AsyncSession):
+@pytest.fixture
+def seeded_db(db_session: Session):
+    db_session.query(Role).delete()
     for role_enum in RoleEnum:
-        db_session.add(Role(role_name=role_enum.value))
-    await db_session.commit()
+        db_session.add(Role(role_name=role_enum.name))
+    db_session.commit()
     return db_session
 
 
-async def create_test_user(db: AsyncSession, role_name: str, email: str = "test@example.com", password: str = "testpass123", **kwargs) -> tuple[User, str]:
-    role = (await db.execute(select(Role).where(Role.role_name == role_name))).scalar_one()
+import uuid
+
+def create_test_user(db: Session, role_name: str, email: str = "test@example.com", password: str = "testpass123", **kwargs) -> tuple[User, str]:
+    unique_email = f"{uuid.uuid4().hex[:8]}@{email}"
+    role = db.query(Role).filter(Role.role_name == role_name).one()
     user = User(
         role_id=role.role_id,
-        email=email,
+        email=unique_email,
         full_name=kwargs.get("full_name", "Test User"),
         phone=kwargs.get("phone", "1234567890"),
         password_hash=hash_password(password),
@@ -87,30 +91,30 @@ async def create_test_user(db: AsyncSession, role_name: str, email: str = "test@
         is_verified=True,
     )
     db.add(user)
-    await db.commit()
-    await db.refresh(user)
+    db.commit()
+    db.refresh(user)
     token = create_access_token({"sub": str(user.user_id), "role": role_name})
     return user, token
 
 
-async def create_test_resident(db: AsyncSession, flat_number: str = "A-101", email: str = "resident@example.com") -> tuple[User, ResidentProfile, str]:
-    block = (await db.execute(select(Block))).scalar_one_or_none()
+def create_test_resident(db: Session, flat_number: str = "A-101", email: str = "resident@example.com") -> tuple[User, ResidentProfile, str]:
+    block = db.query(Block).first()
     if block is None:
         block = Block(block_name="Block A", total_flats=100)
         db.add(block)
-        await db.commit()
-        await db.refresh(block)
+        db.commit()
+        db.refresh(block)
     
-    flat = (await db.execute(select(Flat).where(Flat.flat_number == flat_number))).scalar_one_or_none()
+    flat = db.query(Flat).filter(Flat.flat_number == flat_number).first()
     if flat is None:
         flat = Flat(flat_number=flat_number, floor_number=1, occupancy_status="occupied", block_id=block.block_id)
         db.add(flat)
-        await db.commit()
-        await db.refresh(flat)
+        db.commit()
+        db.refresh(flat)
     
-    user, token = await create_test_user(db, RoleEnum.RESIDENT.value, email=email)
+    user, token = create_test_user(db, RoleEnum.RESIDENT.name, email=email)
     profile = ResidentProfile(user_id=user.user_id, flat_id=flat.flat_id)
     db.add(profile)
-    await db.commit()
-    await db.refresh(profile)
+    db.commit()
+    db.refresh(profile)
     return user, profile, token

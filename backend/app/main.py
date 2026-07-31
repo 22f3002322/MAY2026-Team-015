@@ -87,7 +87,9 @@ def create_app() -> FastAPI:
     app.include_router(blocks_router.router)
     app.include_router(flats_router.router)
     app.include_router(complaint_router.router)
+    app.include_router(complaint_router.router_complaints)
     app.include_router(facilities_router.router)
+    app.include_router(facilities_router.router_bookings)
     app.include_router(visitors_router.router)
 
     # Serve uploaded media (resident profile pictures, etc.) statically.
