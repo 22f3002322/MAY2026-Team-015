@@ -18,6 +18,9 @@ class MaintenanceStaff(Base, TimestampMixin):
 
     user = relationship("User", back_populates="maintenance_staff_profile")
 
+    assignments = relationship("ComplaintAssignment", back_populates="assigned_to_staff")
+    tasks = relationship("MaintenanceTask", back_populates="staff")
+
 
 class SecurityGuard(Base, TimestampMixin):
     __tablename__ = "security_guards"
@@ -29,3 +32,5 @@ class SecurityGuard(Base, TimestampMixin):
     shift = Column(String(20), nullable=True)
 
     user = relationship("User", back_populates="security_guard_profile")
+
+    visitor_logs = relationship("VisitorLog", back_populates="security_guard")

@@ -50,6 +50,6 @@ class VisitorLog(Base):
     created_at = Column(DateTime, default=ist_now)
 
     visitor = relationship("Visitor", back_populates="logs")
-    resident = relationship("ResidentProfile")
+    resident = relationship("ResidentProfile", back_populates="past_visitors")
     security_guard = relationship("SecurityGuard", back_populates="visitor_logs")
     request = relationship("VisitorRequest", back_populates="logs")
