@@ -47,7 +47,7 @@ class VisitorLog(Base):
     otp_verified = Column(Boolean, default=False)
     entry_time = Column(DateTime)
     exit_time = Column(DateTime)
-    created_at = Column(DateTime, server_default=ist_now)
+    created_at = Column(DateTime, default=ist_now)
 
     visitor = relationship("Visitor", back_populates="logs")
     resident = relationship("ResidentProfile")

@@ -40,7 +40,7 @@ class ComplaintImage(Base):
     image_id = Column(Integer, primary_key=True, autoincrement=True)
     complaint_id = Column(Integer, ForeignKey("complaints.complaint_id"), nullable=False)
     url = Column(String, nullable=False)
-    uploaded_at = Column(DateTime, server_default=ist_now)
+    uploaded_at = Column(DateTime, default=ist_now)
 
     complaint = relationship("Complaint", back_populates="images")
 
@@ -51,7 +51,7 @@ class ComplaintAssignment(Base):
     assignment_id = Column(Integer, primary_key=True, autoincrement=True)
     complaint_id = Column(Integer, ForeignKey("complaints.complaint_id"), nullable=False)
     assigned_to = Column(Integer, ForeignKey("maintenance_staff.staff_id"), nullable=False)
-    assigned_at = Column(DateTime, server_default=ist_now)
+    assigned_at = Column(DateTime, default=ist_now)
 
     complaint = relationship("Complaint", back_populates="assignments")
     assigned_to_staff = relationship("MaintenanceStaff", back_populates="assignments")
@@ -81,7 +81,7 @@ class ComplaintComment(Base):
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     feedback = Column(Text, nullable=False)
     rating = Column(Integer)
-    created_at = Column(DateTime, server_default=ist_now)
+    created_at = Column(DateTime, default=ist_now)
 
     complaint = relationship("Complaint", back_populates="comments")
     user = relationship("User", back_populates="complaint_comments")
