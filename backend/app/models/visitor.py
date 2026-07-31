@@ -27,7 +27,7 @@ class VisitorRequest(Base, TimestampMixin):
     expected_date = Column(Date, nullable=False)
     expected_time = Column(Time, nullable=False)
     status = Column(String, default="expected")
-    approved_at = Column(DateTime)
+    approved_at = Column(DateTime(timezone = True))
     otp = Column(String)
 
 
@@ -45,9 +45,9 @@ class VisitorLog(Base):
     security_guard_id = Column(Integer, ForeignKey("security_guards.guard_id"), nullable=False)
     request_id = Column(Integer, ForeignKey("visitor_requests.request_id"), nullable=True)
     otp_verified = Column(Boolean, default=False)
-    entry_time = Column(DateTime)
-    exit_time = Column(DateTime)
-    created_at = Column(DateTime, default=ist_now)
+    entry_time = Column(DateTime(timezone = True))
+    exit_time = Column(DateTime(timezone = True))
+    created_at = Column(DateTime(timezone = True), default=ist_now)
 
     visitor = relationship("Visitor", back_populates="logs")
     resident = relationship("ResidentProfile", back_populates="past_visitors")

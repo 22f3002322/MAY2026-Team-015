@@ -31,9 +31,9 @@ class FacilityBooking(Base, TimestampMixin):
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
     status = Column(String, default="booked")
-    approved_at = Column(DateTime)
+    approved_at = Column(DateTime(timezone = True))
     cancelled_by = Column(Integer, ForeignKey("users.user_id"))
-    cancelled_at = Column(DateTime)
+    cancelled_at = Column(DateTime(timezone = True))
 
     facility = relationship("Facility", back_populates="bookings")
     resident = relationship("ResidentProfile", back_populates="bookings")
