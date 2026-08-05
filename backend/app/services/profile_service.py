@@ -8,6 +8,11 @@ public URL (settings.MEDIA_URL + path) on the row. main.py mounts
 MEDIA_ROOT as static files at MEDIA_URL so the stored value is directly
 usable by a frontend <img src>.
 
+This is now the ONLY way profile_image gets set -- see
+app/schemas/auth_schema.py's ResidentProfileIn, which used to also
+accept a free-text profile_image at signup, bypassing all of the
+validation below.
+
 Security notes:
 - The client-supplied filename is never used for anything (no path
   traversal surface) -- we generate our own name from user_id + a random

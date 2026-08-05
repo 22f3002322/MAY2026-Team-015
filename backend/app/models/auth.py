@@ -38,7 +38,7 @@ class User(Base, TimestampMixin):
     password_hash = Column(String(255), nullable=False)
     is_active = Column(Boolean, nullable=False, default=True)
     is_verified = Column(Boolean, nullable=False, default=False)
-    last_login = Column(DateTime(timezone = True), nullable=True)
+    last_login = Column(DateTime, nullable=True)
 
 
     # Relationships
@@ -68,17 +68,15 @@ class RefreshToken(Base):
     """
     Persisted refresh-token store (Postgres).
 
-    Previously refresh tokens lived only in Redis (opaque token -> user_id
-    with a TTL). That's fine as a cache, but it means a Redis flush/restart
-    silently logs every device out, and there's no durable way to answer
-    "what sessions does this user have" or audit a rotation chain. Moving
-    the source of truth here fixes that; Redis is now used only for the
-    short-lived password-reset token (see app/utils/redis_client.py and
-    app/services/auth_service.py's start_password_reset/complete_password_reset).
-
     Only a SHA-256 hash of the token is stored, never the raw value --
     same principle as `users.password_hash`. See
     app/utils/security.py:hash_token().
+
+    issued_at/expires_at/revoked_at are naive IST wall-clock values (see
+    app/models/mixins.py:ist_now) -- these columns are plain DateTime
+    (TIMESTAMP WITHOUT TIME ZONE), so ist_now() is deliberately naive to
+    match what's actually stored. Always compare against ist_now(), not
+    a tz-aware datetime.
     """
 
     __tablename__ = "refresh_tokens"
@@ -88,16 +86,17 @@ class RefreshToken(Base):
 
     token_hash = Column(String(64), unique=True, nullable=False, index=True)
 
-    issued_at = Column(DateTime(timezone = True), default=ist_now, nullable=False)
-    expires_at = Column(DateTime(timezone = True), nullable=False)
+    issued_at = Column(DateTime, default=ist_now, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
 
     revoked = Column(Boolean, default=False, nullable=False)
-    revoked_at = Column(DateTime(timezone = True), nullable=True)
+    revoked_at = Column(DateTime, nullable=True)
 
     # Rotation chain: refresh tokens are single-use (see
     # auth_service.rotate_refresh_token). When one is redeemed, this row
     # is marked revoked and pointed at the row that replaced it, so the
     # full chain is reconstructable for auditing/anomaly detection.
+    
     replaced_by_token_id = Column(Integer, ForeignKey("refresh_tokens.token_id"), nullable=True)
 
     user = relationship("User", back_populates="refresh_tokens", foreign_keys=[user_id])

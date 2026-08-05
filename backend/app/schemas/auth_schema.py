@@ -2,12 +2,15 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
-from app.models.auth import RoleEnum
+# bcrypt silently truncates/errors past 72 *bytes* -- see
+# app/utils/password.py. Capping every password field here at 72 characters.
+
+PASSWORD_MAX_LENGTH = 36
 
 
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(min_length=1, max_length=PASSWORD_MAX_LENGTH)
 
 
 class LoginResponse(BaseModel):
@@ -32,7 +35,7 @@ class ForgotPasswordRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     token: str
-    new_password: str = Field(min_length=8, max_length=128)
+    new_password: str = Field(min_length=8, max_length=PASSWORD_MAX_LENGTH)
 
 
 # --------------------------------------------------------------------------
@@ -43,7 +46,7 @@ class CreateCommitteeRequest(BaseModel):
     email: EmailStr
     full_name: Optional[str] = Field(default=None, max_length=100)
     phone: Optional[str] = Field(default=None, max_length=20)
-    password: str = Field(min_length=8, max_length=128)
+    password: str = Field(min_length=8, max_length=PASSWORD_MAX_LENGTH)
 
 
 class CreateCommitteeResponse(BaseModel):
@@ -74,7 +77,10 @@ class ResidentProfileIn(BaseModel):
     emergency_contact: Optional[str] = None
     alternate_phone: Optional[str] = None
     occupation: Optional[str] = None
-    profile_image: Optional[str] = None
+    # The only way to set a
+    # profile picture is now POST /api/v1/residents/me/profile-picture
+    # after the account exists. See ResidentProfileOut in user_schema.py
+    # for how it's surfaced back to the client.
 
 
 class MaintenanceProfileIn(BaseModel):
@@ -89,10 +95,16 @@ class SecurityProfileIn(BaseModel):
 
 class SignupRequest(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8, max_length=128)
+    password: str = Field(min_length=8, max_length=PASSWORD_MAX_LENGTH)
     full_name: str = Field(min_length=1, max_length=100)
     phone: Optional[str] = Field(default=None, max_length=20)
-    role: Literal[RoleEnum.RESIDENT, RoleEnum.MAINTENANCE, RoleEnum.SECURITY]
+    
+    # This was `Literal[RoleEnum.RESIDENT, RoleEnum.MAINTENANCE,
+    # RoleEnum.SECURITY]`. A Literal of enum *members* only matches an
+    # input that's already that exact enum member -- pydantic v2 does
+    # NOT coerce a plain JSON string like "Resident" into it the way it
+    # would for a bare `role: RoleEnum` field.
+    role: Literal["Resident", "Maintenance", "Security"]
 
     # Only the one matching `role` needs to be supplied -- all fields on
     # each are optional, so an empty/omitted profile is fine too (e.g. a

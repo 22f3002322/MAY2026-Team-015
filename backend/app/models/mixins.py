@@ -5,7 +5,14 @@ from sqlalchemy import Column
 from sqlalchemy import DateTime
 
 def ist_now():
-    return datetime.now(ZoneInfo("Asia/Kolkata"))
+    
+    # Current IST wall-clock time, as a NAIVE datetime without timezone info.
+
+    return datetime.now(ZoneInfo("Asia/Kolkata")).replace(tzinfo=None)
+    
+    # Timezone aware datetime
+    
+    # return datetime.now(ZoneInfo("Asia/Kolkata")) 
 
 def ist_format(dt):
     if dt is not None:

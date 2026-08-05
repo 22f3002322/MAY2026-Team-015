@@ -20,6 +20,9 @@ occupancy_status/occupancy_history. One wrinkle worth knowing: a resident
 can have flat_id set (their signup choice) with NO current
 occupancy_history row yet, in the window between signing up and being
 verified -- that's expected, not a bug (see ResidentProfile's docstring).
+auth_service.signup_user additionally guards against two residents
+claiming the same still-vacant flat in that window -- see the
+already_claimed check there.
 Everything else (signup's initial flat_id write, profile edits) treats
 flat_id as otherwise read-only, which is why ResidentProfileUpdate
 (admin edit) excludes it.

@@ -19,12 +19,12 @@ Workflow:
   start with is_verified=False.
 - is_active still independently gates login -- a freshly signed-up user
   CAN log in right away; is_verified is a separate business flag that
-  later modules (complaints, bookings, etc.) can check before granting
-  full access. A Committee member reviews and flips it via /verify/{id}.
+  later modules (complaints, bookings, etc.) check before granting full
+  access -- see app.core.dependencies.require_roles_verified.
 
 JWT: PyJWT via app.utils.security (create_access_token / verify_access_token).
 
-Refresh tokens (Postgres, app.models.refresh_token.RefreshToken)
+Refresh tokens (Postgres, app.models.auth.RefreshToken)
 ------------------------------------------------------------------
 Only a SHA-256 hash of the opaque token is stored (app.utils.security.
 hash_token). Rotation is single-use: redeeming a refresh token revokes it
@@ -36,7 +36,8 @@ Redis key schema (password reset only -- refresh tokens moved to Postgres)
 pwdreset:{token}          -> "{user_id}"      TTL = PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
 """
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta, timezone
+from datetime import datetime as dt
 
 from sqlalchemy.orm import Session
 
@@ -107,7 +108,7 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
 
     # Not gated on is_verified -- unverified users can still log in; it's
     # up to later modules to check is_verified before granting access to
-    # specific features.
+    # specific features (see app.core.dependencies.require_roles_verified).
     user.last_login = ist_now()
     db.commit()
 
@@ -130,7 +131,17 @@ def access_token_payload(user: User) -> dict:
         "email": user.email,
         "role": user.role.role_name.value,
         "is_verified": user.is_verified,
-        "iat": int(datetime.now().timestamp())
+        # BUGFIX (caught in testing): ist_now() is a NAIVE datetime that
+        # numerically represents IST wall-clock time (see
+        # app/models/mixins.py). Calling .timestamp() on a naive
+        # datetime interprets it as the system's LOCAL timezone, not
+        # IST -- on a UTC-clocked server this produced an "iat" ~5.5
+        # hours in the future. PyJWT validates "iat" by default
+        # (verify_iat=True) and rejects a token whose iat is in the
+        # future, so every access token would fail verification. Use an
+        # explicit UTC-aware timestamp instead, matching how `exp` is
+        # computed in app/utils/security.py.
+        "iat": int(dt.now(timezone.utc).timestamp()),
     }
 
 
@@ -154,6 +165,13 @@ def rotate_refresh_token(db: Session, old_refresh_token: str) -> tuple[User, str
     old_hash = hash_token(old_refresh_token)
     token_row = db.query(RefreshToken).filter(RefreshToken.token_hash == old_hash).first()
 
+    # BUGFIX: `token_row.expires_at` comes back from Postgres as a naive
+    # datetime (the column is TIMESTAMP WITHOUT TIME ZONE). ist_now() now
+    # returns a matching naive IST datetime (see mixins.py) instead of a
+    # tz-aware one -- previously this comparison raised
+    # "can't compare offset-naive and offset-aware datetimes" on every
+    # call that found a non-revoked token, i.e. almost every real
+    # refresh attempt.
     if token_row is None or token_row.revoked or token_row.expires_at < ist_now():
         raise NotAuthenticated("Invalid or expired refresh token.")
 
@@ -203,8 +221,6 @@ def create_committee_member(db: Session, payload: CreateCommitteeRequest) -> tup
     role = get_role(db, RoleEnum.COMMITTEE)
     if role is None:
         raise ServerError("Committee role is not seeded. Run scripts/seed.py first.")
-
-    # initial_password = generate_opaque_token(9)[:12]
 
     user = User(
         role_id=role.role_id,
@@ -259,6 +275,23 @@ def signup_user(db: Session, payload: SignupRequest) -> User:
             flat = apartment_service.get_flat(db, p.flat_id)  # raises NotFound if it doesn't exist
             if flat.occupancy_status != "vacant":
                 raise Conflict(f"Flat '{flat.flat_number}' is already occupied.")
+            # BUGFIX: occupancy_status only flips to "occupied" at
+            # verification (move_in), not at signup -- so without this
+            # check, a second resident could sign up against the same
+            # still-"vacant" flat while the first signup is pending
+            # committee review. Any resident_profile already pointing at
+            # this flat_id (verified-and-current, or just pending) means
+            # it's spoken for.
+            already_claimed = (
+                db.query(ResidentProfile)
+                .filter(ResidentProfile.flat_id == p.flat_id)
+                .first()
+            )
+            if already_claimed is not None:
+                raise Conflict(
+                    f"Flat '{flat.flat_number}' has already been requested by another "
+                    "pending signup. Please contact a committee member."
+                )
         db.add(
             ResidentProfile(
                 user_id=user.user_id,
@@ -266,7 +299,10 @@ def signup_user(db: Session, payload: SignupRequest) -> User:
                 emergency_contact=p.emergency_contact,
                 alternate_phone=p.alternate_phone,
                 occupation=p.occupation,
-                profile_image=p.profile_image,
+                # BUGFIX: profile_image is no longer accepted from the
+                # signup payload -- see ResidentProfileIn in
+                # auth_schema.py. It's only ever set via the validated
+                # upload endpoint (profile_service.upload_profile_picture).
             )
         )
     
