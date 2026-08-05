@@ -1,164 +1,494 @@
-# Neighbourly Backend — Module 1: Authentication & Authorization
+# Neighbourly Backend
 
-Built directly on top of the files you uploaded (`app/core/*`, `app/models/*`,
-`app/utils/security.py`, `app/utils/password.py`, `app/dependencies.py`,
-`main.py`, `init_db.py`) rather than a rewrite. Everything below either
-came from those files as-is, fixes a bug found in them, or fills in what
-was missing (schemas/services/routers/seed).
+This README replaces the previous Module‑1/Module‑2‑only version. It now
+documents every component that's actually wired up end‑to‑end
+(router → service → schema → model): **Modules 1–9**, matching sections
+1.1–1.9 of the component design doc. Section 1.10 (**AI Community
+Intelligence**) is designed but not yet built — see "Next module" at the
+bottom.
 
-**Schema source of truth: `er-dbml.txt`, followed literally.** The SDD
-is used only for *workflow* framing, not table structure.
+**Architecture, per the component design doc:** a modular,
+component‑based system where each component owns a distinct functional
+area, communicating through REST APIs built with FastAPI, backed by a
+single PostgreSQL database. Authentication is JWT‑based Role‑Based
+Access Control (RBAC). Components are developed independently but share
+the same database and the same response/error envelope.
 
-## This round's changes
+**Schema source of truth: `er-dbml.txt`, followed literally.** The
+component design doc's ER diagram describes 30 entities across every
+module including 1.10; 29 of those are implemented in code today
+(`app/models/__init__.py`) — the 30th belongs to AI Community
+Intelligence, which doesn't exist yet.
 
-1. **Refresh tokens moved from Redis-only to Postgres.** New
-   `refresh_tokens` table (`app/models/refresh_token.py`) stores a
-   SHA-256 hash of each refresh token (never the raw value, same
-   principle as `password_hash`), plus `expires_at`, `revoked`/
-   `revoked_at`, and `replaced_by_token_id` so a rotation chain is
-   reconstructable. Redis is now used only for the short-lived
-   password-reset token. Rotation is still single-use: redeeming a
-   token revokes it and links it to whatever replaced it, so replaying
-   an already-rotated token is rejected.
-   Run `python -m scripts.init_db` again to create the new table --
-   `create_all()` only adds missing tables, it won't touch your
-   existing ones.
+---
 
-2. **Response envelope restructured.**
-   `app/utils/envelope.py` → `app/utils/api_response.py`, success shape
-   is now `{ "success": true, "data": {...}, "message": "" }`. Every
-   router endpoint calls `success_response(...)` explicitly.
+## Response & error envelope
 
-3. **Error envelope restructured.**
-   `app/utils/errors.py` → `app/utils/api_error.py`, shape is now
-   `{ "success": false, "message": "..." }`. As part of this I also
-   swept `app/dependencies.py` and `app/services/auth_service.py`,
-   which had previously been raising raw FastAPI `HTTPException`
-   in places instead of `AppError` -- those now consistently raise
-   `AppError` subclasses (`BadRequest`, `InvalidCredentials`,
-   `NotAuthenticated`, `Deactivated`, `NotAuthorized`, `NotFound`,
-   `Conflict`, `ValidationFailed`, `ServerError`) so every error path
-   goes through the same envelope. `main.py` also now registers a
-   handler for the base Starlette/FastAPI `HTTPException` as a safety
-   net -- without it, `OAuth2PasswordBearer`'s automatic 401 (when no
-   `Authorization` header is sent) or a 404 on an unknown route would
-   still leak out in the old `{"detail": ...}` shape.
-   Validation errors (422) still carry field-level detail, under an
-   additional `errors` key alongside `success`/`message`.
+Every response has the same shape, regardless of endpoint:
 
-4. **Resident profile picture upload.** `resident_profiles.profile_image`
-   already existed in `er-dbml.txt`; this is what actually populates it.
-   - `POST /api/v1/residents/me/profile-picture` (multipart form, field
-     name `file`) -- Resident-only. Validates JPEG/PNG/WEBP by sniffing
-     the actual file bytes (not just the declared Content-Type), caps
-     uploads at 5 MB (enforced via bounded chunked reads, not a
-     read-then-check), generates its own filename (no path-traversal
-     surface from a client-supplied name), and replaces any previous
-     picture.
-   - `DELETE /api/v1/residents/me/profile-picture` -- removes it.
-   - Files are stored under `MEDIA_ROOT` (default `media/`) and served
-     statically at `MEDIA_URL` (default `/media`); both are configurable
-     via `.env`. `GET /api/v1/auth/me` already returns the current
-     `profile_image` URL as part of `resident_profile`.
-   - New dependency: `python-multipart` (required by FastAPI to parse
-     `multipart/form-data`) -- added to `requirements.txt`.
+**Success** (`app/utils/api_response.py`):
+```json
+{ "success": true, "data": { ... }, "message": "" }
+```
+Routers call `success_response(...)` explicitly for every 2xx response.
 
-## Tables (er-dbml.txt)
+**Error** (`app/utils/api_error.py` + `main.py`'s global exception
+handlers):
+```json
+{ "success": false, "message": "Invalid email or password" }
+```
+`AppError` is the one exception type routers/services raise for
+expected, user‑facing errors (`BadRequest` 400, `InvalidCredentials` /
+`NotAuthenticated` 401, `Deactivated` / `NotAuthorized` 403, `NotFound`
+404, `Conflict` 409, `ValidationFailed` 422, `ServerError` 500).
+`main.py` also catches:
+- Stray `fastapi`/`starlette` `HTTPException`s that slip out of a
+  dependency (e.g. `OAuth2PasswordBearer`'s automatic 401 when no
+  `Authorization` header is sent, or a 404 on an unknown route) — these
+  still come back in the same `{success, message}` shape instead of
+  Starlette's default `{"detail": ...}`.
+- `RequestValidationError` (422) — carries per‑field detail under an
+  additional `errors` key, alongside the required `success`/`message`.
+- Any other unhandled exception — logged, returned as a generic 500 so
+  internals never leak to the client.
 
-- `roles` — role_id, role_name
-- `users` — user_id, role_id, full_name, phone, email, password_hash, is_active, is_verified, last_login, created_at, updated_at
-- `blocks` — block_id, block_name, total_flats *(Module 2)*
-- `flats` — flat_id, block_id, flat_number, floor_number, flat_type, occupancy_status *(Module 2, derived status)*
-- `resident_profiles` — resident_id, user_id, flat_id, emergency_contact, alternate_phone, occupation, profile_image, created_at, updated_at
-- `occupancy_history` — occupancy_id, resident_id, flat_id, occupancy_type, move_in_date, move_out_date, is_current, created_at, updated_at *(Module 2)*
-- `maintenance_staff` — staff_id, user_id, specialization, experience_years, is_available, created_at, updated_at
-- `security_guards` — guard_id, user_id, gate_assigned, shift, created_at, updated_at
-- `refresh_tokens` — token_id, user_id, token_hash, issued_at, expires_at, revoked, revoked_at, replaced_by_token_id
+Routers never construct error bodies themselves; they raise an
+`AppError` subclass and move on.
 
-full_name / phone / is_active / is_verified / last_login all live on
-`users` per `user.py` — not duplicated onto the profile tables.
+---
 
-## The workflow
+## Auth & roles
 
-- **Admin is seeded** (`scripts/seed.py`) — never created through the API.
-- **Admin creates Committee** — `POST /api/v1/auth/register-committee`
-  (Admin-only). Generates a password, returns it in the response (same
-  "no email service yet" caveat as before). Committee accounts are
-  auto-verified (`is_verified=True`) since they're admin-provisioned, not
-  part of the self-signup flow.
-- **Resident / Maintenance / Security self-register** —
-  `POST /api/v1/auth/signup`, no auth required. They pick their own
-  password and start with `is_verified=False`.
+Five roles (`RoleEnum` in `app/models/auth.py`): **Admin, Committee,
+Resident, Security, Maintenance**.
+
+- **Admin** is seeded once (`scripts/seed.py`), never created through
+  the API.
+- **Admin creates Committee** — the only account‑creation path that
+  needs an authenticated caller (`POST /api/v1/auth/register-committee`).
+  Committee accounts are auto‑verified (`is_verified=True`) since
+  they're admin‑provisioned, not part of the self‑signup flow.
+- **Resident / Maintenance / Security self‑register** — public
+  `POST /api/v1/auth/signup`, no auth required. They start
+  `is_verified=False` until a Committee member reviews them.
 - **`is_active` and `is_verified` are independent.** A freshly
-  self-registered user can log in immediately (`is_active=True` from
-  creation) — `is_verified` is a separate flag for later modules
-  (complaints, bookings, etc.) to check before granting full access.
-  Login and `/me` both surface `is_verified` so the frontend can show a
-  "pending verification" state.
-- **Committee verifies**: `GET /api/v1/auth/pending-verifications` lists
-  unverified Resident/Maintenance/Security accounts;
-  `POST /api/v1/auth/verify/{user_id}` flips `is_verified` to `True`.
-  Scoped to `require_committee` only, per your spec — Admin is
-  deliberately refused on `/verify` too (tested). Say the word if you'd
-  rather Admin have that power as well.
+  self‑registered user can log in immediately (`is_active=True` from
+  creation); `is_verified` is a separate flag that later modules
+  (complaints, bookings, visitor pre‑registration, voting…) check
+  before granting full access.
 
-## What I added (wasn't in your files yet, or added this round)
+`app/core/dependencies.py` exposes the building blocks every router
+uses:
 
-- `app/utils/redis_client.py` — password-reset token storage.
-- `generate_opaque_token()` / `hash_token()` in `security.py` — for
-  refresh/reset tokens and hashing them at rest. Your existing
-  `create_access_token`/`verify_access_token` (PyJWT) are untouched.
-- `app/schemas/`, `app/services/auth_service.py`, `app/routers/auth.py`.
-- `app/models/refresh_token.py`, `app/services/profile_service.py`,
-  `app/routers/profile.py` *(new this round)*.
-- `scripts/seed.py` — seeds the 5 roles + bootstrap Admin.
+| Dependency | Guarantees |
+|---|---|
+| `get_current_user` | Valid, non‑expired access token; user exists and `is_active` |
+| `require_roles(*roles)` → `require_admin`, `require_committee`, `require_resident`, `require_security`, `require_maintenance` | Above, plus role membership |
+| `require_admin_or_committee` | Above, role is Admin or Committee |
+| `require_roles_verified(*roles)` → `require_verified_resident`, `require_verified_security`, `require_verified_maintenance` | Above, plus `is_verified=True` — used for actions that should wait on committee review (filing complaints, booking facilities, pre‑registering visitors, verifying visitor OTPs, voting) |
+| `get_resident_profile` / `get_security_guard_profile` / `get_maintenance_staff_profile` | Resolves the caller's own role‑specific profile row; `NotAuthorized` if none exists |
 
-## Removed on earlier request (still gone)
+---
 
-No self-service change-password endpoint, no login lockout. The only way
-to get a new password is `forgot-password` → `reset-password`.
+## Module 1 — Authentication & Authorization (1.1)
 
-## A real bug this surfaced: don't use `.local` for `ADMIN_EMAIL`
+### Session & account endpoints (`/api/v1/auth`)
 
-Your original `_env` had `SUPER_ADMIN_EMAIL=superadmin@neighbourly.local`.
-`.local` is a reserved special-use TLD, and `pydantic`'s `EmailStr` (used
-on the login request schema) rejects it outright. You could seed that
-admin account fine, but the login API would 422 on it forever. Changed
-the example to `admin@neighbourly.com` in `.env.example` — use any
-non-reserved-TLD domain in your real `.env`.
+- `POST /register-committee` (Admin) — the *only* way a Committee
+  account gets created.
+- `POST /signup` (public) — self‑registration for Resident /
+  Maintenance / Security. Starts unverified.
+- `POST /login`, `POST /refresh`, `POST /logout`
+- `POST /forgot-password`, `POST /reset-password`
+- `GET /me` — current user + whichever role‑specific profile applies.
+- `GET /pending-verifications` (**Committee only** — Admin is
+  deliberately refused here too) — lists unverified Resident /
+  Maintenance / Security accounts.
+- `POST /verify/{user_id}` (Committee) — flips `is_verified=True`. If
+  the user is a Resident who picked a flat at signup, **this call is
+  also the move‑in** (see Module 2).
 
-## A quirk worth knowing about, not a bug
+### Profile picture (`/api/v1/residents/me`)
 
-Your `role.py` uses `Column(Enum(RoleEnum), ...)`. SQLAlchemy's default
-behavior for a native Python `Enum` column is to persist the member's
-`.name` ("ADMIN", "COMMITTEE", ...) to the database, not its `.value`
-("Admin", "Committee", ...) — confirmed by inspecting the actual seeded
-table. This happens to match the ALL-CAPS convention in er-dbml.txt's own
-comment (`// ADMIN, COMMITTEE, RESIDENT, SECURITY, MAINTAINANCE`), so
-left as-is. Everywhere in the API (JWT payload, `/me`, etc.) uses
-`.value` ("Admin") for the human-readable form — only the raw DB column
-looks like "ADMIN" if you inspect it directly.
+- `POST /profile-picture` (Resident, multipart `file`) — replaces any
+  existing picture. Validates JPEG/PNG/WEBP by sniffing the actual file
+  bytes (not just the declared `Content-Type`), caps uploads at 5 MB via
+  bounded chunked reads, generates its own filename (no path‑traversal
+  surface from a client‑supplied name).
+- `DELETE /profile-picture` (Resident) — removes it.
 
-One correction from that same comment: `MAINTAINANCE` looks like a typo
-for `MAINTENANCE` (which is what `RoleEnum.MAINTENANCE` and every table
-name, like `maintenance_staff`, actually use) — spelled correctly
-throughout the code.
+Files live under `MEDIA_ROOT` (default `media/`), served statically at
+`MEDIA_URL` (default `/media`); `GET /me` returns the current
+`profile_image` URL as-is, ready for an `<img src>`.
 
-## Endpoints
+### Tokens
 
-`POST /register-committee` (Admin), `POST /signup` (public),
-`POST /login`, `POST /refresh`, `POST /logout`, `POST /forgot-password`,
-`POST /reset-password`, `GET /me`,
-`GET /pending-verifications` (Committee), `POST /verify/{user_id}` (Committee),
-`POST /residents/me/profile-picture` (Resident), `DELETE /residents/me/profile-picture` (Resident)
+- **Access tokens** are short‑lived JWTs (`app/utils/security.py`,
+  PyJWT). Payload: `sub`, `full_name`, `email`, `role`, `is_verified`,
+  `iat` (explicit UTC timestamp — a naive‑IST `iat` previously landed in
+  the future on a UTC‑clocked server and PyJWT rejects that), `exp`.
+- **Refresh tokens** are opaque random strings, persisted in Postgres
+  (`refresh_tokens` table) as a SHA‑256 hash only — never the raw value,
+  same principle as `password_hash`. Rotation is single‑use: redeeming
+  one revokes it and links it (`replaced_by_token_id`) to the row minted
+  in its place, so replaying an already‑rotated token is detectable and
+  rejected.
+- **Password reset** tokens live only in Redis
+  (`pwdreset:{token}` → `user_id`, TTL = `PASSWORD_RESET_TOKEN_EXPIRE_MINUTES`),
+  single‑use, no user enumeration (same response whether or not the
+  email exists). Completing a reset revokes every refresh token the
+  user currently holds.
+- There is deliberately **no self‑service change‑password endpoint** and
+  no login lockout — the only way to get a new password is
+  `forgot-password` → `reset-password`.
+
+---
+
+## Module 2 — User & Apartment Management (1.2)
+
+Blocks, flats, and occupancy history are the building‑registration side
+of the app; resident directory/profile edits are the staff‑facing side.
+
+### The flat‑selection workflow
+
+1. **Committee registers the building structure** —
+   `POST /api/v1/blocks`, `POST /api/v1/flats` (Admin/Committee only).
+2. **A resident picks a flat at signup.** The signup form resolves a
+   typed flat number to a `flat_id` via
+   `GET /api/v1/flats?block_id=..&flat_number=..` — deliberately
+   **public**, since a not‑yet‑registered user has no token yet (same
+   reasoning for `GET /api/v1/blocks`). Only structural data is
+   returned there (no resident names). The backend still re‑validates
+   the `flat_id` is real and currently unclaimed (`NotFound`/`Conflict`
+   if not) — it never trusts the frontend's check alone. At this point
+   it's just a *request*: no `occupancy_history` row exists yet, and
+   the flat's `occupancy_status` hasn't changed.
+3. **Verification IS the move‑in.** `POST /api/v1/auth/verify/{user_id}`
+   calls `apartment_service.move_in()` the moment a Resident who picked
+   a flat at signup gets verified — `move_in_date` is the moment of
+   verification, not signup. Optionally pass
+   `{"occupancy_type": "Owner"|"Rental"}`; defaults to `"Owner"`.
+   Re‑verifying, or verifying someone an Admin already moved in
+   manually, is a safe no‑op.
+4. After that, `flat_id` is otherwise **read‑only** outside of
+   `move_in()`/`move_out()` — an Admin/Committee transfers or moves a
+   resident out via the dedicated endpoints below.
+
+A flat can hold more than one current resident (family members) —
+`occupancy_status` is derived as `"occupied"` iff *any* resident has a
+current (`is_current=True`) `occupancy_history` row for that flat.
+
+### Endpoints
+
+**Blocks** (`/api/v1/blocks`)
+- `POST /` (Admin/Committee)
+- `GET /`, `GET /{block_id}` (public) — incl. computed `flat_count`
+- `PATCH /{block_id}` (Admin/Committee) — refuses to shrink
+  `total_flats` below the number of flats already registered
+- `DELETE /{block_id}` (Admin/Committee) — refuses if it still has flats
+
+**Flats** (`/api/v1/flats`)
+- `POST /` (Admin/Committee) — refuses if the block is already at its
+  `total_flats` allotment, or the number is taken in that block
+- `GET /` (public, filters `block_id` / `flat_number` / `occupancy_status`)
+- `GET /{flat_id}` (any authenticated role) — includes
+  `current_residents` (names/phone/email), which is why this one isn't
+  public
+- `PATCH /{flat_id}` (Admin/Committee) — `occupancy_status` isn't
+  editable here, it's derived
+
+**Residents directory** (`/api/v1/residents`, Admin/Committee — distinct
+from `/api/v1/residents/me/...`, which is a Resident managing their own
+profile picture)
+- `GET /` — filters `block_id`, `flat_id`
+- `GET /{resident_id}` — full profile + flat/block
+- `PATCH /{resident_id}` — edits `emergency_contact` /
+  `alternate_phone` / `occupation` only (not `flat_id` — that's
+  move‑in/move‑out only)
+- `POST /{resident_id}/move-in` — `{flat_id, occupancy_type,
+  move_in_date?}`
+- `POST /{resident_id}/move-out` — `{move_out_date?}`
+- `GET /{resident_id}/occupancy-history` — full move‑in/move‑out history
+
+---
+
+## Module 3 — Complaint Management (1.3)
+
+### Categories
+
+- `POST /api/v1/admin/complaint-categories` (Admin/Committee) — create
+- `GET /api/v1/admin/complaint-categories` (Admin/Committee) — list
+- `GET /api/v1/complaint-categories` (**any authenticated user**) —
+  read‑only mirror so a resident can discover valid `category_id`
+  values before filing a complaint, without needing the Admin‑only list.
+
+### Complaints (`/api/v1/complaints`)
+
+Ownership is enforced centrally (`_authorize_complaint_access`):
+Admin/Committee can access anything; a Resident only their own; a
+Maintenance staff member only complaints they're assigned to; everyone
+else is refused.
+
+- `POST /` (verified Resident) — resident_id is always the caller's own
+  profile, never client‑supplied. Optional `image_urls`.
+- `GET /` (any authenticated user) — scoped by role: Resident sees their
+  own; Maintenance sees only complaints assigned to them (via their
+  staff profile); Admin/Committee see everything.
+- `GET /{complaint_id}` — ownership‑checked as above.
+- `PATCH /{complaint_id}` — ownership‑checked. Residents may edit
+  `description`/`priority` on their own complaint but can **never**
+  set `status` directly (`NotAuthorized` if they try) — status only
+  moves through `/assign` and the maintenance task endpoints below.
+  Non‑Admin/Committee callers must follow the state machine:
+  `open → assigned → in_progress → resolved → {closed, assigned}`;
+  Admin or Committee can force any transition.
+- `POST /{complaint_id}/assign` (Admin/Committee) — `{staff_id}`.
+  Creates the `ComplaintAssignment`, flips `open → assigned`, and (this
+  is what actually lets the assignee do anything) creates the
+  `MaintenanceTask` row that drives the accept → schedule → start →
+  complete workflow in Module 4.
+- `POST /{complaint_id}/comments` — feedback + optional `1–5` rating;
+  a rating is only accepted once the complaint is `resolved`.
+
+---
+
+## Module 4 — Maintenance Staff Management (1.4)
+
+All under `/api/v1/maintenance/tasks`, all `require_verified_maintenance`
++ the caller's own `MaintenanceStaff` profile. A `MaintenanceTask` is
+created automatically (`status="accepted"`) the moment a complaint is
+assigned (Module 3); this router drives it the rest of the way.
+
+- `GET /` — the caller's own tasks.
+- `GET /{task_id}` — 403 if the task isn't assigned to the caller.
+- `POST /{task_id}/schedule` — `{scheduled_at}`, sets a target time
+  without changing status.
+- `POST /{task_id}/start` — `accepted → in_progress`; also flips the
+  parent complaint `assigned → in_progress`.
+- `POST /{task_id}/complete` — `in_progress → completed`; also flips
+  the parent complaint `in_progress → resolved` (sets `resolved_at`)
+  and fires a `complaint_update` notification to the resident asking
+  for feedback.
+
+Each of `schedule`/`start`/`complete` enforces both the correct
+starting status and that the task belongs to the caller.
+
+---
+
+## Module 5 — Visitor Management (1.5)
+
+OTPs are 6‑digit numeric (`app/utils/otp.py`), generated with
+`secrets.choice` and stored only as an HMAC‑SHA256 hash
+(`OTP_HASH_SECRET`), compared with `hmac.compare_digest` (timing‑safe).
+The raw OTP is returned exactly once, in the pre‑register response —
+there's no SMS/email gateway wired up yet (same "not built yet" caveat
+as billing's mocked payment gateway and committee‑creation's
+returned‑not‑emailed initial password).
+
+- `POST /api/v1/visitors/pre-register` (verified Resident) — looks up
+  the visitor by phone (reuses the row if it already exists, otherwise
+  creates one), creates a `VisitorRequest` with a hashed OTP, and
+  returns the plaintext OTP for the resident to share.
+- `GET /api/v1/visitors/requests` (verified Resident) — the caller's
+  own requests only.
+- `POST /api/v1/visitors/{request_id}/verify-otp` (verified Security) —
+  verifies the OTP against the caller's own `SecurityGuard` profile
+  (the log's `security_guard_id` is always whoever actually
+  authenticated, never an arbitrary guard row), flips the request to
+  `arrived`, creates the `VisitorLog` (`entry_time` = now), and
+  notifies the resident (`visitor_arrival`). Rejects an already‑arrived
+  or already‑denied request, and an incorrect OTP.
+- `POST /api/v1/visitors/logs/{log_id}/exit` (verified Security) — sets
+  `exit_time`; `Conflict` if exit was already logged.
+- `GET /api/v1/visitors/logs` (**Admin only** — the one admin‑capable
+  endpoint in this API that does *not* also accept Committee) — full
+  visitor log.
+
+---
+
+## Module 6 — Facility Booking (1.6)
+
+### Facilities (`/api/v1/admin/facilities`, Admin/Committee)
+- `POST /`, `GET /`, `GET /{facility_id}`, `PATCH /{facility_id}`
+
+### Bookings (`/api/v1/facility-bookings`)
+- `POST /` (verified Resident) — `resident_id` is always the caller's
+  own profile, never client‑supplied. Validated against the facility
+  before anything is written:
+  - facility must be `is_active`
+  - `end_time > start_time`
+  - the slot must fall within the facility's `opening_time`/
+    `closing_time`
+  - duration must not exceed `maximum_duration`
+  - the slot can't be in the past
+  - and it can't overlap an existing `booked` slot for that facility
+    (`check_booking_conflict`)
+  A confirmed booking notifies the resident (`booking_update`).
+- `GET /` — Resident sees only their own bookings; every other role
+  sees all.
+- `GET /{booking_id}` — 403 if a Resident requests someone else's
+  booking (guessing an id doesn't work).
+- `PATCH /{booking_id}` (Admin/Committee) — e.g. cancelling. The
+  date/time window and conflict checks are **only re‑run if
+  date/time actually changed** in the patch, so a pure status update
+  (like cancelling) isn't blocked by the slot now being "in the past".
+  A status change notifies the resident.
+
+---
+
+## Module 7 — Communication & Notification (1.7)
+
+Two things: admin/committee‑authored **announcements**, and the
+per‑user **notification** inbox that every other module feeds. There is
+deliberately no public "create a notification for an arbitrary user"
+endpoint — notifications only ever originate from real events inside
+`complaint_service`, `booking_service`, `visitor_service`,
+`billing_service`, `auth_service`, and this module itself.
+
+### Announcements (`/api/v1/announcements`)
+- `POST /` (Admin/Committee) — also pushes the announcement into every
+  Resident's notification inbox (`notify_all_residents`,
+  `notification_type="announcement"`), not just the standalone list.
+- `GET /` (any authenticated) — only Admin/Committee can pass
+  `include_inactive=true` and actually see inactive/expired
+  announcements; everyone else always gets the current, live list.
+- `GET /{announcement_id}` (any authenticated)
+- `PATCH /{announcement_id}`, `DELETE /{announcement_id}` (Admin/Committee)
+
+### Notifications (`/api/v1/notifications`)
+- `GET /` (any authenticated) — `unread_only` filter.
+- `POST /{notification_id}/read`
+- `POST /read-all`
+
+### Notification types fired around the app
+
+| `notification_type` | Fired by | When |
+|---|---|---|
+| `account_verified` | `auth_service.verify_user` | Committee verifies an account |
+| `bill_generated` | `billing_service.create_bill` | A new bill is generated for a flat |
+| `payment_success` | `billing_service.create_payment` | A payment succeeds |
+| `complaint_update` | `complaint_service.assign_complaint` / `complete_task` | Complaint assigned / resolved |
+| `booking_update` | `booking_service.create_booking` / `update_booking` | Booking confirmed / status changed |
+| `visitor_arrival` | `visitor_service.verify_visitor_otp` | A pre‑registered visitor is checked in |
+| `announcement` | `notification_service.create_announcement` | A new announcement is published |
+| `poll` | `community_service.create_poll` | A new poll opens |
+
+---
+
+## Module 8 — Billing & Payment (1.8)
+
+Money is `Decimal` everywhere (`Numeric(10, 2)` columns) — never
+`float`, which can't represent currency exactly and would compound
+errors across items/payments/summaries.
+
+### Bills (`/api/v1/admin/bills`, Admin/Committee)
+- `POST /` — if `items` are supplied, `amount` is **computed as their
+  sum and the client‑supplied `amount` is ignored**; a top‑level
+  `amount` is only used as‑is when there are no items (e.g. a flat
+  maintenance fee with no line‑item breakdown). Notifies every resident
+  of the flat (`bill_generated`).
+- `GET /summary` — `total_billed`, `total_collected`,
+  `total_outstanding`, `unpaid_bill_count` across every bill in the
+  system.
+- `GET /`, `GET /{bill_id}` — `flat_id` filter on the list.
+- `PATCH /{bill_id}` — direct admin correction of `due_date`/`status`.
+
+### My billing (`/api/v1/billing/me`, Resident)
+- `GET /bills`, `GET /payments` — the caller's own flat's bills/payments
+  (empty list if the resident has no `flat_id` yet).
+
+### Payments & receipts (`/api/v1/payments`)
+
+There's no real payment gateway wired up — `PaymentCreate.status` is
+how the caller reports the outcome directly (`pending` / `success` /
+`failed`), the same "mocked, not built yet" pattern as visitor OTP
+delivery.
+
+- `POST /` (verified Resident, or Admin/Committee) — ownership‑checked:
+  a Resident may only pay a bill belonging to their own flat.
+  `Conflict` if the bill is already `paid`, or if the
+  `transaction_reference` has been used before. On `status="success"`:
+  flips the bill to `paid`, **auto‑generates a `Receipt`** server‑side
+  (`RCPT-{year}-{payment_id:06d}` — never client‑suppliable/spoofable),
+  and notifies the resident (`payment_success`).
+- `GET /` — Admin/Committee see everything (optional `bill_id` filter);
+  a Resident sees only their own flat's payments.
+- `GET /{payment_id}` — ownership‑checked the same way.
+- `GET /{payment_id}/receipt` — ownership‑checked; 404 if the payment
+  never succeeded (no receipt exists yet).
+
+---
+
+## Module 9 — Community Engagement (1.9)
+
+### Polls (`/api/v1/polls`)
+- `POST /` (Admin/Committee) — requires at least 2 options. Notifies
+  every Resident (`poll`).
+- `GET /` (any authenticated)
+- `GET /{poll_id}` (any authenticated)
+- `PATCH /{poll_id}` (Admin/Committee) — including `is_active`, which is
+  a real column (see below).
+- `POST /{poll_id}/vote` (verified Resident) — `{option_id}`. Rejected
+  if the poll isn't `is_active`, or today is before `start_date` or
+  after `end_date`, or the option doesn't belong to the poll, or (when
+  `allow_multiple_votes` is false) the caller already voted.
+- `GET /{poll_id}/results` (any authenticated) — per‑option vote counts
+  + total, live at any point (not gated on the poll having ended).
+  `anonymous` means votes aren't attributed to a voter in the data
+  model — it doesn't hide the aggregate totals.
+
+---
+
+## Cross‑cutting notes
+
+- **Everything server‑generated stays server‑generated.** Receipt
+  numbers, OTPs (hashed at rest), refresh/reset tokens (hashed at
+  rest), profile‑picture filenames, and `occupancy_status` are never
+  accepted as client input — they're all derived or generated inside
+  the service layer.
+- **Ownership checks are centralized, not sprinkled per‑field.**
+  Complaints (`_authorize_complaint_access`), bookings, and bill
+  payments (`_assert_can_touch_bill`) each have one function that
+  decides access, called from every endpoint that touches that
+  resource, so a new endpoint can't accidentally skip the check.
+- **"Verified" gates the resident‑facing write path, not read/login.**
+  A brand‑new, unverified account can still log in and hit `GET /me`;
+  it just can't file complaints, book facilities, pre‑register
+  visitors, verify visitor OTPs, or vote until a Committee member
+  verifies it.
+- **IST timestamps are naive on purpose.** `ist_now()`
+  (`app/models/mixins.py`) returns a naive datetime that numerically
+  represents Asia/Kolkata wall‑clock time, matching the plain
+  `TIMESTAMP WITHOUT TIME ZONE` columns actually stored in Postgres —
+  comparisons against it (refresh‑token expiry, booking‑in‑the‑past
+  checks, etc.) always use `ist_now()`, never a timezone‑aware
+  datetime.
+
+---
+
+## Tables (`er-dbml.txt`)
+
+`roles`, `users`, `refresh_tokens` · `blocks`, `flats`,
+`resident_profiles`, `occupancy_history` · `maintenance_staff`,
+`security_guards` · `complaint_categories`, `complaints`,
+`complaint_images`, `complaint_assignments`, `maintenance_tasks`,
+`complaint_comments` · `visitors`, `visitor_requests`, `visitor_logs` ·
+`facilities`, `facility_bookings` · `maintenance_bills`, `bill_items`,
+`payments`, `receipts` · `announcements`, `notifications` · `polls`,
+`poll_options`, `poll_votes`
+
+`full_name` / `phone` / `is_active` / `is_verified` / `last_login` all
+live on `users`, not duplicated onto the role‑specific profile tables.
+
+---
 
 ## Running it
 
 ```bash
-cp .env.example .env             # edit SECRET_KEY, DATABASE_URL, REDIS_URL
+cp .env.example .env             # edit SECRET_KEY, DATABASE_URL, REDIS_URL, OTP_HASH_SECRET, etc.
 pip install -r requirements.txt
 
-python -m scripts.init_db        # creates/updates tables (no migration framework)
+python -m scripts.init_db        # creates all tables (no migration framework)
 python -m scripts.seed           # seeds the 5 roles + bootstrap Admin
 
 uvicorn app.main:app --reload
@@ -171,8 +501,6 @@ curl -X POST localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@neighbourly.com","password":"ChangeMe123!"}'
 ```
-
-Response now looks like:
 
 ```json
 {
@@ -189,110 +517,50 @@ Response now looks like:
 ```
 
 Profile picture upload:
-
 ```bash
 curl -X POST localhost:8000/api/v1/residents/me/profile-picture \
   -H "Authorization: Bearer <resident access token>" \
   -F "file=@/path/to/photo.jpg"
 ```
 
+Record a mocked bill payment:
+```bash
+curl -X POST localhost:8000/api/v1/payments \
+  -H "Authorization: Bearer <resident access token>" \
+  -H "Content-Type: application/json" \
+  -d '{"bill_id":1,"amount":"2500.00","payment_method":"upi","transaction_reference":"txn_001","status":"success"}'
+```
+
+`GET /health` is unauthenticated and returns
+`{"success": true, "data": {"status": "ok"}, "message": ""}` — useful
+for container/load‑balancer health checks.
+
+A note from Module 1, still true: your original `.env` had
+`SUPER_ADMIN_EMAIL=superadmin@neighbourly.local` — `.local` is a
+reserved special‑use TLD and pydantic's `EmailStr` (used on
+`LoginRequest`) rejects it outright, so that account could be seeded
+but never logged in. Use any non‑reserved‑TLD domain for `ADMIN_EMAIL`
+in your real `.env`.
+
 ## On testing
 
-No pytest shipped (per your earlier simplification request). This
-round's changes (refresh-token issuance/rotation/reuse-rejection/
-expiry/revocation, the new response/error envelopes, and the profile
-picture upload's content sniffing / size cap / replace-and-delete
-behavior) were exercised against the real modules with lightweight
-in-memory stand-ins for Postgres/Redis before delivery, not kept in the
-repo. Please still run your own end-to-end pass (`uvicorn` + real
-Postgres/Redis) before treating this as production-ready.
-
-## Module 2 — User & Apartment Management
-
-Covers component design doc section 1.2 in full: blocks, flats, resident
-directory, resident profile edits by staff, and move-in/move-out
-occupancy tracking. `blocks`, `flats`, and `occupancy_history` were
-already in `er-dbml.txt` (Module 1 called this out as what
-`resident_profiles.flat_id` was waiting on) -- this module is what
-actually populates and maintains them.
-
-### The flat-selection workflow (revised from the original plan)
-
-Originally I had signup accept no `flat_id` at all, forcing every
-assignment through an Admin/Committee-driven move-in after the fact.
-Revised per your direction to a more realistic flow instead:
-
-1. **Committee registers the building structure first** --
-   `POST /api/v1/blocks`, `POST /api/v1/flats` (Admin/Committee only).
-2. **A resident picks their flat at signup.** The signup form lets them
-   type a flat number; the frontend resolves it to a `flat_id` by
-   calling `GET /api/v1/flats?block_id=..&flat_number=..` -- **this
-   endpoint (and `GET /api/v1/blocks`) is deliberately public**, since a
-   not-yet-registered user has no token yet. Only structural data is
-   returned there (flat number/floor/type/status) -- no resident names,
-   so nothing sensitive leaks. `POST /api/v1/auth/signup` then stores
-   that `flat_id` on `resident_profiles` immediately, but backend
-   re-validates it's a real flat (`NotFound` if not) -- never trust the
-   frontend's check alone. At this point it's still just a *request*:
-   no `occupancy_history` row exists yet, and the flat's
-   `occupancy_status` hasn't changed.
-3. **Verification IS the move-in.** When a Committee member calls
-   `POST /api/v1/auth/verify/{user_id}`, if that user is a Resident who
-   picked a `flat_id` at signup, this is now the moment
-   `apartment_service.move_in()` actually runs: it creates the
-   `occupancy_history` row (`move_in_date` = the moment of verification,
-   not signup) and flips the flat to `occupied`. Optionally pass
-   `{"occupancy_type": "Owner"|"Rental"}` in the verify request body;
-   defaults to `"Owner"` if omitted. Re-verifying (or verifying someone
-   an Admin already moved in manually beforehand) is a safe no-op, not a
-   duplicate move-in.
-4. **After that**, an Admin/Committee can still transfer or move a
-   resident out at any time via the dedicated endpoints below --
-   `resident_profiles.flat_id` is otherwise treated as read-only outside
-   of `apartment_service.move_in()`/`move_out()`.
-
-A flat can hold more than one current resident (family members) --
-`occupancy_status` is derived as "occupied" iff *any* resident has a
-current (`is_current=True`) `occupancy_history` row for that flat, not
-tied to a single occupant.
-
-### New endpoints
-
-**Blocks** (`/api/v1/blocks`)
-- `POST /` (Admin/Committee) -- create
-- `GET /`, `GET /{block_id}` (public) -- list/detail, incl. computed `flat_count`
-- `PATCH /{block_id}` (Admin/Committee) -- rename / resize; refuses to
-  shrink `total_flats` below the number of flats already registered
-- `DELETE /{block_id}` (Admin/Committee) -- refuses if it still has flats
-
-**Flats** (`/api/v1/flats`)
-- `POST /` (Admin/Committee) -- create; refuses if the block is already
-  at its `total_flats` allotment, or the flat_number is already taken in
-  that block
-- `GET /` (public, filters: `block_id`, `flat_number`, `occupancy_status`)
-- `GET /{flat_id}` (authenticated, any role) -- includes
-  `current_residents` (names/phone/email), which is why this one isn't
-  public
-- `PATCH /{flat_id}` (Admin/Committee) -- `occupancy_status` isn't
-  editable here, it's derived
-
-**Residents** (`/api/v1/residents`, Admin/Committee -- distinct from
-`/api/v1/residents/me/...` in Module 1, which is a Resident managing
-their own profile picture)
-- `GET /` -- directory (filters: `block_id`, `flat_id`)
-- `GET /{resident_id}` -- single resident's full profile + flat/block
-- `PATCH /{resident_id}` -- edit `emergency_contact`/`alternate_phone`/
-  `occupation` (not `flat_id` -- that's move-in/move-out only)
-- `POST /{resident_id}/move-in` -- assign/transfer to a flat
-  (`{flat_id, occupancy_type, move_in_date?}`); auto-closes any existing
-  current occupancy as a transfer rather than erroring
-- `POST /{resident_id}/move-out` -- close out their current occupancy
-  (`{move_out_date?}`)
-- `GET /{resident_id}/occupancy-history` -- full move-in/move-out history
+No pytest suite ships in this snapshot. Every workflow above (auth/
+token rotation, occupancy tracking, the complaint state machine, the
+maintenance task lifecycle, visitor OTP verification, facility booking
+conflict detection, billing/receipt generation, and poll voting) was
+exercised manually against the real modules with lightweight in‑memory
+stand‑ins for Postgres/Redis before delivery. Please run your own
+end‑to‑end pass (`uvicorn` + real Postgres/Redis) before treating this
+as production‑ready, and add pytest coverage per module as it stabilizes.
 
 ## Next module
 
-Module 3 — Complaint Management (component design doc section 1.3):
-`complaint_categories`, `complaints`, `complaint_images`,
-`complaint_assignments`, `maintenance_tasks`, `complaint_comments` are
-all already in `er-dbml.txt`, waiting on this module.
+**Module 10 — AI Community Intelligence (1.10)**, the last section of
+the component design doc, is not implemented yet:
+auto‑categorizing/prioritizing complaints with AI, staff
+recommendations, admin‑facing community summaries/reports, smart search
+across complaints/announcements/records, and a chat assistant for
+residents and admins. Nothing in `app/models`, `app/services`,
+`app/schemas`, or `app/routers` currently backs any of this — it's the
+one component design doc section with no corresponding table in
+`er-dbml.txt`‑derived code yet.
