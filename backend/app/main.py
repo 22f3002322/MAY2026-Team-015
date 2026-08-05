@@ -18,6 +18,9 @@ from app.routers import complaint_router
 from app.routers import maintenance_router
 from app.routers import facilities_router
 from app.routers import visitors_router
+from app.routers import billing_router
+from app.routers import communication_router
+from app.routers import community_router
 from app.utils.api_error import AppError
 from app.utils.api_response import success_response
 
@@ -43,11 +46,6 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        # BUGFIX: this list used to be hardcoded to
-        # ["http://localhost:5173"] with no way to add a staging/prod
-        # origin without editing code. Now driven by CORS_ORIGINS in
-        # .env (comma-separated), defaulting to the same localhost value
-        # for local dev. See app/core/config.py.
         allow_origins=settings.cors_origins_list,
         allow_credentials=True,
         allow_methods=["*"],
@@ -99,6 +97,12 @@ def create_app() -> FastAPI:
     app.include_router(facilities_router.router)
     app.include_router(facilities_router.router_bookings)
     app.include_router(visitors_router.router)
+    app.include_router(billing_router.router)
+    app.include_router(billing_router.router_my_billing)
+    app.include_router(billing_router.router_payments)
+    app.include_router(communication_router.router)
+    app.include_router(communication_router.router_notifications)
+    app.include_router(community_router.router)
 
     # Serve uploaded media (resident profile pictures, etc.) statically.
     os.makedirs(settings.MEDIA_ROOT, exist_ok=True)

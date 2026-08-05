@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.facility import Facility, FacilityBooking
 from app.models.mixins import ist_now
 from app.schemas.facility_schema import FacilityCreate, FacilityUpdate, FacilityBookingCreate, FacilityBookingUpdate
+from app.services import notification_service
 from app.utils.api_error import BadRequest, Conflict, NotFound
 
 
@@ -97,6 +98,14 @@ def create_booking(db: Session, payload: FacilityBookingCreate, resident_id: int
     db.add(booking)
     db.commit()
     db.refresh(booking)
+
+    notification_service.create_notification(
+        db,
+        user_id=booking.resident.user_id,
+        notification_type="booking_update",
+        title="Facility booked",
+        message=f"Your booking for '{facility.facility_name}' on {payload.booking_date} is confirmed.",
+    )
     return booking
 
 
@@ -138,4 +147,13 @@ def update_booking(db: Session, booking_id: int, payload: FacilityBookingUpdate)
         setattr(booking, field, value)
     db.commit()
     db.refresh(booking)
+
+    if "status" in update_data:
+        notification_service.create_notification(
+            db,
+            user_id=booking.resident.user_id,
+            notification_type="booking_update",
+            title="Booking status updated",
+            message=f"Your booking #{booking.booking_id} status changed to '{booking.status}'.",
+        )
     return booking
