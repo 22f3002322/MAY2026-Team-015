@@ -62,6 +62,12 @@ class User(Base, TimestampMixin):
         foreign_keys="RefreshToken.user_id",
     )
     complaint_comments = relationship("ComplaintComment", back_populates="user")
+    # Added alongside the communication/community modules --
+    # Notification.user and PollVote.user both declare
+    # back_populates="..." pointing here, which requires the reverse
+    # side to actually exist on User.
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    poll_votes = relationship("PollVote", back_populates="user", cascade="all, delete-orphan")
 
 
 class RefreshToken(Base):

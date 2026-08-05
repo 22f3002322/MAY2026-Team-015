@@ -7,6 +7,7 @@ from app.models.mixins import ist_now
 from app.models.visitor import Visitor, VisitorRequest, VisitorLog
 from app.models.staff import SecurityGuard
 from app.schemas.visitor_schema import VisitorCreate, VisitorRequestCreate
+from app.services import notification_service
 from app.utils.api_error import BadRequest, Conflict, NotFound
 from app.utils.otp import hash_otp, verify_otp
 
@@ -89,6 +90,14 @@ def verify_visitor_otp(db: Session, request_id: int, otp: str, guard_id: int) ->
     db.add(log)
     db.commit()
     db.refresh(log)
+
+    notification_service.create_notification(
+        db,
+        user_id=request.resident.user_id,
+        notification_type="visitor_arrival",
+        title="Visitor arrived",
+        message=f"Your visitor has arrived and been verified at the gate.",
+    )
     return log
 
 

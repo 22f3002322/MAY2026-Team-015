@@ -21,6 +21,7 @@ from app.schemas.complaint_schema import (
     ComplaintUpdate,
 )
 from app.utils.api_error import BadRequest, NotFound
+from app.services import notification_service
 
 
 VALID_TRANSITIONS = {
@@ -134,6 +135,14 @@ def assign_complaint(db: Session, complaint_id: int, staff_id: int) -> Complaint
 
     db.commit()
     db.refresh(assignment)
+
+    notification_service.create_notification(
+        db,
+        user_id=complaint.resident.user_id,
+        notification_type="complaint_update",
+        title="Complaint assigned",
+        message=f"Your complaint #{complaint_id} has been assigned to a maintenance staff member.",
+    )
     return assignment
 
 
@@ -218,6 +227,15 @@ def complete_task(db: Session, task_id: int, staff_id: int) -> MaintenanceTask:
 
     db.commit()
     db.refresh(task)
+
+    if complaint.status == "resolved":
+        notification_service.create_notification(
+            db,
+            user_id=complaint.resident.user_id,
+            notification_type="complaint_update",
+            title="Complaint resolved",
+            message=f"Your complaint #{complaint.complaint_id} has been marked resolved. Let us know how we did!",
+        )
     return task
 
 

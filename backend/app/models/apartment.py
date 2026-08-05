@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, UniqueConstraint, Date
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, UniqueConstraint, Date, DateTime
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -51,7 +51,7 @@ class Flat(Base):
 
     block = relationship("Block", back_populates="flats")
     resident_profiles = relationship("ResidentProfile", back_populates="flat")
-    # bills = relationship("MaintenanceBill", back_populates="flat")
+    bills = relationship("MaintenanceBill", back_populates="flat", cascade="all, delete-orphan")
     occupancy_history = relationship("OccupancyHistory", back_populates="flat")
 
 

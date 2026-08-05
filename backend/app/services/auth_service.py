@@ -54,6 +54,7 @@ from app.schemas.auth_schema import (
     SignupRequest,
 )
 from app.services import apartment_service
+from app.services import notification_service
 from app.utils.api_error import (
     BadRequest,
     Conflict,
@@ -391,6 +392,14 @@ def verify_user(db: Session, user_id: int, occupancy_type: str | None = None) ->
             ist_now().date(),
         )
         db.refresh(user)
+
+    notification_service.create_notification(
+        db,
+        user_id=user.user_id,
+        notification_type="account_verified",
+        title="Account verified",
+        message="Your account has been verified by a committee member. You now have full access.",
+    )
 
     return user
 
