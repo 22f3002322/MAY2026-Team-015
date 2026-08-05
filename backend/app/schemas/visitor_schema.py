@@ -1,7 +1,7 @@
 from datetime import date, datetime, time
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class VisitorBase(BaseModel):
@@ -41,6 +41,14 @@ class VisitorRequestOut(VisitorRequestBase):
     created_at: Optional[datetime] = None
 
 
+class VisitorPreRegisterRequest(BaseModel):
+    visitor_name: str = Field(min_length=1, max_length=100)
+    visitor_phone: str = Field(min_length=1, max_length=20)
+    visitor_type: str = Field(min_length=1, max_length=50)
+    expected_date: date
+    expected_time: time
+
+
 class VisitorLogBase(BaseModel):
     visitor_id: int
     resident_id: int
@@ -60,3 +68,7 @@ class VisitorLogOut(VisitorLogBase):
 
     log_id: int
     created_at: Optional[datetime] = None
+
+
+class VisitorOtpVerifyRequest(BaseModel):
+    otp: str = Field(min_length=1, max_length=20)

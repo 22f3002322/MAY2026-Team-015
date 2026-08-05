@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ComplaintCategoryBase(BaseModel):
@@ -36,6 +36,14 @@ class ComplaintAssignmentOut(BaseModel):
     assigned_at: Optional[datetime] = None
 
 
+# --------------------------------------------------------------------------
+# Assign complaint to a maintenance staff member. Added a proper body
+# schema so the router doesn't take `staff_id` as a bare query param.
+# --------------------------------------------------------------------------
+class ComplaintAssignRequest(BaseModel):
+    staff_id: int
+
+
 class MaintenanceTaskOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -51,6 +59,10 @@ class MaintenanceTaskOut(BaseModel):
     updated_at: Optional[datetime] = None
 
 
+class MaintenanceTaskScheduleRequest(BaseModel):
+    scheduled_at: datetime
+
+
 class ComplaintCommentOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -62,8 +74,18 @@ class ComplaintCommentOut(BaseModel):
     created_at: Optional[datetime] = None
 
 
+# --------------------------------------------------------------------------
+# Adding a comment/feedback -- was previously bare `feedback`/`rating`
+# query params on the router (add_comment). A proper body schema also
+# lets us validate the rating range here instead of trusting whatever
+# int a client sends.
+# --------------------------------------------------------------------------
+class ComplaintCommentCreate(BaseModel):
+    feedback: str = Field(min_length=1, max_length=2000)
+    rating: Optional[int] = Field(default=None, ge=1, le=5)
+
+
 class ComplaintBase(BaseModel):
-    resident_id: int
     category_id: int
     description: str
     priority: Optional[str] = "medium"

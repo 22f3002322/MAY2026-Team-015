@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user, require_admin, require_committee, require_resident
-from app.core.dependencies import get_resident_profile
+from app.core.dependencies import get_current_user, get_resident_profile, require_admin_or_committee, require_verified_resident
 from app.models.auth import User
 from app.models.apartment import ResidentProfile
 from app.models.auth import RoleEnum
@@ -16,67 +15,84 @@ from app.schemas.facility_schema import (
     FacilityBookingOut,
     FacilityBookingUpdate,
 )
+from app.utils.api_error import NotAuthorized
+from app.utils.api_response import success_response
 
+# BUGFIX: every endpoint below used to require Committee specifically
+# (require_committee) and excluded Admin entirely, unlike every other
+# admin-capable module in this app (blocks/flats use
+# require_admin_or_committee) and unlike the component design doc, which
+# describes facility approval as an administrator action. Switched to
+# require_admin_or_committee throughout.
 router = APIRouter(prefix="/api/v1/admin/facilities", tags=["facilities"])
 
 
-@router.post("", response_model=FacilityOut)
-def create_facility(payload: FacilityCreate, _committee: User = Depends(require_committee), db: Session = Depends(get_db)):
-    return booking_service.create_facility(db, payload)
+@router.post("")
+def create_facility(payload: FacilityCreate, _staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
+    facility = booking_service.create_facility(db, payload)
+    return success_response(data=FacilityOut.model_validate(facility), message="Facility created.")
 
 
-@router.get("", response_model=list[FacilityOut])
-def list_facilities(_committee: User = Depends(require_committee), db: Session = Depends(get_db)):
-    return booking_service.list_facilities(db)
+@router.get("")
+def list_facilities(_staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
+    facilities = booking_service.list_facilities(db)
+    return success_response(data=[FacilityOut.model_validate(f) for f in facilities])
 
 
-@router.get("/{facility_id}", response_model=FacilityOut)
-def get_facility(facility_id: int, _committee: User = Depends(require_committee), db: Session = Depends(get_db)):
-    facility = booking_service.get_facility(db, facility_id)
-    if facility is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Facility not found")
-    return facility
+@router.get("/{facility_id}")
+def get_facility(facility_id: int, _staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
+    facility = booking_service.get_facility(db, facility_id)  # raises NotFound if missing
+    return success_response(data=FacilityOut.model_validate(facility))
 
 
-@router.patch("/{facility_id}", response_model=FacilityOut)
-def update_facility(facility_id: int, payload: FacilityUpdate, _committee: User = Depends(require_committee), db: Session = Depends(get_db)):
-    try:
-        return booking_service.update_facility(db, facility_id, payload)
-    except ValueError:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Facility not found")
+@router.patch("/{facility_id}")
+def update_facility(facility_id: int, payload: FacilityUpdate, _staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
+    facility = booking_service.update_facility(db, facility_id, payload)
+    return success_response(data=FacilityOut.model_validate(facility), message="Facility updated.")
 
 
 router_bookings = APIRouter(prefix="/api/v1/facility-bookings", tags=["facility-bookings"])
 
 
-@router_bookings.post("", response_model=FacilityBookingOut)
-def create_booking(payload: FacilityBookingCreate, current_user: User = Depends(require_resident), profile: ResidentProfile = Depends(get_resident_profile), db: Session = Depends(get_db)):
-    payload_dict = payload.model_dump()
-    payload_dict["resident_id"] = profile.resident_id
-    from app.schemas.facility_schema import FacilityBookingCreate
-    new_payload = FacilityBookingCreate(**payload_dict)
-    return booking_service.create_booking(db, new_payload)
+@router_bookings.post("")
+def create_booking(
+    payload: FacilityBookingCreate,
+    current_user: User = Depends(require_verified_resident),
+    profile: ResidentProfile = Depends(get_resident_profile),
+    db: Session = Depends(get_db),
+):
+    # resident_id is always the caller's own profile, never
+    # client-supplied -- see FacilityBookingCreate in facility_schema.py.
+    booking = booking_service.create_booking(db, payload, profile.resident_id)
+    return success_response(data=FacilityBookingOut.model_validate(booking), message="Facility booked.")
 
 
-@router_bookings.get("", response_model=list[FacilityBookingOut])
+@router_bookings.get("")
 def list_bookings(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.role.role_name == RoleEnum.RESIDENT:
         profile = get_resident_profile(current_user, db)
-        return booking_service.list_bookings(db, resident_id=profile.resident_id)
-    return booking_service.list_bookings(db)
+        bookings = booking_service.list_bookings(db, resident_id=profile.resident_id)
+    else:
+        bookings = booking_service.list_bookings(db)
+    return success_response(data=[FacilityBookingOut.model_validate(b) for b in bookings])
 
 
-@router_bookings.get("/{booking_id}", response_model=FacilityBookingOut)
+@router_bookings.get("/{booking_id}")
 def get_booking(booking_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    booking = booking_service.get_booking(db, booking_id)
-    if booking is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Booking not found")
-    return booking
+    booking = booking_service.get_booking(db, booking_id)  # raises NotFound if missing
+
+    # BUGFIX: previously any authenticated user (any role) could fetch
+    # any booking by id -- a resident could read another resident's
+    # booking just by guessing the id.
+    if current_user.role.role_name == RoleEnum.RESIDENT:
+        profile = get_resident_profile(current_user, db)
+        if booking.resident_id != profile.resident_id:
+            raise NotAuthorized("You can only access your own bookings.")
+
+    return success_response(data=FacilityBookingOut.model_validate(booking))
 
 
-@router_bookings.patch("/{booking_id}", response_model=FacilityBookingOut)
-def update_booking(booking_id: int, payload: FacilityBookingUpdate, _committee: User = Depends(require_committee), db: Session = Depends(get_db)):
-    try:
-        return booking_service.update_booking(db, booking_id, payload)
-    except ValueError:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Booking not found")
+@router_bookings.patch("/{booking_id}")
+def update_booking(booking_id: int, payload: FacilityBookingUpdate, _staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
+    booking = booking_service.update_booking(db, booking_id, payload)
+    return success_response(data=FacilityBookingOut.model_validate(booking), message="Booking updated.")

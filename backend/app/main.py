@@ -13,7 +13,9 @@ from app.routers import auth_router
 from app.routers import blocks_router
 from app.routers import flats_router
 from app.routers import profile_router
+from app.routers import residents_router
 from app.routers import complaint_router
+from app.routers import maintenance_router
 from app.routers import facilities_router
 from app.routers import visitors_router
 from app.utils.api_error import AppError
@@ -41,9 +43,12 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost:5173",
-        ],
+        # BUGFIX: this list used to be hardcoded to
+        # ["http://localhost:5173"] with no way to add a staging/prod
+        # origin without editing code. Now driven by CORS_ORIGINS in
+        # .env (comma-separated), defaulting to the same localhost value
+        # for local dev. See app/core/config.py.
+        allow_origins=settings.cors_origins_list,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -86,8 +91,11 @@ def create_app() -> FastAPI:
     app.include_router(profile_router.router)
     app.include_router(blocks_router.router)
     app.include_router(flats_router.router)
+    app.include_router(residents_router.router)
     app.include_router(complaint_router.router)
+    app.include_router(complaint_router.router_categories_public)
     app.include_router(complaint_router.router_complaints)
+    app.include_router(maintenance_router.router)
     app.include_router(facilities_router.router)
     app.include_router(facilities_router.router_bookings)
     app.include_router(visitors_router.router)

@@ -7,7 +7,7 @@ from app.models.apartment import Block, Flat, ResidentProfile, OccupancyHistory 
 from app.models.staff import MaintenanceStaff, SecurityGuard # noqa: F401
 from app.models.visitor import Visitor, VisitorRequest, VisitorLog # noqa: F401
 from app.models.facility import Facility, FacilityBooking # noqa: F401
-from app.models.complaint import ComplaintCategory, Complaint, ComplaintImage, ComplaintAssignment, ComplaintComment # noqa: F401
+from app.models.complaint import ComplaintCategory, Complaint, ComplaintImage, ComplaintAssignment, ComplaintComment, MaintenanceTask # noqa: F401
 
 __all__ = [
     "Role",
@@ -28,5 +28,6 @@ __all__ = [
     "Complaint",
     "ComplaintImage",
     "ComplaintAssignment",
-    "ComplaintComment"
+    "ComplaintComment",
+    "MaintenanceTask",
 ]

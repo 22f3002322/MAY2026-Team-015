@@ -46,6 +46,14 @@ class Settings(BaseSettings):
     MEDIA_ROOT: str = "media"
     MEDIA_URL: str = "/media"
 
+    # CORS -- comma separated list of allowed origins. Defaults cover local
+    # dev only; set this via .env for staging/production.
+    CORS_ORIGINS: str = "http://localhost:5173"
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+
 settings = Settings()
 
 # To check if the settings are loaded correctly, you can uncomment the following line to print the settings:

@@ -38,13 +38,18 @@ class FacilityOut(FacilityBase):
 
 class FacilityBookingBase(BaseModel):
     facility_id: int
-    resident_id: int
     booking_date: date
     start_time: time
     end_time: time
 
 
 class FacilityBookingCreate(FacilityBookingBase):
+    # BUGFIX: resident_id used to be a required client-supplied field
+    # here even though the router always overwrites it with the caller's
+    # own resident profile id (facilities_router.create_booking) --
+    # confusing API surface for no benefit. Removed from the input
+    # schema; it's still present on FacilityBookingOut as the actual
+    # stored value.
     pass
 
 
@@ -59,6 +64,7 @@ class FacilityBookingOut(FacilityBookingBase):
     model_config = ConfigDict(from_attributes=True)
 
     booking_id: int
+    resident_id: int
     status: str
     approved_at: Optional[datetime] = None
     cancelled_by: Optional[int] = None
