@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Layout from "../../components/layout/Layout";
 
@@ -25,6 +25,14 @@ const Notices = () => {
   const deleteNoticeById = useNoticeStore(
     (state) => state.deleteNotice
   );
+
+  const fetchAnnouncements = useNoticeStore(
+    (state) => state.fetchAnnouncements
+  );
+
+  useEffect(() => {
+    fetchAnnouncements();
+  }, [fetchAnnouncements]);
 
   // Filters
 

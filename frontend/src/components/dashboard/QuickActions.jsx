@@ -3,6 +3,7 @@ import {
   UserPlus,
   CalendarPlus,
   UserRoundPlus,
+  Shield,
 } from "lucide-react";
 
 import Button from "../ui/Button";
@@ -13,6 +14,7 @@ const QuickActions = ({
   onAddResident,
   onRegisterVisitor,
   onBookFacility,
+  onAddCommittee,   // Admin-only — omit prop to hide
 }) => {
   const actions = [
     {
@@ -35,6 +37,17 @@ const QuickActions = ({
       icon: CalendarPlus,
       onClick: onBookFacility,
     },
+    // Only shows when the parent passes the prop (Admin only)
+    ...(onAddCommittee
+      ? [
+          {
+            title: "Add Committee",
+            icon: Shield,
+            onClick: onAddCommittee,
+            highlight: true,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -42,7 +55,7 @@ const QuickActions = ({
       title="Quick Actions"
       subtitle="Frequently used actions"
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {actions.map((action) => {
           const Icon = action.icon;
 
@@ -50,7 +63,11 @@ const QuickActions = ({
             <Button
               key={action.title}
               variant="outline"
-              className="h-14 justify-start"
+              className={`h-14 justify-start ${
+                action.highlight
+                  ? "border-blue-400 text-blue-600 hover:bg-blue-50 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-950/30"
+                  : ""
+              }`}
               onClick={action.onClick}
             >
               <Icon size={18} />

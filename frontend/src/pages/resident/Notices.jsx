@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 import Layout from "../../components/layout/Layout";
 
@@ -10,9 +10,11 @@ import NoticeDetails from "../../components/residents/notices/NoticeDetails";
 import useNoticeStore from "../../store/noticeStore";
 
 const Notices = () => {
-  const notices = useNoticeStore(
-    (state) => state.notices
-  );
+  const { notices, fetchAnnouncements } = useNoticeStore();
+
+  useEffect(() => {
+    fetchAnnouncements();
+  }, [fetchAnnouncements]);
 
   const [search, setSearch] =
     useState("");
