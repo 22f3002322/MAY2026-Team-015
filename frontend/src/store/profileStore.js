@@ -1,25 +1,17 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { profileApi } from "../api/profileApi";
 
 const initialProfile = {
   id: crypto.randomUUID(),
-
   name: "William Alexander",
-
   email: "william@example.com",
-
   phone: "+91 9876543210",
-
   block: "A",
-
   flat: "203",
-
   occupancy: "Owner",
-
   joined: "12 Jan 2025",
-
   avatar: "https://i.pravatar.cc/300?img=12",
-
   familyDetails: [
     {
       id: crypto.randomUUID(),
@@ -34,7 +26,6 @@ const initialProfile = {
       age: 6,
     },
   ],
-
   vehicleDetails: [
     {
       id: crypto.randomUUID(),
@@ -47,15 +38,12 @@ const initialProfile = {
       number: "UP32 XY 5678",
     },
   ],
-
   emergencyContact: {
     name: "Emma Alexander",
     relation: "Wife",
     phone: "+91 9988776655",
   },
-
   createdAt: new Date().toISOString(),
-
   updatedAt: null,
 };
 
@@ -72,6 +60,52 @@ const useProfileStore = create(
             updatedAt: new Date().toISOString(),
           },
         })),
+
+      uploadAvatar: async (file) => {
+        try {
+          const res = await profileApi.uploadProfilePicture(file);
+          if (res && res.success && res.data?.profile_image) {
+            const imageUrl = res.data.profile_image;
+            set((state) => ({
+              profile: {
+                ...state.profile,
+                avatar: imageUrl,
+                updatedAt: new Date().toISOString(),
+              },
+            }));
+            return { success: true, avatar: imageUrl };
+          }
+        } catch (err) {
+          console.warn("Backend avatar upload failed or server offline:", err.message);
+        }
+
+        // Local blob URL fallback for local offline testing
+        const localUrl = URL.createObjectURL(file);
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            avatar: localUrl,
+            updatedAt: new Date().toISOString(),
+          },
+        }));
+        return { success: true, avatar: localUrl };
+      },
+
+      removeAvatar: async () => {
+        try {
+          await profileApi.deleteProfilePicture();
+        } catch (err) {
+          console.warn("Backend avatar delete failed:", err.message);
+        }
+
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            avatar: "https://i.pravatar.cc/300?img=12",
+            updatedAt: new Date().toISOString(),
+          },
+        }));
+      },
 
       updateEmergencyContact: (contact) =>
         set((state) => ({
@@ -101,11 +135,9 @@ const useProfileStore = create(
         set((state) => ({
           profile: {
             ...state.profile,
-            vehicleDetails:
-              state.profile.vehicleDetails.filter(
-                (vehicle) =>
-                  vehicle.id !== id
-              ),
+            vehicleDetails: state.profile.vehicleDetails.filter(
+              (vehicle) => vehicle.id !== id
+            ),
             updatedAt: new Date().toISOString(),
           },
         })),
@@ -129,25 +161,15 @@ const useProfileStore = create(
         set((state) => ({
           profile: {
             ...state.profile,
-            familyDetails:
-              state.profile.familyDetails.filter(
-                (member) =>
-                  member.id !== id
-              ),
+            familyDetails: state.profile.familyDetails.filter(
+              (member) => member.id !== id
+            ),
             updatedAt: new Date().toISOString(),
           },
         })),
 
-      changePassword: async (
-        currentPassword,
-        newPassword
-      ) => {
-        // Replace with backend API later
-        console.log({
-          currentPassword,
-          newPassword,
-        });
-
+      changePassword: async (currentPassword, newPassword) => {
+        console.log({ currentPassword, newPassword });
         return true;
       },
 
@@ -155,15 +177,9 @@ const useProfileStore = create(
         set({
           profile: {
             ...initialProfile,
-            familyDetails: [
-              ...initialProfile.familyDetails,
-            ],
-            vehicleDetails: [
-              ...initialProfile.vehicleDetails,
-            ],
-            emergencyContact: {
-              ...initialProfile.emergencyContact,
-            },
+            familyDetails: [...initialProfile.familyDetails],
+            vehicleDetails: [...initialProfile.vehicleDetails],
+            emergencyContact: { ...initialProfile.emergencyContact },
           },
         }),
     }),

@@ -1,705 +1,113 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
-
-const defaultPolls = [
-
-  {
-    id: 1,
-
-    pollId: "POLL-1001",
-
-    question:
-      "Should we install EV charging stations?",
-
-    category:
-      "Infrastructure",
-
-
-    options: [
-
-      {
-        id: 1,
-        text: "Yes",
-        votes: 24,
-      },
-
-      {
-        id: 2,
-        text: "No",
-        votes: 6,
-      },
-
-    ],
-
-
-    totalVotes: 30,
-
-
-    status:
-      "Active",
-
-
-    userVoted:
-      false,
-
-
-    endDate:
-      "31 Dec 2026",
-
-
-    createdBy:
-      "Admin",
-
-
-    createdAt:
-      new Date().toISOString(),
-
-
-    updatedAt:
-      new Date().toISOString(),
-
-  },
-
-
-  {
-    id: 2,
-
-    pollId:
-      "POLL-1002",
-
-
-    question:
-      "Annual cultural event in December?",
-
-
-    category:
-      "Events",
-
-
-    options:[
-
-      {
-        id:1,
-        text:"Yes",
-        votes:18,
-      },
-
-      {
-        id:2,
-        text:"No",
-        votes:9,
-      },
-
-    ],
-
-
-    totalVotes:
-      27,
-
-
-    status:
-      "Closed",
-
-
-    userVoted:
-      false,
-
-
-    endDate:
-      "15 Jul 2026",
-
-
-    createdBy:
-      "Admin",
-
-
-    createdAt:
-      new Date().toISOString(),
-
-
-    updatedAt:
-      new Date().toISOString(),
-
-  },
-
-];
-
-
+import pollApi from "../api/pollApi";
 
 const usePollStore = create(
-
-persist(
-
-(set,get)=>(
-
-{
-
-
-polls:
-defaultPolls,
-
-
-
-
-// ============================
-// ADMIN ACTIONS
-// ============================
-
-
-// Create poll
-
-addPoll:(poll)=>
-
-set((state)=>({
-
-polls:[
-
-
-{
-
-...poll,
-
-
-id:
-Date.now(),
-
-
-pollId:
-`POLL-${Date.now()}`,
-
-
-totalVotes:
-0,
-
-
-userVoted:
-false,
-
-
-status:
-"Active",
-
-
-createdAt:
-new Date().toISOString(),
-
-
-updatedAt:
-new Date().toISOString(),
-
-
-},
-
-...state.polls,
-
-
-]
-
-
-})),
-
-
-
-
-
-
-// Update poll
-
-
-updatePoll:(updatedPoll)=>
-
-set((state)=>({
-
-
-polls:
-
-state.polls.map(
-
-(poll)=>
-
-poll.id===updatedPoll.id
-
-?
-
-{
-
-...poll,
-
-...updatedPoll,
-
-updatedAt:
-new Date().toISOString(),
-
-}
-
-:
-
-poll
-
-)
-
-
-})),
-
-
-
-
-
-
-
-// Delete poll
-
-
-deletePoll:(id)=>
-
-set((state)=>({
-
-
-polls:
-
-state.polls.filter(
-
-(poll)=>
-
-poll.id!==id
-
-)
-
-
-})),
-
-
-
-
-
-
-
-// Close poll
-
-
-closePoll:(id)=>
-
-set((state)=>({
-
-
-polls:
-
-state.polls.map(
-
-(poll)=>
-
-poll.id===id
-
-?
-
-{
-
-...poll,
-
-status:
-"Closed",
-
-updatedAt:
-new Date().toISOString(),
-
-}
-
-:
-
-poll
-
-)
-
-
-})),
-
-
-
-
-
-
-
-// Reopen poll
-
-
-reopenPoll:(id)=>
-
-set((state)=>({
-
-
-polls:
-
-state.polls.map(
-
-(poll)=>
-
-poll.id===id
-
-?
-
-{
-
-...poll,
-
-status:
-"Active",
-
-updatedAt:
-new Date().toISOString(),
-
-}
-
-:
-
-poll
-
-)
-
-
-})),
-
-
-
-
-
-
-
-// Add option
-
-
-addOption:(pollId,text)=>
-
-set((state)=>({
-
-
-polls:
-
-state.polls.map(
-
-(poll)=>
-
-poll.id===pollId
-
-?
-
-{
-
-...poll,
-
-
-options:[
-
-...poll.options,
-
-
-{
-
-id:
-Date.now(),
-
-text,
-
-votes:
-0,
-
-}
-
-]
-
-}
-
-:
-
-poll
-
-
-)
-
-
-})),
-
-
-
-
-
-
-
-// Remove option
-
-
-removeOption:(pollId,optionId)=>
-
-set((state)=>({
-
-
-polls:
-
-state.polls.map(
-
-(poll)=>
-
-poll.id===pollId
-
-?
-
-{
-
-...poll,
-
-options:
-
-poll.options.filter(
-
-(option)=>
-
-option.id!==optionId
-
-)
-
-}
-
-:
-
-poll
-
-)
-
-
-})),
-
-
-
-
-
-
-
-// ============================
-// RESIDENT ACTIONS
-// ============================
-
-
-
-// Vote
-
-
-votePoll:(pollId,optionId)=>
-
-set((state)=>({
-
-
-polls:
-
-state.polls.map(
-
-(poll)=>{
-
-
-if(
-poll.id!==pollId
-)
-
-return poll;
-
-
-
-if(
-poll.status==="Closed"
-)
-
-return poll;
-
-
-
-if(
-poll.userVoted
-)
-
-return poll;
-
-
-
-
-
-return {
-
-
-...poll,
-
-
-userVoted:
-true,
-
-
-totalVotes:
-poll.totalVotes+1,
-
-
-updatedAt:
-new Date().toISOString(),
-
-
-
-options:
-
-poll.options.map(
-
-(option)=>{
-    const isMatch = (option.id !== undefined && option.id === optionId) ||
-                    (option.id === undefined && (option.text || option.option) === optionId);
-    return isMatch
-    ?
-
-    {
-
-      ...option,
-
-      votes: (option.votes || 0) + 1,
-
-    }
-
-    :
-
-    option;
-  }
-
-
-)
-
-
-};
-
-
-}
-
-)
-
-
-})),
-
-
-
-
-
-
-
-
-// Get poll by ID
-
-
-getPollById:(id)=>
-
-get()
-
-.polls
-
-.find(
-
-(poll)=>
-
-poll.id===id
-
-),
-
-
-
-
-
-
-
-// Statistics
-
-
-getPollStats:()=>{
-
-
-const polls =
-get().polls;
-
-
-return {
-
-
-totalPolls:
-polls.length,
-
-
-activePolls:
-
-polls.filter(
-
-(p)=>
-
-p.status==="Active"
-
-).length,
-
-
-
-closedPolls:
-
-polls.filter(
-
-(p)=>
-
-p.status==="Closed"
-
-).length,
-
-
-
-totalVotes:
-
-polls.reduce(
-
-(sum,p)=>
-
-sum+p.totalVotes,
-
-0
-
-),
-
-
-};
-
-
-},
-
-
-
-
-
-
-
-
-// Reset
-
-
-resetPolls:()=>set({
-
-polls:
-defaultPolls,
-
-}),
-
-
-
-}
-
-),
-
-
-{
-
-name:
-"poll-storage",
-
-}
-
-)
-
+  persist(
+    (set, get) => ({
+      polls: [],
+      pollResults: {},  // keyed by poll_id
+      loading: false,
+
+      // ── Fetch all polls ───────────────────────────────────────────────────
+      fetchPolls: async () => {
+        set({ loading: true });
+        try {
+          const res = await pollApi.getPolls();
+          if (res && res.success && Array.isArray(res.data)) {
+            set({ polls: res.data, loading: false });
+            return { success: true, data: res.data };
+          }
+        } catch (err) {
+          console.warn("Polls fetch failed:", err.message);
+        }
+        set({ loading: false });
+        return { success: false, data: get().polls };
+      },
+
+      // ── Create poll (Admin/Committee) ─────────────────────────────────────
+      createPoll: async (payload) => {
+        try {
+          const res = await pollApi.createPoll(payload);
+          if (res && res.success) {
+            get().fetchPolls();
+            return { success: true, data: res.data, message: res.message };
+          }
+          return { success: false, message: res?.message || "Failed to create poll." };
+        } catch (err) {
+          return { success: false, message: err.message || "Failed to create poll." };
+        }
+      },
+
+      // ── Update poll (Admin/Committee) ─────────────────────────────────────
+      updatePoll: async (pollId, payload) => {
+        try {
+          const res = await pollApi.updatePoll(pollId, payload);
+          if (res && res.success) {
+            get().fetchPolls();
+            return { success: true, data: res.data, message: res.message };
+          }
+          return { success: false, message: res?.message || "Update failed." };
+        } catch (err) {
+          return { success: false, message: err.message || "Failed to update poll." };
+        }
+      },
+
+      // ── Vote (verified Resident only) ─────────────────────────────────────
+      votePoll: async (pollId, optionId) => {
+        try {
+          const res = await pollApi.vote(pollId, optionId);
+          if (res && res.success) {
+            // Mark locally as voted so UI updates immediately
+            set((state) => ({
+              polls: state.polls.map((p) =>
+                (p.poll_id || p.id) === pollId ? { ...p, user_voted: true } : p
+              ),
+            }));
+            // Refresh results
+            get().fetchResults(pollId);
+            return { success: true, data: res.data, message: res.message };
+          }
+          return { success: false, message: res?.message || "Vote failed." };
+        } catch (err) {
+          return { success: false, message: err.message || "Failed to cast vote." };
+        }
+      },
+
+      // ── Fetch live results for a specific poll ────────────────────────────
+      fetchResults: async (pollId) => {
+        try {
+          const res = await pollApi.getResults(pollId);
+          if (res && res.success && res.data) {
+            set((state) => ({
+              pollResults: { ...state.pollResults, [pollId]: res.data },
+            }));
+            return { success: true, data: res.data };
+          }
+        } catch (err) {
+          console.warn("Poll results fetch failed:", err.message);
+        }
+        return { success: false };
+      },
+
+      // Selectors
+      getPollById: (id) =>
+        get().polls.find((p) => p.poll_id === id || p.id === id),
+
+      getPollStats: () => {
+        const polls = get().polls;
+        return {
+          totalPolls: polls.length,
+          activePolls: polls.filter((p) => p.is_active).length,
+          closedPolls: polls.filter((p) => !p.is_active).length,
+          totalVotes: polls.reduce((sum, p) => sum + (p.total_votes || 0), 0),
+        };
+      },
+
+      reset: () => set({ polls: [], pollResults: {} }),
+    }),
+    { name: "poll-storage" }
+  )
 );
-
 
 export default usePollStore;

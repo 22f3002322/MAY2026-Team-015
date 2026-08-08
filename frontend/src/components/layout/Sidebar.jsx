@@ -6,27 +6,18 @@ import {
   UserRoundCheck,
   CalendarDays,
   Megaphone,
-  FolderOpen,
   Vote,
-  FileBarChart2,
   ReceiptIndianRupee,
-  Settings,
   X,
   LogOut,
   User,
   Shield,
-  Truck,
-  AlertTriangle,
-  Phone,
-  History,
   Wrench,
-  CheckSquare,
-  Sparkles,
-  Calendar
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 
+// Admin menu — matches backend Modules 1-9
 const adminMenuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
   { title: "Apartments", icon: Building2, path: "/admin/apartments" },
@@ -36,50 +27,31 @@ const adminMenuItems = [
   { title: "Facility Booking", icon: CalendarDays, path: "/admin/bookings" },
   { title: "Billing", icon: ReceiptIndianRupee, path: "/admin/billing" },
   { title: "Notice Board", icon: Megaphone, path: "/admin/notices" },
-  { title: "Documents", icon: FolderOpen, path: "/admin/documents" },
   { title: "Polls", icon: Vote, path: "/admin/polls" },
-  { title: "Reports", icon: FileBarChart2, path: "/admin/reports" },
-  { title: "Staff", icon: Users, path: "/admin/staff" },
-  { title: "Staff Schedules", icon: Calendar, path: "/admin/staff-schedules" },
-  { title: "Settings", icon: Settings, path: "/admin/settings" },
 ];
 
+// Resident menu — matches backend Modules 1-9
 const residentMenuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/resident/dashboard" },
   { title: "Bills", icon: ReceiptIndianRupee, path: "/resident/bills" },
   { title: "Complaints", icon: ClipboardList, path: "/resident/complaints" },
-  { title: "Documents", icon: FolderOpen, path: "/resident/documents" },
-  { title: "Events", icon: CalendarDays, path: "/resident/events" },
   { title: "Facilities", icon: Building2, path: "/resident/facilities" },
   { title: "Notices", icon: Megaphone, path: "/resident/notices" },
   { title: "Polls", icon: Vote, path: "/resident/polls" },
   { title: "Visitors", icon: UserRoundCheck, path: "/resident/visitors" },
   { title: "Profile", icon: User, path: "/resident/profile" },
-  { title: "Settings", icon: Settings, path: "/resident/settings" },
 ];
 
+// Security staff menu — Module 5 (Visitor Management)
 const securityMenuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/staff/dashboard" },
   { title: "Verify Visitors", icon: Shield, path: "/staff/verify-visitors" },
-  { title: "Delivery Register", icon: Truck, path: "/staff/deliveries" },
-  { title: "Incident Reports", icon: AlertTriangle, path: "/staff/incidents" },
-  { title: "Emergency Contacts", icon: Phone, path: "/staff/emergency-contacts" },
-  { title: "Visitor History", icon: History, path: "/staff/visitor-history" },
 ];
 
+// Maintenance staff menu — Module 4 (Maintenance Tasks)
 const maintenanceMenuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/staff/dashboard" },
   { title: "Assigned Complaints", icon: Wrench, path: "/staff/assigned-complaints" },
-  { title: "Completed Jobs", icon: CheckSquare, path: "/staff/completed-jobs" },
-  { title: "Job History", icon: History, path: "/staff/maintenance-history" },
-  { title: "Emergency Contacts", icon: Phone, path: "/staff/emergency-contacts" },
-];
-
-const housekeepingMenuItems = [
-  { title: "Dashboard", icon: LayoutDashboard, path: "/staff/dashboard" },
-  { title: "Cleaning Tasks", icon: Sparkles, path: "/staff/cleaning-tasks" },
-  { title: "Completed Tasks", icon: CheckSquare, path: "/staff/completed-cleaning" },
-  { title: "Cleaning Schedule", icon: Calendar, path: "/staff/cleaning-schedule" },
 ];
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
@@ -93,7 +65,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       const staffRole = user?.staffRole;
       if (staffRole === "security") return securityMenuItems;
       if (staffRole === "maintenance") return maintenanceMenuItems;
-      if (staffRole === "housekeeping") return housekeepingMenuItems;
+      // Default staff gets both options
+      return [...securityMenuItems, ...maintenanceMenuItems.slice(1)];
     }
     return [];
   };

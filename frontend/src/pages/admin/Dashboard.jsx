@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Layout from "../../components/layout/Layout";
@@ -16,9 +16,15 @@ import useResidentStore from "../../store/residentStore";
 import useComplaintStore from "../../store/complaintStore";
 import useVisitorStore from "../../store/visitorStore";
 import useBillingStore from "../../store/billingStore";
+import useAuthStore from "../../store/authStore";
+import CreateCommitteeModal from "../../components/admin/CreateCommitteeModal";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [committeeModal, setCommitteeModal] = useState(false);
+  const { backendRole } = useAuthStore();
+  // Only pure Admins (not Committee) get the "Add Committee" quick action
+  const isPureAdmin = String(backendRole || "").toLowerCase() === "admin";
 
   const apartments = useApartmentStore(
     (state) => state.apartments
@@ -316,28 +322,19 @@ const Dashboard = () => {
 
       <div className="mt-8">
         <QuickActions
-          onRaiseComplaint={() =>
-            navigate(
-              "/admin/complaints"
-            )
-          }
-          onAddResident={() =>
-            navigate(
-              "/admin/residents"
-            )
-          }
-          onRegisterVisitor={() =>
-            navigate(
-              "/admin/visitors"
-            )
-          }
-          onBookFacility={() =>
-            navigate(
-              "/admin/bookings"
-            )
-          }
+          onRaiseComplaint={() => navigate("/admin/complaints")}
+          onAddResident={() => navigate("/admin/residents")}
+          onRegisterVisitor={() => navigate("/admin/visitors")}
+          onBookFacility={() => navigate("/admin/bookings")}
+          onAddCommittee={isPureAdmin ? () => setCommitteeModal(true) : undefined}
         />
       </div>
+
+      {/* Committee creation modal — Admin only */}
+      <CreateCommitteeModal
+        open={committeeModal}
+        onClose={() => setCommitteeModal(false)}
+      />
 
       <div className="mt-8 grid gap-6 xl:grid-cols-2">
         <ComplaintStatusChart

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Layout from "../../components/layout/Layout";
 
@@ -13,6 +13,7 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import Pagination from "../../components/ui/Pagination";
 
 import useResidentStore from "../../store/residentStore";
+import PendingVerifications from "../../components/admin/PendingVerifications";
 
 const Residents = () => {
   // Zustand
@@ -32,6 +33,14 @@ const Residents = () => {
   const removeResident = useResidentStore(
     (state) => state.deleteResident
   );
+
+  const fetchResidents = useResidentStore(
+    (state) => state.fetchResidents
+  );
+
+  useEffect(() => {
+    fetchResidents();
+  }, [fetchResidents]);
 
   // Filters
 
@@ -95,6 +104,8 @@ const Residents = () => {
       title="Residents"
       breadcrumb={["Home", "Residents"]}
     >
+      <PendingVerifications />
+
       <ResidentStats />
 
       <ResidentFilters
