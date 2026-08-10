@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
+import Button from "../../components/ui/Button";
 import Table from "../../components/ui/Table";
 
 import StatCard from "../../components/dashboard/StatCard";
@@ -22,8 +23,8 @@ import CreateCommitteeModal from "../../components/admin/CreateCommitteeModal";
 const Dashboard = () => {
   const navigate = useNavigate();
   const [committeeModal, setCommitteeModal] = useState(false);
-  const { backendRole } = useAuthStore();
-  // Only pure Admins (not Committee) get the "Add Committee" quick action
+  const { backendRole, pendingVerifications, fetchPendingVerifications } = useAuthStore();
+  const isCommittee = String(backendRole || "").toLowerCase() === "committee";
   const isPureAdmin = String(backendRole || "").toLowerCase() === "admin";
 
   const fetchResidents = useResidentStore((state) => state.fetchResidents);
@@ -38,7 +39,10 @@ const Dashboard = () => {
     fetchComplaints();
     fetchVisitorLogs();
     fetchBills();
-  }, [fetchResidents, fetchFlats, fetchComplaints, fetchVisitorLogs, fetchBills]);
+    if (isCommittee) {
+      fetchPendingVerifications();
+    }
+  }, [fetchResidents, fetchFlats, fetchComplaints, fetchVisitorLogs, fetchBills, isCommittee, fetchPendingVerifications]);
 
   const flats = useApartmentStore(
     (state) => state.flats
@@ -331,10 +335,51 @@ const Dashboard = () => {
 
       <div className="mt-8">
         <QuickActions
-          onAddResident={() => navigate("/admin/residents")}
           onAddCommittee={isPureAdmin ? () => setCommitteeModal(true) : undefined}
         />
       </div>
+
+      {/* Committee: pending verifications nudge */}
+      {isCommittee && pendingVerifications.length > 0 && (
+        <div className="mt-6">
+          <Card
+            title="Pending Verifications"
+            subtitle={`${pendingVerifications.length} account(s) awaiting review`}
+            className="border-amber-200 dark:border-amber-800"
+          >
+            <div className="space-y-3">
+              {pendingVerifications.slice(0, 5).map((u) => (
+                <div
+                  key={u.user_id}
+                  className="flex items-center justify-between rounded-xl border border-slate-100 dark:border-slate-800 p-4"
+                >
+                  <div>
+                    <p className="font-medium text-slate-800 dark:text-slate-200">{u.full_name || "—"}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{u.email}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="secondary">{u.role}</Badge>
+                      <span className="text-xs text-slate-400 dark:text-slate-500">
+                        {u.created_at ? new Date(u.created_at).toLocaleDateString() : ""}
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => navigate("/admin/users")}
+                  >
+                    Review
+                  </Button>
+                </div>
+              ))}
+              {pendingVerifications.length > 5 && (
+                <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
+                  +{pendingVerifications.length - 5} more pending
+                </p>
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Committee creation modal — Admin only */}
       <CreateCommitteeModal

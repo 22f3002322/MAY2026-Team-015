@@ -4,7 +4,9 @@ import {
   Menu,
   ChevronRight,
   CheckCheck,
+  UserRoundCheck,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 import useNoticeStore from "../../store/noticeStore";
 
@@ -20,8 +22,10 @@ const NOTIFICATION_TYPE_STYLES = {
 };
 
 const Topbar = ({ title = "Dashboard", breadcrumb = [], onMenuClick }) => {
-  const { user, role } = useAuthStore();
+  const navigate = useNavigate();
+  const { user, role, backendRole, pendingVerifications, fetchPendingVerifications } = useAuthStore();
   const { notifications, unreadCount, fetchNotifications, markRead, markAllRead } = useNoticeStore();
+  const isCommittee = String(backendRole || "").toLowerCase() === "committee";
 
   const [showNotifications, setShowNotifications] = useState(false);
   const dropdownRef = useRef(null);
@@ -34,6 +38,13 @@ const Topbar = ({ title = "Dashboard", breadcrumb = [], onMenuClick }) => {
     }, 30000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
+
+  // Fetch pending verifications for Committee
+  useEffect(() => {
+    if (isCommittee) {
+      fetchPendingVerifications();
+    }
+  }, [isCommittee, fetchPendingVerifications]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -112,6 +123,23 @@ const Topbar = ({ title = "Dashboard", breadcrumb = [], onMenuClick }) => {
 
       {/* Right Section */}
       <div className="flex items-center gap-4">
+
+        {/* Pending Verifications Indicator (Committee only) */}
+        {isCommittee && pendingVerifications.length > 0 && (
+          <button
+            onClick={() => navigate("/admin/users")}
+            className="relative rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors text-sm font-medium"
+            title={`${pendingVerifications.length} pending verification(s)`}
+          >
+            <span className="flex items-center gap-2">
+              <UserRoundCheck size={18} />
+              <span className="hidden md:inline">{pendingVerifications.length} pending</span>
+            </span>
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-bold">
+              {pendingVerifications.length}
+            </span>
+          </button>
+        )}
 
         {/* Notification Bell */}
         <div className="relative" ref={dropdownRef}>
