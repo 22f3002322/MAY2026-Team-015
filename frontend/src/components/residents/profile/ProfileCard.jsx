@@ -138,13 +138,6 @@ const ProfileCard = ({ onEdit }) => {
             </span>
           </div>
 
-          {/* Vehicle Info */}
-          <div className="flex items-center gap-3">
-            <Car size={18} className="text-indigo-600" />
-            <span className="text-slate-700 dark:text-slate-100">
-              Vehicles {profile.vehicleDetails?.length || 0}
-            </span>
-          </div>
 
           <div className="flex items-center gap-3">
             <User size={18} className="text-indigo-600" />

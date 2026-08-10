@@ -93,26 +93,6 @@ const VisitorTable = ({
             <Eye size={16} />
           </Button>
 
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              onEdit(row)
-            }
-          >
-            <Pencil size={16} />
-          </Button>
-
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={() =>
-              onDelete(row)
-            }
-          >
-            <Trash2 size={16} />
-          </Button>
-
         </div>
       ),
     },

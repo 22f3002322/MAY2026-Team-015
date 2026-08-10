@@ -104,12 +104,25 @@ export async function apiRequest(endpoint, options = {}) {
           headers["Authorization"] = `Bearer ${newAccessToken}`;
           return apiRequest(endpoint, { ...options, headers });
         } else {
+          localStorage.removeItem("auth-storage");
           processQueue(new Error("Refresh failed"), null);
           isRefreshing = false;
+          if (!window.location.pathname.includes("/login")) {
+            window.location.href = "/login";
+          }
         }
       } catch (err) {
+        localStorage.removeItem("auth-storage");
         processQueue(err, null);
         isRefreshing = false;
+        if (!window.location.pathname.includes("/login")) {
+          window.location.href = "/login";
+        }
+      }
+    } else {
+      localStorage.removeItem("auth-storage");
+      if (!window.location.pathname.includes("/login")) {
+        window.location.href = "/login";
       }
     }
   }

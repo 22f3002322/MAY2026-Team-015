@@ -103,13 +103,15 @@ const ComplaintFilters = ({
               <Download size={18} />
             </Button>
 
-            <Button
-              className="h-14 flex-1"
-              onClick={onRaiseComplaint}
-            >
-              <Plus size={18} />
-              Raise Complaint
-            </Button>
+            {onRaiseComplaint && (
+              <Button
+                className="h-14 flex-1"
+                onClick={onRaiseComplaint}
+              >
+                <Plus size={18} />
+                Raise Complaint
+              </Button>
+            )}
 
           </div>
 

@@ -21,28 +21,27 @@ const StaffDashboard = () => {
   const staffRole = user?.staffRole || "security";
 
   const { tasks, fetchMyTasks, loading: tasksLoading } = useMaintenanceStore();
-  const { requests, fetchVisitorRequests, logs, fetchVisitorLogs, loading: visitorsLoading } = useVisitorStore();
+  const { logs, fetchVisitorLogs, loading: visitorsLoading } = useVisitorStore();
 
   // Fetch data on mount from backend
   useEffect(() => {
     if (staffRole === "maintenance") {
       fetchMyTasks();
     } else if (staffRole === "security") {
-      fetchVisitorRequests();
       fetchVisitorLogs();
     }
   }, [staffRole]);
 
   const stats = useMemo(() => {
     if (staffRole === "security") {
-      const pendingRequests = requests.filter(r => r.status === "pending" || r.status === "pre_registered").length;
       const arrivedToday = logs.filter(l => l.entry_time && l.entry_time.startsWith(new Date().toISOString().split("T")[0])).length;
+      const checkedOutToday = logs.filter(l => l.exit_time && l.exit_time.startsWith(new Date().toISOString().split("T")[0])).length;
+      const totalLogs = logs.length;
       
       return [
-        { title: "Pending Requests", value: pendingRequests, icon: UserRoundCheck, color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50" },
-        { title: "Visitors Checked In", value: arrivedToday, icon: Users, color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50" },
-        { title: "Total Requests", value: requests.length, icon: Shield, color: "text-sky-600 bg-sky-50 dark:bg-sky-950/50" },
-        { title: "Total Logs", value: logs.length, icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50" },
+        { title: "Checked In Today", value: arrivedToday, icon: Users, color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50" },
+        { title: "Checked Out Today", value: checkedOutToday, icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50" },
+        { title: "Total Logs", value: totalLogs, icon: Shield, color: "text-sky-600 bg-sky-50 dark:bg-sky-950/50" },
       ];
     } else {
       // Maintenance
@@ -57,7 +56,7 @@ const StaffDashboard = () => {
         { title: "Total Tasks", value: tasks.length, icon: Wrench, color: "text-sky-600 bg-sky-50 dark:bg-sky-950/50" },
       ];
     }
-  }, [staffRole, requests, logs, tasks]);
+  }, [staffRole, logs, tasks]);
 
   const roleName = {
     security: "Security Officer",
@@ -105,7 +104,7 @@ const StaffDashboard = () => {
         </div>
 
         {/* Recent Tasks / Requests */}
-        <Card title={staffRole === "maintenance" ? "Your Recent Tasks" : "Recent Visitor Requests"}>
+        <Card title={staffRole === "maintenance" ? "Your Recent Tasks" : "Recent Visitor Activity Logs"}>
           {loading ? (
             <p className="text-sm text-slate-500 dark:text-slate-400 py-4">Loading...</p>
           ) : staffRole === "maintenance" ? (
@@ -142,33 +141,32 @@ const StaffDashboard = () => {
               </div>
             )
           ) : (
-            requests.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400 py-4">No visitor requests found.</p>
+            logs.length === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400 py-4">No visitor logs found.</p>
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {requests.slice(0, 8).map((req) => (
-                  <div key={req.request_id} className="flex items-center justify-between py-3.5 first:pt-0 last:pb-0">
+                {logs.slice(0, 8).map((log) => (
+                  <div key={log.log_id || log.id} className="flex items-center justify-between py-3.5 first:pt-0 last:pb-0">
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                         <Users size={18} />
                       </div>
                       <div>
                         <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                          {req.visitor_name || `Visitor #${req.request_id}`}
+                          {log.visitor_name || `Visitor #${log.log_id}`}
                         </h4>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          Expected: {req.expected_date} at {req.expected_time}
+                          Flat: {log.flat_number || log.flat_id} • Purpose: {log.visitor_type || "Guest"}
                         </p>
                       </div>
                     </div>
                     <Badge
                       variant={
-                        req.status === "arrived" ? "success" :
-                        req.status === "pre_registered" ? "warning" : "default"
+                        log.exit_time ? "success" : "warning"
                       }
                       className="capitalize"
                     >
-                      {req.status?.replace("_", " ")}
+                      {log.exit_time ? "Departed" : "Checked In"}
                     </Badge>
                   </div>
                 ))}

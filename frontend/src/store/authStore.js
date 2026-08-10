@@ -81,6 +81,8 @@ const useAuthStore = create(
                     : me.security_profile
                     ? "security"
                     : null,
+                  residentProfile: residentInfo,
+                  avatar: me.profile_image || null,
                 },
               });
             }
@@ -207,6 +209,7 @@ const useAuthStore = create(
 
           if (res && res.success && res.data) {
             const me = res.data;
+            const residentInfo = me.resident_profile || {};
 
             set({
               user: {
@@ -214,7 +217,19 @@ const useAuthStore = create(
                 name: me.full_name,
                 email: me.email,
                 phone: me.phone,
+                flat: residentInfo.flat_id
+                  ? String(residentInfo.flat_id)
+                  : null,
+                block: residentInfo.block || null,
+                occupancy: "Resident",
                 isVerified: me.is_verified,
+                staffRole: me.maintenance_profile
+                  ? "maintenance"
+                  : me.security_profile
+                  ? "security"
+                  : null,
+                residentProfile: residentInfo,
+                avatar: me.profile_image || null,
               },
               role: mapBackendRoleToFrontend(me.role),
               backendRole: me.role,

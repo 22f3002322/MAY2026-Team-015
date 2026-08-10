@@ -89,8 +89,9 @@ const useResidentStore = create(
           if (signupRes && signupRes.success && signupRes.data) {
             const userId = signupRes.data.user_id;
 
-            // 4. Verify account if status is Active (verify triggers move-in on backend)
-            if (resident.status === "Active") {
+            // 4. Verify account if status is Active (only Committee members can verify users)
+            const callerRole = String(useAuthStore.getState().backendRole || "").toLowerCase();
+            if (resident.status === "Active" && callerRole === "committee") {
               await authApi.verifyUser(userId);
             }
 

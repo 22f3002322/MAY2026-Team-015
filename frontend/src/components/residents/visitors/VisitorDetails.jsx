@@ -102,6 +102,20 @@ const VisitorDetails = ({
             </Badge>
           </div>
 
+          {visitor.otp && (
+            <div className="col-span-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 p-4 border border-indigo-100 dark:border-indigo-900 flex flex-col items-center justify-center">
+              <p className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold tracking-wider uppercase">
+                Visitor Verification OTP
+              </p>
+              <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300 mt-1 tracking-widest">
+                {visitor.otp}
+              </p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 text-center">
+                Share this OTP with the visitor to verify entry at the gate.
+              </p>
+            </div>
+          )}
+
         </div>
 
         {/* Created */}

@@ -29,10 +29,18 @@ const useNoticeStore = create(
       loading: false,
 
       // ── Announcements ─────────────────────────────────────────────────────
-      fetchAnnouncements: async (includeInactive = true) => {
+      fetchAnnouncements: async (includeInactive) => {
+        // Only admin/committee can include inactive; default based on role
+        let isAdmin = false;
+        try {
+          const stored = JSON.parse(localStorage.getItem("auth-storage") || "{}");
+          const role = stored?.state?.role || "";
+          isAdmin = role === "admin" || role === "committee";
+        } catch { /* ignore */ }
+        const shouldIncludeInactive = includeInactive !== undefined ? includeInactive : isAdmin;
         set({ loading: true });
         try {
-          const res = await communicationApi.getAnnouncements(includeInactive);
+          const res = await communicationApi.getAnnouncements(shouldIncludeInactive);
           if (res && res.success && Array.isArray(res.data)) {
             const mapped = res.data.map(mapBackendToNotice);
             set({ 
