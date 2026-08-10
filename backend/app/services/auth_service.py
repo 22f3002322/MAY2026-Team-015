@@ -405,6 +405,49 @@ def verify_user(db: Session, user_id: int, occupancy_type: str | None = None) ->
 
 
 # --------------------------------------------------------------------------
+# Account deactivation / reactivation.
+#
+# BUGFIX (CODE_REVIEW.md 1.5): `Deactivated` is a real exception and
+# both get_current_user and authenticate_user check `is_active` -- but
+# nothing anywhere ever set it to False after account creation. There
+# was no admin "suspend a bad actor" path at all short of a manual DB
+# edit, unlike is_verified, which has a full read+write lifecycle
+# (list_pending_verifications / verify_user). Deactivating also revokes
+# every refresh token the user currently holds, same as a password
+# reset, so an existing session dies immediately rather than staying
+# valid until its access token naturally expires.
+# --------------------------------------------------------------------------
+def deactivate_user(db: Session, user_id: int, actor_user_id: int) -> User:
+    if user_id == actor_user_id:
+        raise BadRequest("You cannot deactivate your own account.")
+
+    user = get_user_by_id(db, user_id)
+    if user is None:
+        raise NotFound("User not found.")
+
+    if user.is_active:
+        user.is_active = False
+        db.commit()
+        db.refresh(user)
+        revoke_all_refresh_tokens(db, user.user_id)
+
+    return user
+
+
+def reactivate_user(db: Session, user_id: int) -> User:
+    user = get_user_by_id(db, user_id)
+    if user is None:
+        raise NotFound("User not found.")
+
+    if not user.is_active:
+        user.is_active = True
+        db.commit()
+        db.refresh(user)
+
+    return user
+
+
+# --------------------------------------------------------------------------
 # Password reset -- the only way to get a new password (no self-service
 # change-password endpoint). Still backed by Redis (short-lived, TTL is
 # exactly what Redis is good at); unrelated to the refresh-token store.

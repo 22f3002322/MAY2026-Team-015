@@ -121,6 +121,20 @@ def create_payment(db: Session, payload: PaymentCreate) -> Payment:
     if bill.status == "paid":
         raise Conflict("This bill has already been paid.")
 
+    # BUGFIX (CODE_REVIEW.md 1.3): payload.amount was never checked
+    # against the bill it's paying -- a client could submit amount=1
+    # with status="success" against a much larger bill and the bill
+    # would still flip to "paid" in full. This system doesn't support
+    # partial payments (MaintenanceBill has a single `amount` and a
+    # binary unpaid/paid status, no running balance to track against),
+    # so a payment must cover the bill exactly or it's rejected outright
+    # -- same principle as create_bill reconciling `amount` against
+    # `items` rather than trusting a client-supplied total.
+    if payload.amount != bill.amount:
+        raise BadRequest(
+            f"Payment amount ({payload.amount}) does not match the bill amount ({bill.amount})."
+        )
+
     existing_ref = (
         db.query(Payment).filter(Payment.transaction_reference == payload.transaction_reference).first()
     )
