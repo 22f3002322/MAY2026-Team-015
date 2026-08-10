@@ -273,7 +273,18 @@ def signup_user(db: Session, payload: SignupRequest) -> User:
     if role_enum == RoleEnum.RESIDENT:
         p = payload.resident_profile or ResidentProfileIn()
         if p.flat_id is not None:
-            flat = apartment_service.get_flat(db, p.flat_id)  # raises NotFound if it doesn't exist
+            # BUGFIX (CODE_REVIEW.md 2): get_flat() used to be a plain,
+            # unlocked SELECT here -- two near-simultaneous signups
+            # against the same flat_id could both read
+            # occupancy_status="vacant" and both find no
+            # already_claimed row before either commits, since the
+            # check below is application-level only (no DB uniqueness
+            # constraint backs it). for_update=True locks the flat row
+            # for the rest of this transaction (signup_user only
+            # commits once, at the very end), so the second concurrent
+            # signup blocks here until the first commits, then re-reads
+            # and correctly hits one of the two Conflicts below.
+            flat = apartment_service.get_flat(db, p.flat_id, for_update=True)  # raises NotFound if it doesn't exist
             if flat.occupancy_status != "vacant":
                 raise Conflict(f"Flat '{flat.flat_number}' is already occupied.")
             # BUGFIX: occupancy_status only flips to "occupied" at

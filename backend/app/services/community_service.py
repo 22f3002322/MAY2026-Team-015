@@ -72,8 +72,25 @@ def cast_vote(db: Session, poll_id: int, option_id: int, user_id: int) -> PollVo
     started yet, had already ended, or had been deactivated early (a
     no-op in the reference anyway, since Poll.is_active didn't exist as
     a real column -- see models/community.py).
+
+    BUGFIX (CODE_REVIEW.md 2): get_poll() below used to be a plain,
+    unlocked SELECT -- two concurrent votes from the same user on a
+    single-vote poll could both pass the "already voted" check before
+    either commits, producing two PollVote rows for one user on a poll
+    that's supposed to disallow that. Locking the poll row for the
+    duration of the check + insert closes the gap: the second
+    concurrent request blocks here until the first commits, then
+    re-checks and correctly hits the Conflict below.
     """
-    poll = get_poll(db, poll_id)
+    poll = (
+        db.query(Poll)
+        .options(*_LOAD_OPTIONS)
+        .filter(Poll.poll_id == poll_id)
+        .with_for_update()
+        .first()
+    )
+    if poll is None:
+        raise NotFound("Poll not found.")
 
     if not poll.is_active:
         raise BadRequest("This poll is closed.")

@@ -116,7 +116,22 @@ def _generate_receipt_number(payment_id: int) -> str:
 
 
 def create_payment(db: Session, payload: PaymentCreate) -> Payment:
-    bill = get_bill(db, payload.bill_id)  # raises NotFound if missing
+    # BUGFIX (CODE_REVIEW.md 2): get_bill() was a plain, unlocked SELECT
+    # -- two concurrent POST /payments for the same bill could both read
+    # status="unpaid" before either commits, both pass every check below,
+    # and both create a Payment + Receipt against one bill. Locking this
+    # row for the rest of the transaction means the second concurrent
+    # request blocks here until the first commits, then re-reads the
+    # now-"paid" row and correctly hits the Conflict below instead of
+    # double-booking the payment.
+    bill = (
+        db.query(MaintenanceBill)
+        .filter(MaintenanceBill.bill_id == payload.bill_id)
+        .with_for_update()
+        .first()
+    )
+    if bill is None:
+        raise NotFound("Bill not found.")
 
     if bill.status == "paid":
         raise Conflict("This bill has already been paid.")
