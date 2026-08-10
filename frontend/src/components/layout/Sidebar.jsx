@@ -28,6 +28,7 @@ const adminMenuItems = [
   { title: "Billing", icon: ReceiptIndianRupee, path: "/admin/billing" },
   { title: "Notice Board", icon: Megaphone, path: "/admin/notices" },
   { title: "Polls", icon: Vote, path: "/admin/polls" },
+  { title: "Users", icon: Users, path: "/admin/users" },
 ];
 
 // Resident menu — matches backend Modules 1-9
@@ -85,7 +86,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   return (
     <aside 
-      className={`fixed lg:static inset-y-0 left-0 z-50 w-72 h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+      className={`fixed lg:sticky inset-y-0 left-0 z-50 w-72 h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
         isOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
@@ -111,7 +112,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-5 space-y-2 overflow-y-auto">
+      <nav className="flex-1 px-4 py-5 space-y-2 overflow-y-auto no-scrollbar">
         {menuItems.map((item) => {
           const Icon = item.icon;
 
