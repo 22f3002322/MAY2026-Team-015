@@ -1,6 +1,7 @@
 import {
   useMemo,
   useState,
+  useEffect,
 } from "react";
 
 
@@ -27,6 +28,12 @@ const Polls = () => {
       (state) =>
         state.polls
     );
+
+  const fetchPolls = usePollStore((state) => state.fetchPolls);
+
+  useEffect(() => {
+    fetchPolls();
+  }, [fetchPolls]);
 
 
 

@@ -23,22 +23,15 @@ const ProfileStats = () => {
         "bg-indigo-100 text-indigo-600",
     },
     {
-      title: "Vehicles",
-      value: profile.vehicleDetails.length,
-      icon: Car,
-      color:
-        "bg-emerald-100 text-emerald-600",
-    },
-    {
-      title: "Family Members",
-      value: profile.familyDetails.length,
+      title: "Occupancy",
+      value: profile.occupancy,
       icon: Users,
       color:
         "bg-amber-100 text-amber-600",
     },
     {
       title: "Flat",
-      value: `${profile.block}-${profile.flat}`,
+      value: profile.block && profile.flat ? `${profile.block}-${profile.flat}` : "Not Assigned",
       icon: Home,
       color:
         "bg-rose-100 text-rose-600",

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 
 import Layout from "../../components/layout/Layout";
@@ -30,13 +30,13 @@ const Visitors = () => {
     (state) => state.addVisitor
   );
 
-  const updateVisitor = useVisitorStore(
-    (state) => state.updateVisitor
+  const fetchVisitorRequests = useVisitorStore(
+    (state) => state.fetchVisitorRequests
   );
 
-  const deleteVisitor = useVisitorStore(
-    (state) => state.deleteVisitor
-  );
+  useEffect(() => {
+    fetchVisitorRequests();
+  }, [fetchVisitorRequests]);
 
   // Filters
 
@@ -59,20 +59,7 @@ const Visitors = () => {
     setSelectedVisitor,
   ] = useState(null);
 
-  const [
-    editingVisitor,
-    setEditingVisitor,
-  ] = useState(null);
 
-  const [
-    editModal,
-    setEditModal,
-  ] = useState(false);
-
-  const [
-    deleteItem,
-    setDeleteItem,
-  ] = useState(null);
 
   // Filtering
 
@@ -141,19 +128,10 @@ const Visitors = () => {
       >
         <VisitorTable
           visitors={filteredVisitors}
-          onView={
-            setSelectedVisitor
-          }
-          onEdit={(visitor) => {
-            setEditingVisitor(
-              visitor
-            );
-            setEditModal(true);
-          }}
-          onDelete={setDeleteItem}
+          onView={setSelectedVisitor}
         />
       </Card>
-            {/* Add Visitor */}
+      {/* Add Visitor */}
 
       <Modal
         open={openModal}
@@ -163,45 +141,19 @@ const Visitors = () => {
         }
       >
         <VisitorForm
-          onSubmit={(data) => {
-            addVisitor({
+          onSubmit={async (data) => {
+            const res = await addVisitor({
               ...data,
               residentFlat: resident ? resident.flat : "101",
             });
-            toast.success("Visitor added successfully!");
+            if (res.success && res.otp) {
+              toast.success(`Visitor pre-registered! OTP is ${res.otp}`, { duration: 6000 });
+            }
             setOpenModal(false);
           }}
           onClose={() =>
             setOpenModal(false)
           }
-        />
-      </Modal>
-
-      {/* Edit Visitor */}
-
-      <Modal
-        open={editModal}
-        title="Edit Visitor"
-        onClose={() => {
-          setEditModal(false);
-          setEditingVisitor(null);
-        }}
-      >
-        <VisitorForm
-          initialData={editingVisitor}
-          onSubmit={(data) => {
-            updateVisitor(
-              editingVisitor.id,
-              data
-            );
-            toast.success("Visitor updated successfully!");
-            setEditModal(false);
-            setEditingVisitor(null);
-          }}
-          onClose={() => {
-            setEditModal(false);
-            setEditingVisitor(null);
-          }}
         />
       </Modal>
 
@@ -212,23 +164,6 @@ const Visitors = () => {
         onClose={() =>
           setSelectedVisitor(null)
         }
-      />
-
-      {/* Delete Visitor */}
-
-      <ConfirmDialog
-        open={!!deleteItem}
-        title="Delete Visitor"
-        message={`Are you sure you want to delete ${deleteItem?.name}?`}
-        confirmText="Delete"
-        onCancel={() =>
-          setDeleteItem(null)
-        }
-        onConfirm={() => {
-          deleteVisitor(deleteItem.id);
-          toast.success("Visitor removed successfully!");
-          setDeleteItem(null);
-        }}
       />
     </Layout>
   );

@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import useBookingStore from "../../store/bookingStore";
 
 import Layout from "../../components/layout/Layout";
 import Modal from "../../components/ui/Modal";
@@ -20,6 +21,14 @@ const Facilities = () => {
   const bookings = useFacilityStore(
     (state) => state.bookings
   );
+
+  const fetchFacilities = useFacilityStore((state) => state.fetchFacilities);
+  const fetchBookings = useBookingStore((state) => state.fetchBookings);
+
+  useEffect(() => {
+    fetchFacilities();
+    fetchBookings();
+  }, [fetchFacilities, fetchBookings]);
 
   const [search, setSearch] =
     useState("");
