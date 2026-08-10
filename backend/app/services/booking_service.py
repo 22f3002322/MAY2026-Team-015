@@ -87,7 +87,25 @@ def _validate_booking_window(facility: Facility, booking_date, start_time: time,
 
 
 def create_booking(db: Session, payload: FacilityBookingCreate, resident_id: int) -> FacilityBooking:
-    facility = get_facility(db, payload.facility_id)  # raises NotFound if missing
+    # BUGFIX (CODE_REVIEW.md 2): get_facility() was a plain, unlocked
+    # SELECT -- two concurrent bookings for the same facility/date/
+    # overlapping time could both pass check_booking_conflict before
+    # either commits, since nothing serialized them (a booked slot has
+    # no row of its own to lock until after it's inserted). Locking the
+    # facility row itself for the duration of the check + insert closes
+    # that gap: the second concurrent request blocks here until the
+    # first commits, then re-checks against the now-committed booking
+    # and correctly hits the Conflict below. This briefly serializes
+    # bookings against the SAME facility only -- different facilities
+    # are unaffected.
+    facility = (
+        db.query(Facility)
+        .filter(Facility.facility_id == payload.facility_id)
+        .with_for_update()
+        .first()
+    )
+    if facility is None:
+        raise NotFound("Facility not found.")
 
     _validate_booking_window(facility, payload.booking_date, payload.start_time, payload.end_time)
 
@@ -127,17 +145,25 @@ def get_booking(db: Session, booking_id: int) -> FacilityBooking:
 
 def update_booking(db: Session, booking_id: int, payload: FacilityBookingUpdate) -> FacilityBooking:
     booking = get_booking(db, booking_id)
-    facility = get_facility(db, booking.facility_id)
 
     update_data = payload.model_dump(exclude_unset=True)
     new_start = update_data.get("start_time", booking.start_time)
     new_end = update_data.get("end_time", booking.end_time)
     new_date = update_data.get("booking_date", booking.booking_date)
 
-    # Only re-validate the window if the date/time actually changed --
-    # a pure status update (e.g. admin cancelling) shouldn't be blocked
-    # by e.g. the slot now being "in the past".
+    # BUGFIX (CODE_REVIEW.md 2): same race as create_booking above --
+    # only lock the facility when we're actually about to re-check the
+    # conflict window (date/time changed), so a pure status update (e.g.
+    # admin cancelling) doesn't pay for a lock it doesn't need.
     if {"start_time", "end_time", "booking_date"} & update_data.keys():
+        facility = (
+            db.query(Facility)
+            .filter(Facility.facility_id == booking.facility_id)
+            .with_for_update()
+            .first()
+        )
+        if facility is None:
+            raise NotFound("Facility not found.")
         _validate_booking_window(facility, new_date, new_start, new_end)
 
     if check_booking_conflict(db, booking.facility_id, new_date, new_start, new_end, exclude_booking_id=booking_id):

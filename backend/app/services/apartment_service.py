@@ -125,8 +125,16 @@ def create_flat(db: Session, payload: FlatCreate) -> Flat:
     return flat
 
 
-def get_flat(db: Session, flat_id: int) -> Flat:
-    flat = db.query(Flat).filter(Flat.flat_id == flat_id).first()
+def get_flat(db: Session, flat_id: int, for_update: bool = False) -> Flat:
+    query = db.query(Flat).filter(Flat.flat_id == flat_id)
+    if for_update:
+        # BUGFIX (CODE_REVIEW.md 2): used by auth_service.signup_user to
+        # close the double-flat-claim race -- see that call site for
+        # details. Default stays False so every other caller (the
+        # flats router's plain GET, move_in/move_out, etc.) is unaffected
+        # and doesn't pay for a lock it doesn't need.
+        query = query.with_for_update()
+    flat = query.first()
     if flat is None:
         raise NotFound("Flat not found.")
     return flat
