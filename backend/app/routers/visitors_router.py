@@ -84,6 +84,19 @@ def list_my_requests(
     return success_response(data=[VisitorRequestOut.model_validate(r) for r in requests])
 
 
+@router.post("/{request_id}/deny")
+def deny_visitor_request(
+    request_id: int,
+    current_user: User = Depends(require_verified_resident),
+    profile: ResidentProfile = Depends(get_resident_profile),
+    db: Session = Depends(get_db),
+):
+    """Gap-fill (CODE_REVIEW.md 3.2): lets the resident who
+    pre-registered a visitor call it off before they arrive."""
+    request = visitor_service.deny_visitor_request(db, request_id, profile.resident_id)
+    return success_response(data=VisitorRequestOut.model_validate(request), message="Visitor request denied.")
+
+
 @router.post("/{request_id}/verify-otp")
 def verify_otp(
     request_id: int,

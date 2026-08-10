@@ -17,27 +17,42 @@ const QuickActions = ({
   onAddCommittee,   // Admin-only — omit prop to hide
 }) => {
   const actions = [
-    {
-      title: "Raise Complaint",
-      icon: Plus,
-      onClick: onRaiseComplaint,
-    },
-    {
-      title: "Add Resident",
-      icon: UserPlus,
-      onClick: onAddResident,
-    },
-    {
-      title: "Register Visitor",
-      icon: UserRoundPlus,
-      onClick: onRegisterVisitor,
-    },
-    {
-      title: "Book Facility",
-      icon: CalendarPlus,
-      onClick: onBookFacility,
-    },
-    // Only shows when the parent passes the prop (Admin only)
+    ...(onRaiseComplaint
+      ? [
+          {
+            title: "Raise Complaint",
+            icon: Plus,
+            onClick: onRaiseComplaint,
+          },
+        ]
+      : []),
+    ...(onAddResident
+      ? [
+          {
+            title: "Add Resident",
+            icon: UserPlus,
+            onClick: onAddResident,
+          },
+        ]
+      : []),
+    ...(onRegisterVisitor
+      ? [
+          {
+            title: "Register Visitor",
+            icon: UserRoundPlus,
+            onClick: onRegisterVisitor,
+          },
+        ]
+      : []),
+    ...(onBookFacility
+      ? [
+          {
+            title: "Book Facility",
+            icon: CalendarPlus,
+            onClick: onBookFacility,
+          },
+        ]
+      : []),
     ...(onAddCommittee
       ? [
           {

@@ -116,10 +116,39 @@ def _generate_receipt_number(payment_id: int) -> str:
 
 
 def create_payment(db: Session, payload: PaymentCreate) -> Payment:
-    bill = get_bill(db, payload.bill_id)  # raises NotFound if missing
+    # BUGFIX (CODE_REVIEW.md 2): get_bill() was a plain, unlocked SELECT
+    # -- two concurrent POST /payments for the same bill could both read
+    # status="unpaid" before either commits, both pass every check below,
+    # and both create a Payment + Receipt against one bill. Locking this
+    # row for the rest of the transaction means the second concurrent
+    # request blocks here until the first commits, then re-reads the
+    # now-"paid" row and correctly hits the Conflict below instead of
+    # double-booking the payment.
+    bill = (
+        db.query(MaintenanceBill)
+        .filter(MaintenanceBill.bill_id == payload.bill_id)
+        .with_for_update()
+        .first()
+    )
+    if bill is None:
+        raise NotFound("Bill not found.")
 
     if bill.status == "paid":
         raise Conflict("This bill has already been paid.")
+
+    # BUGFIX (CODE_REVIEW.md 1.3): payload.amount was never checked
+    # against the bill it's paying -- a client could submit amount=1
+    # with status="success" against a much larger bill and the bill
+    # would still flip to "paid" in full. This system doesn't support
+    # partial payments (MaintenanceBill has a single `amount` and a
+    # binary unpaid/paid status, no running balance to track against),
+    # so a payment must cover the bill exactly or it's rejected outright
+    # -- same principle as create_bill reconciling `amount` against
+    # `items` rather than trusting a client-supplied total.
+    if payload.amount != bill.amount:
+        raise BadRequest(
+            f"Payment amount ({payload.amount}) does not match the bill amount ({bill.amount})."
+        )
 
     existing_ref = (
         db.query(Payment).filter(Payment.transaction_reference == payload.transaction_reference).first()
@@ -160,6 +189,75 @@ def create_payment(db: Session, payload: PaymentCreate) -> Payment:
                 title="Payment received",
                 message=f"Your payment of {payment.amount} for bill #{bill.bill_id} was received. Thank you!",
             )
+
+    db.commit()
+    db.refresh(payment)
+    return payment
+
+
+def update_payment_status(db: Session, payment_id: int, new_status: str) -> Payment:
+    """
+    Gap-fill (CODE_REVIEW.md 3.6): PaymentCreate.status could be
+    "pending", but nothing anywhere ever moved a pending payment
+    forward -- the caller had to create an entirely new Payment row
+    with a different transaction_reference just to actually complete
+    the bill. This is the missing "gateway callback" half of the same
+    mocked-payment-gateway pattern already documented on
+    PaymentCreate.status. Only a "pending" payment can be transitioned,
+    and only once -- success/failed are terminal, matching how a real
+    gateway callback would behave.
+    """
+    # Lock both rows up front, same pattern as create_payment's race fix
+    # (CODE_REVIEW.md 2) -- two concurrent PATCHes on the same payment
+    # shouldn't both be able to flip it and both flip the bill to paid.
+    payment = (
+        db.query(Payment)
+        .filter(Payment.payment_id == payment_id)
+        .with_for_update()
+        .first()
+    )
+    if payment is None:
+        raise NotFound("Payment not found.")
+
+    if payment.status != "pending":
+        raise Conflict(f"This payment is already '{payment.status}' and can't be changed.")
+
+    bill = (
+        db.query(MaintenanceBill)
+        .filter(MaintenanceBill.bill_id == payment.bill_id)
+        .with_for_update()
+        .first()
+    )
+    if bill is None:
+        raise NotFound("Bill not found.")
+
+    if new_status == "success":
+        if bill.status == "paid":
+            raise Conflict("This bill has already been paid by another payment.")
+        # Same amount-must-match-the-bill rule as create_payment (CODE_REVIEW.md 1.3).
+        if payment.amount != bill.amount:
+            raise BadRequest(
+                f"Payment amount ({payment.amount}) does not match the bill amount ({bill.amount})."
+            )
+        payment.status = "success"
+        payment.paid_at = ist_now()
+        bill.status = "paid"
+        db.add(
+            Receipt(
+                payment_id=payment.payment_id,
+                receipt_number=_generate_receipt_number(payment.payment_id),
+            )
+        )
+        for resident in _residents_of_flat(db, bill.flat_id):
+            notification_service.create_notification(
+                db,
+                user_id=resident.user_id,
+                notification_type="payment_success",
+                title="Payment received",
+                message=f"Your payment of {payment.amount} for bill #{bill.bill_id} was received. Thank you!",
+            )
+    else:
+        payment.status = "failed"
 
     db.commit()
     db.refresh(payment)

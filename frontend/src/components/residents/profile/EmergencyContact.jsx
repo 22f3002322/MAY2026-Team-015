@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
   User,
@@ -27,8 +27,14 @@ const EmergencyContacts = () => {
   const [editing, setEditing] = useState(false);
 
   const [contact, setContact] = useState(
-    profile.emergencyContact
+    profile.emergencyContact || { name: "", relation: "", phone: "" }
   );
+
+  useEffect(() => {
+    if (profile.emergencyContact) {
+      setContact(profile.emergencyContact);
+    }
+  }, [profile.emergencyContact]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

@@ -123,9 +123,6 @@ const Complaints = () => {
                 setPriority={setPriority}
                 status={status}
                 setStatus={setStatus}
-                onRaiseComplaint={() =>
-                    setOpenModal(true)
-                }
             />
 
             <ComplaintTable

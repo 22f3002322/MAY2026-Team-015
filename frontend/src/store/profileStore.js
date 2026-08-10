@@ -1,192 +1,148 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { profileApi } from "../api/profileApi";
+import useAuthStore from "./authStore";
+import apartmentApi from "../api/apartmentApi";
+import profileApi from "../api/profileApi";
 
-const initialProfile = {
-  id: crypto.randomUUID(),
-  name: "William Alexander",
-  email: "william@example.com",
-  phone: "+91 9876543210",
-  block: "A",
-  flat: "203",
-  occupancy: "Owner",
-  joined: "12 Jan 2025",
-  avatar: "https://i.pravatar.cc/300?img=12",
-  familyDetails: [
-    {
-      id: crypto.randomUUID(),
-      name: "Emma Alexander",
-      relation: "Wife",
-      age: 30,
-    },
-    {
-      id: crypto.randomUUID(),
-      name: "Sophia Alexander",
-      relation: "Daughter",
-      age: 6,
-    },
-  ],
-  vehicleDetails: [
-    {
-      id: crypto.randomUUID(),
-      type: "Car",
-      number: "UP32 AB 1234",
-    },
-    {
-      id: crypto.randomUUID(),
-      type: "Bike",
-      number: "UP32 XY 5678",
-    },
-  ],
-  emergencyContact: {
-    name: "Emma Alexander",
-    relation: "Wife",
-    phone: "+91 9988776655",
-  },
-  createdAt: new Date().toISOString(),
-  updatedAt: null,
+const getProfileFromUser = (user) => {
+  if (!user) {
+    return {
+      id: "",
+      name: "",
+      email: "",
+      phone: "",
+      block: "",
+      flat: "",
+      occupancy: "",
+      joined: "",
+      avatar: "",
+      emergencyContact: { name: "", relation: "", phone: "" },
+    };
+  }
+
+  const resProfile = user.residentProfile || {};
+  let emergencyContact = { name: "", relation: "", phone: "" };
+  if (resProfile.emergency_contact) {
+    try {
+      const parsed = JSON.parse(resProfile.emergency_contact);
+      if (parsed && typeof parsed === "object") {
+        emergencyContact = {
+          name: parsed.name || "",
+          relation: parsed.relation || "",
+          phone: parsed.phone || "",
+        };
+      }
+    } catch {
+      emergencyContact = {
+        name: resProfile.emergency_contact,
+        relation: "Emergency",
+        phone: "",
+      };
+    }
+  }
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone || "",
+    block: user.block || "",
+    flat: user.flat || "",
+    occupancy: resProfile.occupation || "Resident",
+    joined: resProfile.move_in_date
+      ? new Date(resProfile.move_in_date).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : "Recently",
+    avatar: user.avatar || "https://i.pravatar.cc/300?img=12",
+    emergencyContact,
+  };
 };
 
-const useProfileStore = create(
-  persist(
-    (set) => ({
-      profile: initialProfile,
+const useProfileStore = create((set, get) => {
+  // Listen to authStore changes and keep profile synced
+  useAuthStore.subscribe((state) => {
+    set({ profile: getProfileFromUser(state.user) });
+  });
 
-      updateProfile: (data) =>
-        set((state) => ({
-          profile: {
-            ...state.profile,
-            ...data,
-            updatedAt: new Date().toISOString(),
-          },
-        })),
+  return {
+    profile: getProfileFromUser(useAuthStore.getState().user),
 
-      uploadAvatar: async (file) => {
-        try {
-          const res = await profileApi.uploadProfilePicture(file);
-          if (res && res.success && res.data?.profile_image) {
-            const imageUrl = res.data.profile_image;
-            set((state) => ({
-              profile: {
-                ...state.profile,
-                avatar: imageUrl,
-                updatedAt: new Date().toISOString(),
-              },
-            }));
-            return { success: true, avatar: imageUrl };
-          }
-        } catch (err) {
-          console.warn("Backend avatar upload failed or server offline:", err.message);
+    updateProfile: async (data) => {
+      const user = useAuthStore.getState().user;
+      const resProfile = user?.residentProfile || {};
+      if (!resProfile.resident_id) return { success: false };
+
+      try {
+        const payload = {
+          occupation: data.occupancy || data.occupation || resProfile.occupation || "",
+          emergency_contact: resProfile.emergency_contact || "",
+          alternate_phone: data.phone || resProfile.alternate_phone || "",
+        };
+        const res = await apartmentApi.updateResident(resProfile.resident_id, payload);
+        if (res && res.success) {
+          await useAuthStore.getState().restoreSession();
+          return { success: true };
         }
+      } catch (err) {
+        console.error("Profile update failed:", err);
+      }
+      return { success: false };
+    },
 
-        // Local blob URL fallback for local offline testing
-        const localUrl = URL.createObjectURL(file);
-        set((state) => ({
-          profile: {
-            ...state.profile,
-            avatar: localUrl,
-            updatedAt: new Date().toISOString(),
-          },
-        }));
-        return { success: true, avatar: localUrl };
-      },
-
-      removeAvatar: async () => {
-        try {
-          await profileApi.deleteProfilePicture();
-        } catch (err) {
-          console.warn("Backend avatar delete failed:", err.message);
+    uploadAvatar: async (file) => {
+      try {
+        const res = await profileApi.uploadProfilePicture(file);
+        if (res && res.success) {
+          await useAuthStore.getState().restoreSession();
+          return { success: true };
         }
+      } catch (err) {
+        console.error("Avatar upload failed:", err);
+      }
+      return { success: false };
+    },
 
-        set((state) => ({
-          profile: {
-            ...state.profile,
-            avatar: "https://i.pravatar.cc/300?img=12",
-            updatedAt: new Date().toISOString(),
-          },
-        }));
-      },
+    removeAvatar: async () => {
+      try {
+        const res = await profileApi.deleteProfilePicture();
+        if (res && res.success) {
+          await useAuthStore.getState().restoreSession();
+          return { success: true };
+        }
+      } catch (err) {
+        console.error("Avatar removal failed:", err);
+      }
+      return { success: false };
+    },
 
-      updateEmergencyContact: (contact) =>
-        set((state) => ({
-          profile: {
-            ...state.profile,
-            emergencyContact: contact,
-            updatedAt: new Date().toISOString(),
-          },
-        })),
+    updateEmergencyContact: async (contact) => {
+      const user = useAuthStore.getState().user;
+      const resProfile = user?.residentProfile || {};
+      if (!resProfile.resident_id) return { success: false };
 
-      addVehicle: (vehicle) =>
-        set((state) => ({
-          profile: {
-            ...state.profile,
-            vehicleDetails: [
-              ...state.profile.vehicleDetails,
-              {
-                id: crypto.randomUUID(),
-                ...vehicle,
-              },
-            ],
-            updatedAt: new Date().toISOString(),
-          },
-        })),
+      try {
+        const payload = {
+          occupation: resProfile.occupation || "",
+          emergency_contact: JSON.stringify(contact),
+          alternate_phone: resProfile.alternate_phone || "",
+        };
+        const res = await apartmentApi.updateResident(resProfile.resident_id, payload);
+        if (res && res.success) {
+          await useAuthStore.getState().restoreSession();
+          return { success: true };
+        }
+      } catch (err) {
+        console.error("Emergency contact update failed:", err);
+      }
+      return { success: false };
+    },
 
-      removeVehicle: (id) =>
-        set((state) => ({
-          profile: {
-            ...state.profile,
-            vehicleDetails: state.profile.vehicleDetails.filter(
-              (vehicle) => vehicle.id !== id
-            ),
-            updatedAt: new Date().toISOString(),
-          },
-        })),
-
-      addFamilyMember: (member) =>
-        set((state) => ({
-          profile: {
-            ...state.profile,
-            familyDetails: [
-              ...state.profile.familyDetails,
-              {
-                id: crypto.randomUUID(),
-                ...member,
-              },
-            ],
-            updatedAt: new Date().toISOString(),
-          },
-        })),
-
-      removeFamilyMember: (id) =>
-        set((state) => ({
-          profile: {
-            ...state.profile,
-            familyDetails: state.profile.familyDetails.filter(
-              (member) => member.id !== id
-            ),
-            updatedAt: new Date().toISOString(),
-          },
-        })),
-
-      changePassword: async (currentPassword, newPassword) => {
-        console.log({ currentPassword, newPassword });
-        return true;
-      },
-
-      resetProfile: () =>
-        set({
-          profile: {
-            ...initialProfile,
-            familyDetails: [...initialProfile.familyDetails],
-            vehicleDetails: [...initialProfile.vehicleDetails],
-            emergencyContact: { ...initialProfile.emergencyContact },
-          },
-        }),
-    }),
-    {
-      name: "profile-storage",
-    }
-  )
-);
+    changePassword: async (currentPassword, newPassword) => {
+      return true;
+    },
+  };
+});
 
 export default useProfileStore;

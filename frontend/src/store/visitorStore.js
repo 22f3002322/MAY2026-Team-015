@@ -18,7 +18,7 @@ const useVisitorStore = create(
             visitor_phone: visitorData.phone || visitorData.visitor_phone || "+919876543210",
             visitor_type: visitorData.type || visitorData.visitor_type || "Guest",
             expected_date: visitorData.expectedDate || visitorData.expected_date || new Date().toISOString().split("T")[0],
-            expected_time: visitorData.expectedTime || visitorData.expected_time || "10:00:00",
+            expected_time: visitorData.visitTime || visitorData.expectedTime || visitorData.expected_time || "10:00:00",
           };
           const res = await visitorApi.preRegisterVisitor(payload);
           if (res && res.success && res.data) {
@@ -33,18 +33,44 @@ const useVisitorStore = create(
 
       // Fetch visitor requests for current resident
       fetchVisitorRequests: async () => {
+        let role = "";
+        try {
+          const stored = JSON.parse(localStorage.getItem("auth-storage") || "{}");
+          role = stored?.state?.role || "";
+        } catch { /* ignore */ }
+
+        if (role !== "resident") {
+          set({ loading: false });
+          return { success: true, data: get().visitors };
+        }
+
         set({ loading: true });
         try {
           const res = await visitorApi.getVisitorRequests();
           if (res && res.success && Array.isArray(res.data)) {
-            set({ requests: res.data, loading: false });
-            return { success: true, data: res.data };
+            const mapped = res.data.map((r) => ({
+              id: r.request_id,
+              name: r.visitor_name,
+              phone: r.visitor_phone,
+              purpose: r.visitor_type,
+              date: r.expected_date,
+              visitTime: r.expected_time,
+              status: r.status === "pre_registered" ? "Expected" : r.status === "arrived" ? "Checked In" : r.status === "departed" ? "Completed" : r.status,
+              otp: r.otp,
+              createdAt: r.created_at || r.expected_date,
+            }));
+            set({ requests: res.data, visitors: mapped, loading: false });
+            return { success: true, data: mapped };
           }
         } catch (err) {
           console.warn("Backend visitor requests fetch failed:", err.message);
         }
         set({ loading: false });
-        return { success: false, data: get().requests };
+        return { success: false, data: get().visitors };
+      },
+
+      addVisitor: async (visitorData) => {
+        return get().preRegisterVisitor(visitorData);
       },
 
       // Verify OTP at gate (Security)

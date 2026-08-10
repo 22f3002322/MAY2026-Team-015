@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Layout from "../../components/layout/Layout";
@@ -26,8 +26,22 @@ const Dashboard = () => {
   // Only pure Admins (not Committee) get the "Add Committee" quick action
   const isPureAdmin = String(backendRole || "").toLowerCase() === "admin";
 
-  const apartments = useApartmentStore(
-    (state) => state.apartments
+  const fetchResidents = useResidentStore((state) => state.fetchResidents);
+  const fetchFlats = useApartmentStore((state) => state.fetchFlats);
+  const fetchComplaints = useComplaintStore((state) => state.fetchComplaints);
+  const fetchVisitorLogs = useVisitorStore((state) => state.fetchVisitorLogs);
+  const fetchBills = useBillingStore((state) => state.fetchBills);
+
+  useEffect(() => {
+    fetchResidents();
+    fetchFlats();
+    fetchComplaints();
+    fetchVisitorLogs();
+    fetchBills();
+  }, [fetchResidents, fetchFlats, fetchComplaints, fetchVisitorLogs, fetchBills]);
+
+  const flats = useApartmentStore(
+    (state) => state.flats
   );
 
   const residents = useResidentStore(
@@ -38,8 +52,8 @@ const Dashboard = () => {
     (state) => state.complaints
   );
 
-  const visitors = useVisitorStore(
-    (state) => state.visitors
+  const logs = useVisitorStore(
+    (state) => state.logs
   );
 
   const bills = useBillingStore(
@@ -85,7 +99,7 @@ const Dashboard = () => {
       {
         id: 2,
         title: "Apartments",
-        value: apartments.length,
+        value: flats.length,
       },
       {
         id: 3,
@@ -101,7 +115,7 @@ const Dashboard = () => {
     ],
     [
       residents.length,
-      apartments.length,
+      flats.length,
       openComplaints,
       totalRevenue,
     ]
@@ -211,22 +225,17 @@ const Dashboard = () => {
       [complaints]
     );
 
-  const recentVisitors =
-    useMemo(
-      () =>
-        [...visitors]
-          .sort(
-            (a, b) =>
-              new Date(
-                b.createdAt || 0
-              ) -
-              new Date(
-                a.createdAt || 0
-              )
-          )
-          .slice(0, 5),
-      [visitors]
-    );
+  const recentVisitors = useMemo(() => {
+    return [...logs]
+      .sort((a, b) => new Date(b.entry_time || 0) - new Date(a.entry_time || 0))
+      .slice(0, 5)
+      .map((log) => ({
+        id: log.log_id || log.id,
+        name: log.visitor_name || (log.visitor && log.visitor.visitor_name) || `Visitor #${log.visitor_id}`,
+        flat: log.flat_number || (log.visitor && log.visitor.flat_number) || `Flat #${log.flat_id}`,
+        visitTime: log.entry_time ? new Date(log.entry_time).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' }) : "N/A",
+      }));
+  }, [logs]);
 
   const complaintColumns = [
     {
@@ -322,10 +331,7 @@ const Dashboard = () => {
 
       <div className="mt-8">
         <QuickActions
-          onRaiseComplaint={() => navigate("/admin/complaints")}
           onAddResident={() => navigate("/admin/residents")}
-          onRegisterVisitor={() => navigate("/admin/visitors")}
-          onBookFacility={() => navigate("/admin/bookings")}
           onAddCommittee={isPureAdmin ? () => setCommitteeModal(true) : undefined}
         />
       </div>

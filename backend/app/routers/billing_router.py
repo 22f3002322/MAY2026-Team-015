@@ -9,7 +9,6 @@ from app.core.dependencies import (
     get_resident_profile,
     require_admin_or_committee,
     require_resident,
-    require_verified_resident,
 )
 from app.models.apartment import ResidentProfile
 from app.models.auth import RoleEnum, User
@@ -21,6 +20,7 @@ from app.schemas.billing_schema import (
     MaintenanceBillUpdate,
     PaymentCreate,
     PaymentOut,
+    PaymentStatusUpdate,
     ReceiptOut,
 )
 from app.utils.api_error import NotAuthorized
@@ -106,8 +106,38 @@ def _assert_can_touch_bill(db: Session, current_user: User, flat_id: int) -> Non
     raise NotAuthorized("You do not have permission to access this bill's payments.")
 
 
+def _require_biller(current_user: User = Depends(get_current_user)) -> User:
+    """
+    BUGFIX (CODE_REVIEW.md 1.4): create_payment's route dependency used
+    to be require_verified_resident, which hard-restricts the *entire*
+    endpoint to Residents -- but _assert_can_touch_bill (above) already
+    explicitly branches for Admin/Committee. That branch was dead code:
+    FastAPI resolves require_verified_resident before the handler body
+    ever runs, so an Admin/Committee caller got a 403 there first and
+    never reached _assert_can_touch_bill at all. In practice there was
+    no way to record a cash/manual payment an admin collected in
+    person -- every payment had to be self-reported by the resident.
+    Admin/Committee pass straight through here, same as everywhere else
+    in this router; a Resident must still be verified, matching every
+    other verified-resident-gated write path in the app. Ownership
+    (which bill a Resident may pay) is still enforced by
+    _assert_can_touch_bill, called right after this in create_payment.
+    """
+    role = current_user.role.role_name
+    if role in (RoleEnum.ADMIN, RoleEnum.COMMITTEE):
+        return current_user
+    if role == RoleEnum.RESIDENT:
+        if not current_user.is_verified:
+            raise NotAuthorized(
+                "Your account is pending verification by a committee member. "
+                "This action isn't available until then."
+            )
+        return current_user
+    raise NotAuthorized("You do not have permission to record payments.")
+
+
 @router_payments.post("")
-def create_payment(payload: PaymentCreate, current_user: User = Depends(require_verified_resident), db: Session = Depends(get_db)):
+def create_payment(payload: PaymentCreate, current_user: User = Depends(_require_biller), db: Session = Depends(get_db)):
     bill = billing_service.get_bill(db, payload.bill_id)
     _assert_can_touch_bill(db, current_user, bill.flat_id)
     payment = billing_service.create_payment(db, payload)
@@ -138,6 +168,27 @@ def get_payment(payment_id: int, current_user: User = Depends(get_current_user),
     bill = billing_service.get_bill(db, payment.bill_id)
     _assert_can_touch_bill(db, current_user, bill.flat_id)
     return success_response(data=PaymentOut.model_validate(payment))
+
+
+@router_payments.patch("/{payment_id}")
+def update_payment_status(
+    payment_id: int,
+    payload: PaymentStatusUpdate,
+    current_user: User = Depends(_require_biller),
+    db: Session = Depends(get_db),
+):
+    """
+    Gap-fill (CODE_REVIEW.md 3.6): moves a "pending" payment to
+    success/failed -- previously there was no way to do this at all,
+    and the caller had to create an entirely new Payment row to
+    complete a bill. Same access rule as creating a payment: Admin/
+    Committee, or the verified Resident who owns the bill.
+    """
+    payment = billing_service.get_payment(db, payment_id)
+    bill = billing_service.get_bill(db, payment.bill_id)
+    _assert_can_touch_bill(db, current_user, bill.flat_id)
+    updated = billing_service.update_payment_status(db, payment_id, payload.status)
+    return success_response(data=PaymentOut.model_validate(updated), message="Payment status updated.")
 
 
 @router_payments.get("/{payment_id}/receipt")

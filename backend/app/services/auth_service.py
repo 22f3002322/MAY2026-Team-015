@@ -273,7 +273,18 @@ def signup_user(db: Session, payload: SignupRequest) -> User:
     if role_enum == RoleEnum.RESIDENT:
         p = payload.resident_profile or ResidentProfileIn()
         if p.flat_id is not None:
-            flat = apartment_service.get_flat(db, p.flat_id)  # raises NotFound if it doesn't exist
+            # BUGFIX (CODE_REVIEW.md 2): get_flat() used to be a plain,
+            # unlocked SELECT here -- two near-simultaneous signups
+            # against the same flat_id could both read
+            # occupancy_status="vacant" and both find no
+            # already_claimed row before either commits, since the
+            # check below is application-level only (no DB uniqueness
+            # constraint backs it). for_update=True locks the flat row
+            # for the rest of this transaction (signup_user only
+            # commits once, at the very end), so the second concurrent
+            # signup blocks here until the first commits, then re-reads
+            # and correctly hits one of the two Conflicts below.
+            flat = apartment_service.get_flat(db, p.flat_id, for_update=True)  # raises NotFound if it doesn't exist
             if flat.occupancy_status != "vacant":
                 raise Conflict(f"Flat '{flat.flat_number}' is already occupied.")
             # BUGFIX: occupancy_status only flips to "occupied" at
@@ -400,6 +411,49 @@ def verify_user(db: Session, user_id: int, occupancy_type: str | None = None) ->
         title="Account verified",
         message="Your account has been verified by a committee member. You now have full access.",
     )
+
+    return user
+
+
+# --------------------------------------------------------------------------
+# Account deactivation / reactivation.
+#
+# BUGFIX (CODE_REVIEW.md 1.5): `Deactivated` is a real exception and
+# both get_current_user and authenticate_user check `is_active` -- but
+# nothing anywhere ever set it to False after account creation. There
+# was no admin "suspend a bad actor" path at all short of a manual DB
+# edit, unlike is_verified, which has a full read+write lifecycle
+# (list_pending_verifications / verify_user). Deactivating also revokes
+# every refresh token the user currently holds, same as a password
+# reset, so an existing session dies immediately rather than staying
+# valid until its access token naturally expires.
+# --------------------------------------------------------------------------
+def deactivate_user(db: Session, user_id: int, actor_user_id: int) -> User:
+    if user_id == actor_user_id:
+        raise BadRequest("You cannot deactivate your own account.")
+
+    user = get_user_by_id(db, user_id)
+    if user is None:
+        raise NotFound("User not found.")
+
+    if user.is_active:
+        user.is_active = False
+        db.commit()
+        db.refresh(user)
+        revoke_all_refresh_tokens(db, user.user_id)
+
+    return user
+
+
+def reactivate_user(db: Session, user_id: int) -> User:
+    user = get_user_by_id(db, user_id)
+    if user is None:
+        raise NotFound("User not found.")
+
+    if not user.is_active:
+        user.is_active = True
+        db.commit()
+        db.refresh(user)
 
     return user
 

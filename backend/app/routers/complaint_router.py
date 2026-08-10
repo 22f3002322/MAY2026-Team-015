@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -22,6 +22,7 @@ from app.schemas.complaint_schema import (
     ComplaintCategoryOut,
     ComplaintCommentCreate,
     ComplaintCreate,
+    ComplaintImageOut,
     ComplaintOut,
     ComplaintUpdate,
 )
@@ -171,3 +172,22 @@ def add_comment(complaint_id: int, payload: ComplaintCommentCreate, current_user
     _authorize_complaint_access(db, complaint, current_user)
     comment = complaint_service.add_comment(db, complaint_id, current_user.user_id, payload)
     return success_response(data={"comment_id": comment.comment_id}, message="Comment added.")
+
+
+@router_complaints.post("/{complaint_id}/images")
+def add_complaint_image(
+    complaint_id: int,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Gap-fill (CODE_REVIEW.md 3.5): ComplaintCreate.image_urls had no way
+    to actually be populated with a real, validated URL -- this is that
+    upload endpoint, same ownership rule as every other complaint
+    endpoint (owning Resident, assigned Maintenance, or Admin/Committee).
+    """
+    complaint = complaint_service.get_complaint_or_404(db, complaint_id)
+    _authorize_complaint_access(db, complaint, current_user)
+    image = complaint_service.add_complaint_image(db, complaint_id, file)
+    return success_response(data=ComplaintImageOut.model_validate(image), message="Image added.")

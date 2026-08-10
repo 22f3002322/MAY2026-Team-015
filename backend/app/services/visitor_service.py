@@ -8,7 +8,7 @@ from app.models.visitor import Visitor, VisitorRequest, VisitorLog
 from app.models.staff import SecurityGuard
 from app.schemas.visitor_schema import VisitorCreate, VisitorRequestCreate
 from app.services import notification_service
-from app.utils.api_error import BadRequest, Conflict, NotFound
+from app.utils.api_error import BadRequest, Conflict, NotAuthorized, NotFound
 from app.utils.otp import hash_otp, verify_otp
 
 
@@ -47,6 +47,32 @@ def list_visitor_requests(db: Session, resident_id: Optional[int] = None) -> lis
 def get_visitor_request(db: Session, request_id: int) -> Optional[VisitorRequest]:
     result = db.execute(select(VisitorRequest).where(VisitorRequest.request_id == request_id))
     return result.scalar_one_or_none()
+
+
+def deny_visitor_request(db: Session, request_id: int, resident_id: int) -> VisitorRequest:
+    """
+    Gap-fill (CODE_REVIEW.md 3.2): verify_visitor_otp below already
+    checks for and rejects a "denied" status, but nothing anywhere ever
+    set a request to "denied" -- design doc 1.5's "approve or reject
+    visitor requests based on resident authorization" was only half
+    built (every pre-registered visitor was implicitly pre-approved).
+    This is the resident-facing reject half: the resident who
+    pre-registered the visitor can call this off before they arrive.
+    """
+    request = get_visitor_request(db, request_id)
+    if request is None:
+        raise NotFound("Visitor request not found.")
+    if request.resident_id != resident_id:
+        raise NotAuthorized("You can only deny your own visitor requests.")
+    if request.status == "arrived":
+        raise BadRequest("This visitor has already arrived; it can't be denied now.")
+    if request.status == "denied":
+        raise Conflict("This visitor request has already been denied.")
+
+    request.status = "denied"
+    db.commit()
+    db.refresh(request)
+    return request
 
 
 def verify_visitor_otp(db: Session, request_id: int, otp: str, guard_id: int) -> VisitorLog:
