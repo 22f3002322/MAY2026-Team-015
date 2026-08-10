@@ -78,6 +78,33 @@ export const authApi = {
     });
   },
 
+  // List all users (Admin and Committee)
+  listUsers: async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.role) params.set("role", filters.role);
+    if (filters.is_verified !== undefined) params.set("is_verified", String(filters.is_verified));
+    if (filters.is_active !== undefined) params.set("is_active", String(filters.is_active));
+    if (filters.search) params.set("search", filters.search);
+    const qs = params.toString();
+    return apiRequest(`/api/v1/users${qs ? `?${qs}` : ""}`, {
+      method: "GET",
+    });
+  },
+
+  // Deactivate a user
+  deactivateUser: async (userId) => {
+    return apiRequest(`/api/v1/users/${userId}/deactivate`, {
+      method: "POST",
+    });
+  },
+
+  // Reactivate a user
+  reactivateUser: async (userId) => {
+    return apiRequest(`/api/v1/users/${userId}/reactivate`, {
+      method: "POST",
+    });
+  },
+
   // Health check
   checkHealth: async () => {
     return apiRequest("/health", {

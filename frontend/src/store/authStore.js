@@ -365,6 +365,45 @@ const useAuthStore = create(
           pendingVerifications: [],
         });
       },
+
+
+      // User management (Admin and Committee)
+      fetchUsers: async (filters = {}) => {
+        try {
+          const res = await authApi.listUsers(filters);
+          if (res && res.success) {
+            return { success: true, data: res.data || [] };
+          }
+          return { success: false, data: [], message: res?.message || "Failed to fetch users." };
+        } catch (err) {
+          console.warn("Fetch users failed:", err.message);
+          return { success: false, data: [], message: err.message };
+        }
+      },
+
+      deactivateUser: async (userId) => {
+        try {
+          const res = await authApi.deactivateUser(userId);
+          if (res && res.success) {
+            return { success: true, data: res.data, message: res.message || "User deactivated." };
+          }
+          return { success: false, message: res?.message || "Failed to deactivate user." };
+        } catch (err) {
+          return { success: false, message: err?.message || "Failed to deactivate user." };
+        }
+      },
+
+      reactivateUser: async (userId) => {
+        try {
+          const res = await authApi.reactivateUser(userId);
+          if (res && res.success) {
+            return { success: true, data: res.data, message: res.message || "User reactivated." };
+          }
+          return { success: false, message: res?.message || "Failed to reactivate user." };
+        } catch (err) {
+          return { success: false, message: err?.message || "Failed to reactivate user." };
+        }
+      },
     }),
 
     {
