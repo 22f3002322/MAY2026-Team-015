@@ -20,6 +20,7 @@ from app.schemas.billing_schema import (
     MaintenanceBillUpdate,
     PaymentCreate,
     PaymentOut,
+    PaymentStatusUpdate,
     ReceiptOut,
 )
 from app.utils.api_error import NotAuthorized
@@ -167,6 +168,27 @@ def get_payment(payment_id: int, current_user: User = Depends(get_current_user),
     bill = billing_service.get_bill(db, payment.bill_id)
     _assert_can_touch_bill(db, current_user, bill.flat_id)
     return success_response(data=PaymentOut.model_validate(payment))
+
+
+@router_payments.patch("/{payment_id}")
+def update_payment_status(
+    payment_id: int,
+    payload: PaymentStatusUpdate,
+    current_user: User = Depends(_require_biller),
+    db: Session = Depends(get_db),
+):
+    """
+    Gap-fill (CODE_REVIEW.md 3.6): moves a "pending" payment to
+    success/failed -- previously there was no way to do this at all,
+    and the caller had to create an entirely new Payment row to
+    complete a bill. Same access rule as creating a payment: Admin/
+    Committee, or the verified Resident who owns the bill.
+    """
+    payment = billing_service.get_payment(db, payment_id)
+    bill = billing_service.get_bill(db, payment.bill_id)
+    _assert_can_touch_bill(db, current_user, bill.flat_id)
+    updated = billing_service.update_payment_status(db, payment_id, payload.status)
+    return success_response(data=PaymentOut.model_validate(updated), message="Payment status updated.")
 
 
 @router_payments.get("/{payment_id}/receipt")

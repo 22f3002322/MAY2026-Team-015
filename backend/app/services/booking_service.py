@@ -143,7 +143,7 @@ def get_booking(db: Session, booking_id: int) -> FacilityBooking:
     return booking
 
 
-def update_booking(db: Session, booking_id: int, payload: FacilityBookingUpdate) -> FacilityBooking:
+def update_booking(db: Session, booking_id: int, payload: FacilityBookingUpdate, actor_user_id: Optional[int] = None) -> FacilityBooking:
     booking = get_booking(db, booking_id)
 
     update_data = payload.model_dump(exclude_unset=True)
@@ -171,6 +171,15 @@ def update_booking(db: Session, booking_id: int, payload: FacilityBookingUpdate)
 
     for field, value in update_data.items():
         setattr(booking, field, value)
+
+    # Gap-fill (CODE_REVIEW.md 3.3): FacilityBooking.cancelled_by/
+    # cancelled_at existed as columns already but nothing ever set
+    # them -- now that residents can cancel their own bookings too
+    # (see facilities_router.update_booking), record who actually did it.
+    if update_data.get("status") == "cancelled" and actor_user_id is not None:
+        booking.cancelled_by = actor_user_id
+        booking.cancelled_at = ist_now()
+
     db.commit()
     db.refresh(booking)
 

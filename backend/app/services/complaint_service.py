@@ -1,9 +1,13 @@
+import os
+import uuid
 from typing import Optional
 
+from fastapi import UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.mixins import ist_now
 from app.models.complaint import (
     Complaint,
@@ -196,8 +200,55 @@ def get_task_or_404(db: Session, task_id: int) -> MaintenanceTask:
 
 
 def create_task_for_assignment(db: Session, complaint_id: int, staff_id: int) -> MaintenanceTask:
-    task = MaintenanceTask(complaint_id=complaint_id, staff_id=staff_id, status="accepted", accepted_at=ist_now())
+    # BUGFIX (CODE_REVIEW.md 3.4): this used to create the task already
+    # status="accepted", the instant an Admin assigned it -- the staff
+    # member never actually did anything to accept it, and there was no
+    # way to decline. Design doc 1.4 lists "allow maintenance personnel
+    # to accept assigned work requests" as a distinct action, so the
+    # task now starts "assigned" (pending the staff member's decision);
+    # see accept_task/decline_task below for the two ways it can move
+    # forward from here.
+    task = MaintenanceTask(complaint_id=complaint_id, staff_id=staff_id, status="assigned")
     db.add(task)
+    db.commit()
+    db.refresh(task)
+    return task
+
+
+def accept_task(db: Session, task_id: int, staff_id: int) -> MaintenanceTask:
+    """Gap-fill (CODE_REVIEW.md 3.4): the explicit accept step that was
+    previously skipped entirely (assignment = automatic acceptance)."""
+    task = get_task_or_404(db, task_id)
+    if task.staff_id != staff_id:
+        raise BadRequest("This task isn't assigned to you.")
+    if task.status != "assigned":
+        raise BadRequest(f"Cannot accept a task in status '{task.status}'.")
+    task.status = "accepted"
+    task.accepted_at = ist_now()
+    db.commit()
+    db.refresh(task)
+    return task
+
+
+def decline_task(db: Session, task_id: int, staff_id: int) -> MaintenanceTask:
+    """
+    Gap-fill (CODE_REVIEW.md 3.4): the missing opt-out. Declining sends
+    the complaint back to "open" so an Admin/Committee can reassign it
+    to someone else -- it deliberately doesn't touch the existing
+    ComplaintAssignment row (kept as a historical record of who was
+    offered the work and turned it down).
+    """
+    task = get_task_or_404(db, task_id)
+    if task.staff_id != staff_id:
+        raise BadRequest("This task isn't assigned to you.")
+    if task.status != "assigned":
+        raise BadRequest(f"Cannot decline a task in status '{task.status}'.")
+    task.status = "declined"
+
+    complaint = get_complaint_or_404(db, task.complaint_id)
+    if complaint.status == "assigned":
+        complaint.status = "open"
+
     db.commit()
     db.refresh(task)
     return task
@@ -266,3 +317,88 @@ def list_tasks_for_staff(db: Session, staff_id: int) -> list[MaintenanceTask]:
         .order_by(MaintenanceTask.created_at.desc())
         .all()
     )
+
+
+# --------------------------------------------------------------------------
+# Complaint image uploads.
+#
+# Gap-fill (CODE_REVIEW.md 3.5): ComplaintCreate.image_urls accepted
+# arbitrary client-supplied strings with no relationship to any real
+# upload -- unlike profile pictures (profile_service.py), there was no
+# endpoint anywhere that produced a real, validated URL to put there.
+# Same validated-upload pattern as profile_service.upload_profile_picture
+# (content-type sniffing against magic bytes, bounded chunked reads,
+# server-generated filename -- no path-traversal surface from a
+# client-supplied name). Deliberately not sharing profile_service's
+# helpers to keep this section's changes isolated to the complaint
+# module; the ~20 lines of duplication is a reasonable trade-off.
+# --------------------------------------------------------------------------
+MAX_COMPLAINT_IMAGE_BYTES = 5 * 1024 * 1024  # 5 MB, same cap as profile pictures
+_COMPLAINT_IMAGE_CHUNK_SIZE = 1024 * 1024
+
+_ALLOWED_COMPLAINT_IMAGE_TYPES = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+}
+
+
+def _sniff_complaint_image_type(header: bytes) -> Optional[str]:
+    if header[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    if header[:8] == b"\x89PNG\r\n\x1a\n":
+        return "image/png"
+    if header[:4] == b"RIFF" and header[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
+def _read_complaint_image_bounded(file: UploadFile, max_bytes: int) -> bytes:
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = file.file.read(_COMPLAINT_IMAGE_CHUNK_SIZE)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            raise BadRequest(f"Image must be smaller than {max_bytes // (1024 * 1024)} MB.")
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def _complaint_image_dir() -> str:
+    path = os.path.join(settings.MEDIA_ROOT, "complaint_images")
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def add_complaint_image(db: Session, complaint_id: int, file: UploadFile) -> ComplaintImage:
+    get_complaint_or_404(db, complaint_id)  # 404 if the complaint doesn't exist
+
+    if file.content_type not in _ALLOWED_COMPLAINT_IMAGE_TYPES:
+        raise BadRequest("Only JPEG, PNG, or WEBP images are allowed.")
+
+    contents = _read_complaint_image_bounded(file, MAX_COMPLAINT_IMAGE_BYTES)
+    if not contents:
+        raise BadRequest("Uploaded file is empty.")
+
+    sniffed_type = _sniff_complaint_image_type(contents[:12])
+    if sniffed_type is None or sniffed_type != file.content_type:
+        raise BadRequest("The uploaded file doesn't look like a valid JPEG, PNG, or WEBP image.")
+
+    extension = _ALLOWED_COMPLAINT_IMAGE_TYPES[sniffed_type]
+    filename = f"{complaint_id}_{uuid.uuid4().hex}.{extension}"
+    full_path = os.path.join(_complaint_image_dir(), filename)
+
+    with open(full_path, "wb") as f:
+        f.write(contents)
+
+    image = ComplaintImage(
+        complaint_id=complaint_id,
+        url=f"{settings.MEDIA_URL}/complaint_images/{filename}",
+    )
+    db.add(image)
+    db.commit()
+    db.refresh(image)
+    return image
