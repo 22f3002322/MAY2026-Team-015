@@ -1,9 +1,8 @@
 # Neighbourly Backend
 
-This README replaces the previous Module‑1/Module‑2‑only version. It now
-documents every component that's actually wired up end‑to‑end
-(router → service → schema → model): **Modules 1–9**, matching sections
-1.1–1.9 of the component design doc. Section 1.10 (**AI Community
+This README documents every component that's actually wired up
+end‑to‑end (router → service → schema → model): **Modules 1–9**, matching
+sections 1.1–1.9 of the component design doc. Section 1.10 (**AI Community
 Intelligence**) is designed but not yet built — see "Next module" at the
 bottom.
 
@@ -14,11 +13,29 @@ single PostgreSQL database. Authentication is JWT‑based Role‑Based
 Access Control (RBAC). Components are developed independently but share
 the same database and the same response/error envelope.
 
-**Schema source of truth: `er-dbml.txt`, followed literally.** The
-component design doc's ER diagram describes 30 entities across every
-module including 1.10; 29 of those are implemented in code today
-(`app/models/__init__.py`) — the 30th belongs to AI Community
-Intelligence, which doesn't exist yet.
+**Schema:** the actual SQLAlchemy models in `app/models/` are the source
+of truth for what's running. `er-dbml.txt` captures the intended design;
+the implemented schema diverges slightly in a few places (noted below).
+29 SQLAlchemy models are implemented across the 9 modules:
+`Role`, `User`, `RefreshToken`, `Block`, `Flat`, `ResidentProfile`,
+`OccupancyHistory`, `MaintenanceStaff`, `SecurityGuard`,
+`ComplaintCategory`, `Complaint`, `ComplaintImage`, `ComplaintAssignment`,
+`MaintenanceTask`, `ComplaintComment`, `Facility`, `FacilityBooking`,
+`Visitor`, `VisitorRequest`, `VisitorLog`, `Announcement`, `Notification`,
+`MaintenanceBill`, `BillItem`, `Payment`, `Receipt`, `Poll`, `PollOption`,
+`PollVote`.
+
+Key schema notes vs. `er-dbml.txt`:
+- `users` carries `full_name`, `phone`, `is_verified`, `last_login` in
+  code — the DBML omits these but they are live columns.
+- `resident_profiles` does **not** duplicate `full_name`/`phone` in code
+  — those live only on `users`.
+- `maintenance_staff` uses `is_available boolean` in code, not
+  `availability varchar` + `is_active`.
+- `visitor_requests.otp` is a `String` (HMAC‑SHA256 hash) in code, not
+  `int`.
+- `notifications` has `is_read boolean` in code, not in the DBML.
+- `refresh_tokens` exists in code but is absent from the DBML.
 
 ---
 
@@ -427,7 +444,7 @@ delivery.
 - `GET /` (any authenticated)
 - `GET /{poll_id}` (any authenticated)
 - `PATCH /{poll_id}` (Admin/Committee) — including `is_active`, which is
-  a real column (see below).
+  a real column.
 - `POST /{poll_id}/vote` (verified Resident) — `{option_id}`. Rejected
   if the poll isn't `is_active`, or today is before `start_date` or
   after `end_date`, or the option doesn't belong to the poll, or (when
@@ -466,7 +483,7 @@ delivery.
 
 ---
 
-## Tables (`er-dbml.txt`)
+## Tables
 
 `roles`, `users`, `refresh_tokens` · `blocks`, `flats`,
 `resident_profiles`, `occupancy_history` · `maintenance_staff`,
@@ -479,6 +496,8 @@ delivery.
 
 `full_name` / `phone` / `is_active` / `is_verified` / `last_login` all
 live on `users`, not duplicated onto the role‑specific profile tables.
+`notifications` also has `is_read` for inbox state. `maintenance_staff`
+uses `is_available boolean` (no separate `availability` varchar).
 
 ---
 
@@ -542,17 +561,6 @@ reserved special‑use TLD and pydantic's `EmailStr` (used on
 but never logged in. Use any non‑reserved‑TLD domain for `ADMIN_EMAIL`
 in your real `.env`.
 
-## On testing
-
-No pytest suite ships in this snapshot. Every workflow above (auth/
-token rotation, occupancy tracking, the complaint state machine, the
-maintenance task lifecycle, visitor OTP verification, facility booking
-conflict detection, billing/receipt generation, and poll voting) was
-exercised manually against the real modules with lightweight in‑memory
-stand‑ins for Postgres/Redis before delivery. Please run your own
-end‑to‑end pass (`uvicorn` + real Postgres/Redis) before treating this
-as production‑ready, and add pytest coverage per module as it stabilizes.
-
 ## Next module
 
 **Module 10 — AI Community Intelligence (1.10)**, the last section of
@@ -562,5 +570,5 @@ recommendations, admin‑facing community summaries/reports, smart search
 across complaints/announcements/records, and a chat assistant for
 residents and admins. Nothing in `app/models`, `app/services`,
 `app/schemas`, or `app/routers` currently backs any of this — it's the
-one component design doc section with no corresponding table in
-`er-dbml.txt`‑derived code yet.
+one component design doc section with no corresponding table in the
+implemented schema yet.
