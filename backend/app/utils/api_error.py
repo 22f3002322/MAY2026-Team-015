@@ -68,3 +68,8 @@ class ValidationFailed(AppError):
 class ServerError(AppError):
     def __init__(self, message: str = "Something went wrong. Please try again."):
         super().__init__(500, message)
+
+
+class ServiceUnavailable(AppError):
+    def __init__(self, message: str = "This service is temporarily unavailable."):
+        super().__init__(503, message)

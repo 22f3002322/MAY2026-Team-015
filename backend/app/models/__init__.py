@@ -11,6 +11,7 @@ from app.models.complaint import ComplaintCategory, Complaint, ComplaintImage, C
 from app.models.billing import MaintenanceBill, BillItem, Payment, Receipt # noqa: F401
 from app.models.communication import Announcement, Notification # noqa: F401
 from app.models.community import Poll, PollOption, PollVote # noqa: F401
+from app.models.ai import AiInferenceLog  # noqa: F401
 
 __all__ = [
     "Role",
@@ -42,4 +43,5 @@ __all__ = [
     "Poll",
     "PollOption",
     "PollVote",
+    "AiInferenceLog",
 ]

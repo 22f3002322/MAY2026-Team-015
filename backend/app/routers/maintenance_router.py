@@ -15,15 +15,33 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_maintenance_staff_profile, require_verified_maintenance
+from app.core.dependencies import (
+    get_maintenance_staff_profile,
+    require_admin_or_committee,
+    require_verified_maintenance,
+)
 from app.models.auth import User
 from app.models.staff import MaintenanceStaff
-from app.services import complaint_service
+from app.services import ai_service, complaint_service
 from app.schemas.complaint_schema import MaintenanceTaskOut, MaintenanceTaskScheduleRequest
 from app.utils.api_error import NotAuthorized
 from app.utils.api_response import success_response
 
 router = APIRouter(prefix="/api/v1/maintenance/tasks", tags=["maintenance"])
+
+# Admin/Committee staff directory — prerequisite for AI staff recommendations
+# (Module 1.10) and assign UI. Same multi-router pattern as facilities_router.
+router_staff_admin = APIRouter(prefix="/api/v1/admin/maintenance-staff", tags=["maintenance"])
+
+
+@router_staff_admin.get("")
+def list_maintenance_staff(
+    _user: User = Depends(require_admin_or_committee),
+    db: Session = Depends(get_db),
+):
+    items = ai_service.list_maintenance_staff(db)
+    return success_response(data=[item.model_dump() for item in items])
+
 
 
 @router.get("")
