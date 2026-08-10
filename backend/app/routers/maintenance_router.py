@@ -49,6 +49,33 @@ def get_task(
     return success_response(data=MaintenanceTaskOut.model_validate(task))
 
 
+@router.post("/{task_id}/accept")
+def accept_task(
+    task_id: int,
+    _user: User = Depends(require_verified_maintenance),
+    staff: MaintenanceStaff = Depends(get_maintenance_staff_profile),
+    db: Session = Depends(get_db),
+):
+    """Gap-fill (CODE_REVIEW.md 3.4): a task used to arrive already
+    "accepted" the instant it was assigned -- this is the real accept
+    step design doc 1.4 calls for."""
+    task = complaint_service.accept_task(db, task_id, staff.staff_id)
+    return success_response(data=MaintenanceTaskOut.model_validate(task), message="Task accepted.")
+
+
+@router.post("/{task_id}/decline")
+def decline_task(
+    task_id: int,
+    _user: User = Depends(require_verified_maintenance),
+    staff: MaintenanceStaff = Depends(get_maintenance_staff_profile),
+    db: Session = Depends(get_db),
+):
+    """Gap-fill (CODE_REVIEW.md 3.4): the missing opt-out -- sends the
+    complaint back to "open" for an Admin/Committee to reassign."""
+    task = complaint_service.decline_task(db, task_id, staff.staff_id)
+    return success_response(data=MaintenanceTaskOut.model_validate(task), message="Task declined.")
+
+
 @router.post("/{task_id}/schedule")
 def schedule_task(
     task_id: int,

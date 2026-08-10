@@ -93,6 +93,46 @@ def get_booking(booking_id: int, current_user: User = Depends(get_current_user),
 
 
 @router_bookings.patch("/{booking_id}")
-def update_booking(booking_id: int, payload: FacilityBookingUpdate, _staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
-    booking = booking_service.update_booking(db, booking_id, payload)
-    return success_response(data=FacilityBookingOut.model_validate(booking), message="Booking updated.")
+def update_booking(
+    booking_id: int,
+    payload: FacilityBookingUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    BUGFIX (CODE_REVIEW.md 3.3): this used to be Admin/Committee-only,
+    but design doc 1.6 calls for residents to modify or cancel their own
+    bookings too. A Resident may reschedule (date/time -- re-validated
+    against the facility window and conflict-checked exactly like an
+    admin edit) or cancel their own booking; they can't touch any other
+    field, set any other status, or reach anyone else's booking.
+    Admin/Committee keep full, unrestricted edit power, same as before.
+    """
+    booking = booking_service.get_booking(db, booking_id)  # raises NotFound if missing
+    role = current_user.role.role_name
+
+    if role in (RoleEnum.ADMIN, RoleEnum.COMMITTEE):
+        updated = booking_service.update_booking(db, booking_id, payload, actor_user_id=current_user.user_id)
+        return success_response(data=FacilityBookingOut.model_validate(updated), message="Booking updated.")
+
+    if role == RoleEnum.RESIDENT:
+        if not current_user.is_verified:
+            raise NotAuthorized(
+                "Your account is pending verification by a committee member. "
+                "This action isn't available until then."
+            )
+        profile = get_resident_profile(current_user, db)
+        if booking.resident_id != profile.resident_id:
+            raise NotAuthorized("You can only modify your own bookings.")
+
+        update_data = payload.model_dump(exclude_unset=True)
+        disallowed = set(update_data.keys()) - {"booking_date", "start_time", "end_time", "status"}
+        if disallowed:
+            raise NotAuthorized(f"You cannot modify: {', '.join(sorted(disallowed))}.")
+        if "status" in update_data and update_data["status"] != "cancelled":
+            raise NotAuthorized("You can only cancel your own booking, not set any other status.")
+
+        updated = booking_service.update_booking(db, booking_id, payload, actor_user_id=current_user.user_id)
+        return success_response(data=FacilityBookingOut.model_validate(updated), message="Booking updated.")
+
+    raise NotAuthorized("You do not have permission to modify this booking.")

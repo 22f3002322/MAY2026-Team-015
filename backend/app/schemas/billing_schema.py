@@ -84,6 +84,17 @@ class PaymentOut(BaseModel):
     created_at: Optional[datetime] = None
 
 
+# --------------------------------------------------------------------------
+# Gap-fill (CODE_REVIEW.md 3.6): a "pending" payment used to be a dead
+# end -- nothing anywhere ever moved it forward. This transitions it to
+# its final outcome; "pending" isn't a valid target here since you can't
+# reset something back to pending, and success/failed are meant to be
+# terminal (see billing_service.update_payment_status).
+# --------------------------------------------------------------------------
+class PaymentStatusUpdate(BaseModel):
+    status: str = Field(pattern="^(success|failed)$")
+
+
 class ReceiptOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
