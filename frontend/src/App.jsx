@@ -14,6 +14,7 @@ import AdminFacilityBookings from "./pages/admin/FacilityBookings";
 import AdminBilling from "./pages/admin/Billing";
 import AdminNotices from "./pages/admin/Notices";
 import AdminPolls from "./pages/admin/Polls";
+import AdminUsers from "./pages/admin/Users";
 
 // Resident Pages
 import ResidentDashboard from "./pages/resident/Dashboard";
@@ -55,6 +56,7 @@ function App() {
       <Route path="/admin/billing" element={<RoleRoute requiredRole="admin"><AdminBilling /></RoleRoute>} />
       <Route path="/admin/notices" element={<RoleRoute requiredRole="admin"><AdminNotices /></RoleRoute>} />
       <Route path="/admin/polls" element={<RoleRoute requiredRole="admin"><AdminPolls /></RoleRoute>} />
+      <Route path="/admin/users" element={<RoleRoute requiredRole="admin"><AdminUsers /></RoleRoute>} />
 
       {/* Resident Routes — Modules 1-9 */}
       <Route path="/resident/dashboard" element={<RoleRoute requiredRole="resident"><ResidentDashboard /></RoleRoute>} />
