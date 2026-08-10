@@ -34,7 +34,8 @@ def create_facility(payload: FacilityCreate, _staff: User = Depends(require_admi
 
 
 @router.get("")
-def list_facilities(_staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
+# Change: Depends(require_admin_or_committee) to Depends(get_current_user)
+def list_facilities(_staff: User = Depends(get_current_user), db: Session = Depends(get_db)):
     facilities = booking_service.list_facilities(db)
     return success_response(data=[FacilityOut.model_validate(f) for f in facilities])
 
