@@ -16,6 +16,9 @@ from app.core import config
 class TestSettings(Settings):
     DATABASE_URL: str = "sqlite:///./test.db"
     OTP_HASH_SECRET: str = "test-secret-key-for-otp-hashing"
+    AI_ENABLED: bool = False
+    GROQ_API_KEY: str = ""
+    REDIS_URL: str = "redis://localhost:6379/15"
 
 config.settings = TestSettings()
 

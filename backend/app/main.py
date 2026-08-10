@@ -21,6 +21,7 @@ from app.routers import visitors_router
 from app.routers import billing_router
 from app.routers import communication_router
 from app.routers import community_router
+from app.routers import ai_router
 from app.utils.api_error import AppError
 from app.utils.api_response import success_response
 
@@ -94,6 +95,8 @@ def create_app() -> FastAPI:
     app.include_router(complaint_router.router_categories_public)
     app.include_router(complaint_router.router_complaints)
     app.include_router(maintenance_router.router)
+    app.include_router(maintenance_router.router_staff_admin)
+    app.include_router(ai_router.router)
     app.include_router(facilities_router.router)
     app.include_router(facilities_router.router_bookings)
     app.include_router(visitors_router.router)

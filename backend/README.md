@@ -16,9 +16,8 @@ the same database and the same response/error envelope.
 
 **Schema source of truth: `er-dbml.txt`, followed literally.** The
 component design doc's ER diagram describes 30 entities across every
-module including 1.10; 29 of those are implemented in code today
-(`app/models/__init__.py`) — the 30th belongs to AI Community
-Intelligence, which doesn't exist yet.
+module including 1.10; all 30 entity groups are represented in code today
+(`app/models/__init__.py`), including `ai_inference_logs` for Module 1.10.
 
 ---
 
@@ -475,7 +474,7 @@ delivery.
 `complaint_comments` · `visitors`, `visitor_requests`, `visitor_logs` ·
 `facilities`, `facility_bookings` · `maintenance_bills`, `bill_items`,
 `payments`, `receipts` · `announcements`, `notifications` · `polls`,
-`poll_options`, `poll_votes`
+`poll_options`, `poll_votes` · `ai_inference_logs`
 
 `full_name` / `phone` / `is_active` / `is_verified` / `last_login` all
 live on `users`, not duplicated onto the role‑specific profile tables.
@@ -553,14 +552,48 @@ stand‑ins for Postgres/Redis before delivery. Please run your own
 end‑to‑end pass (`uvicorn` + real Postgres/Redis) before treating this
 as production‑ready, and add pytest coverage per module as it stabilizes.
 
-## Next module
+## Module 10 — AI Community Intelligence (1.10)
 
-**Module 10 — AI Community Intelligence (1.10)**, the last section of
-the component design doc, is not implemented yet:
-auto‑categorizing/prioritizing complaints with AI, staff
-recommendations, admin‑facing community summaries/reports, smart search
-across complaints/announcements/records, and a chat assistant for
-residents and admins. Nothing in `app/models`, `app/services`,
-`app/schemas`, or `app/routers` currently backs any of this — it's the
-one component design doc section with no corresponding table in
-`er-dbml.txt`‑derived code yet.
+Backend APIs are implemented (Phase 1). Frontend wiring is a later phase.
+Provider: **Groq** (OpenAI-compatible). Toggle with `AI_ENABLED` /
+`GROQ_API_KEY` in `.env` (see `.env.example`).
+
+Layering matches Modules 1–9:
+
+| Piece | Path |
+|---|---|
+| Router | `app/routers/ai_router.py` (`/api/v1/ai`) |
+| Staff directory | `maintenance_router.router_staff_admin` (`/api/v1/admin/maintenance-staff`) |
+| Service | `app/services/ai_service.py` |
+| Schemas | `app/schemas/ai_schema.py` |
+| Model | `app/models/ai.py` → `ai_inference_logs` |
+| Client / prompts | `app/utils/groq_client.py`, `app/utils/ai_prompts.py` |
+
+### Endpoints
+
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| `POST` | `/api/v1/ai/complaints/classify` | Verified Resident, Admin, Committee | Suggests `category_id` + `priority`; does **not** create a complaint |
+| `GET` | `/api/v1/admin/maintenance-staff` | Admin, Committee | Staff list + `open_task_count` |
+| `GET` | `/api/v1/ai/complaints/{complaint_id}/staff-recommendations` | Admin, Committee | Ranked staff; human still assigns |
+| `GET` | `/api/v1/ai/search?q=&limit=` | Any authenticated (role-scoped) | Complaints + announcements; optional Groq re-rank |
+| `POST` | `/api/v1/ai/reports/complaints/summary` | Admin, Committee | SQL aggregates + LLM narrative; Redis cache |
+| `POST` | `/api/v1/ai/chat` | Any authenticated (role-scoped context) | Grounded reply + citations; Redis rate limit |
+
+If `AI_ENABLED=false` or Groq is misconfigured, AI routes return **503** in the
+standard `{success, message}` envelope. Complaint create/assign never call Groq.
+
+```bash
+curl -X POST localhost:8000/api/v1/ai/complaints/classify \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"description":"Water leaking from the bathroom ceiling for two days"}'
+```
+
+Recreate/add tables after pulling:
+
+```bash
+python -m scripts.init_db
+```
+
+Pytest (mocked Groq): `pytest tests/test_ai.py -q`

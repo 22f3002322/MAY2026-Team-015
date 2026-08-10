@@ -50,6 +50,17 @@ class Settings(BaseSettings):
     # dev only; set this via .env for staging/production.
     CORS_ORIGINS: str = "http://localhost:5173"
 
+    # Module 1.10 — AI Community Intelligence (Groq).
+    # AI_ENABLED=false keeps all /api/v1/ai/* endpoints returning 503
+    # without calling Groq. GROQ_API_KEY is required when AI_ENABLED=true.
+    AI_ENABLED: bool = False
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
+    GROQ_TIMEOUT_SECONDS: int = 30
+    AI_CHAT_RATE_LIMIT_PER_MINUTE: int = 20
+    AI_SUMMARY_CACHE_TTL_SECONDS: int = 900
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
