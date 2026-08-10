@@ -144,3 +144,22 @@ class PendingUserOut(BaseModel):
     phone: Optional[str] = None
     role: str
     created_at: Optional[str] = None
+
+
+class UserOut(BaseModel):
+    user_id: int
+    full_name: Optional[str] = None
+    email: EmailStr
+    phone: Optional[str] = None
+    role: str
+    is_active: bool
+    is_verified: bool
+    created_at: Optional[str] = None
+
+
+class DeactivateRequest(BaseModel):
+    pass
+
+
+class ReactivateRequest(BaseModel):
+    pass

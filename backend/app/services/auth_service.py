@@ -362,6 +362,35 @@ def list_pending_verifications(db: Session) -> list[User]:
     )
 
 
+def list_users(
+    db: Session,
+    role: str | None = None,
+    is_verified: bool | None = None,
+    is_active: bool | None = None,
+    search: str | None = None,
+) -> list[User]:
+    query = db.query(User).join(Role)
+
+    if role is not None:
+        query = query.filter(Role.role_name == RoleEnum(role))
+
+    if is_verified is not None:
+        query = query.filter(User.is_verified == is_verified)
+
+    if is_active is not None:
+        query = query.filter(User.is_active == is_active)
+
+    if search is not None:
+        like = f"%{search}%"
+        query = query.filter(
+            (User.full_name.ilike(like))
+            | (User.email.ilike(like))
+            | (User.phone.ilike(like))
+        )
+
+    return query.order_by(User.created_at.desc()).all()
+
+
 def verify_user(db: Session, user_id: int, occupancy_type: str | None = None) -> User:
     user = get_user_by_id(db, user_id)
     if user is None:

@@ -86,6 +86,7 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(auth_router.router)
+    app.include_router(auth_router.router_users)
     app.include_router(profile_router.router)
     app.include_router(blocks_router.router)
     app.include_router(flats_router.router)

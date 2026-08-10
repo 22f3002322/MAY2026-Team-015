@@ -4,20 +4,23 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user, require_admin, require_committee
+from app.core.dependencies import get_current_user, require_admin, require_admin_or_committee, require_committee
 from app.models.auth import User
 from app.schemas.auth_schema import (
     CreateCommitteeRequest,
     CreateCommitteeResponse,
+    DeactivateRequest,
     ForgotPasswordRequest,
     LoginRequest,
     LoginResponse,
     LogoutRequest,
     PendingUserOut,
+    ReactivateRequest,
     RefreshRequest,
     ResetPasswordRequest,
     SignupRequest,
     SignupResponse,
+    UserOut,
     VerifyUserRequest
 )
 from app.schemas.user_schema import MaintenanceProfileOut, MeResponse, ResidentProfileOut, SecurityProfileOut
@@ -172,6 +175,76 @@ def verify(
     occupancy_type = payload.occupancy_type if payload else None
     user = auth_service.verify_user(db, user_id, occupancy_type=occupancy_type)
     return success_response(data=_to_me_response(user), message="User verified successfully.")
+
+
+# --------------------------------------------------------------------------
+# User management (Admin and Committee)
+# --------------------------------------------------------------------------
+router_users = APIRouter(prefix="/api/v1/users", tags=["users"])
+
+
+@router_users.get("")
+def list_users(
+    role: Optional[str] = None,
+    is_verified: Optional[bool] = None,
+    is_active: Optional[bool] = None,
+    search: Optional[str] = None,
+    _staff: User = Depends(require_admin_or_committee),
+    db: Session = Depends(get_db),
+):
+    users = auth_service.list_users(db, role=role, is_verified=is_verified, is_active=is_active, search=search)
+    data = [
+        UserOut(
+            user_id=u.user_id,
+            full_name=u.full_name,
+            email=u.email,
+            phone=u.phone,
+            role=u.role.role_name.value,
+            is_active=u.is_active,
+            is_verified=u.is_verified,
+            created_at=u.created_at.isoformat() if u.created_at else None,
+        )
+        for u in users
+    ]
+    return success_response(data=data)
+
+
+@router_users.post("/{user_id}/deactivate")
+def deactivate_user_endpoint(
+    user_id: int,
+    _staff: User = Depends(require_admin_or_committee),
+    db: Session = Depends(get_db),
+):
+    user = auth_service.deactivate_user(db, user_id, actor_user_id=_staff.user_id)
+    return success_response(data=UserOut(
+        user_id=user.user_id,
+        full_name=user.full_name,
+        email=user.email,
+        phone=user.phone,
+        role=user.role.role_name.value,
+        is_active=user.is_active,
+        is_verified=user.is_verified,
+        created_at=user.created_at.isoformat() if user.created_at else None,
+    ), message="User deactivated.")
+
+
+@router_users.post("/{user_id}/reactivate")
+def reactivate_user_endpoint(
+    user_id: int,
+    _staff: User = Depends(require_admin_or_committee),
+    db: Session = Depends(get_db),
+):
+    user = auth_service.reactivate_user(db, user_id)
+    return success_response(data=UserOut(
+        user_id=user.user_id,
+        full_name=user.full_name,
+        email=user.email,
+        phone=user.phone,
+        role=user.role.role_name.value,
+        is_active=user.is_active,
+        is_verified=user.is_verified,
+        created_at=user.created_at.isoformat() if user.created_at else None,
+    ), message="User reactivated.")
 
 
 # --------------------------------------------------------------------------
