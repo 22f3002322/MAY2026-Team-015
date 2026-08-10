@@ -40,12 +40,32 @@ _LOAD_OPTIONS = (
 
 
 def create_complaint(db: Session, payload: ComplaintCreate, resident_id: int) -> Complaint:
+    # BUGFIX (CODE_REVIEW.md 1.2): category_id was never checked against
+    # ComplaintCategory before insert -- an invalid id tripped a raw FK
+    # violation on commit, surfacing as an unhandled 500 instead of a
+    # clean 404. Same fix pattern already applied to assign_complaint's
+    # staff_id check below.
+    category = (
+        db.query(ComplaintCategory)
+        .filter(ComplaintCategory.category_id == payload.category_id)
+        .first()
+    )
+    if category is None:
+        raise NotFound("Complaint category not found.")
+
     complaint = Complaint(
         resident_id=resident_id,
         category_id=payload.category_id,
         description=payload.description,
         priority=payload.priority,
-        status=payload.status,
+        # BUGFIX (CODE_REVIEW.md 1.1): status is no longer a field on
+        # ComplaintCreate (see complaint_schema.py) -- every complaint
+        # starts "open" server-side, full stop. Previously
+        # payload.status was written straight through with no
+        # constraint anywhere in the pipeline, so a resident could file
+        # a complaint already "resolved" and skip the whole
+        # assignment/work workflow entirely.
+        status="open",
     )
     db.add(complaint)
     db.flush()

@@ -172,3 +172,37 @@ def verify(
     occupancy_type = payload.occupancy_type if payload else None
     user = auth_service.verify_user(db, user_id, occupancy_type=occupancy_type)
     return success_response(data=_to_me_response(user), message="User verified successfully.")
+
+
+# --------------------------------------------------------------------------
+# Account deactivation / reactivation
+#
+# BUGFIX (CODE_REVIEW.md 1.5): no endpoint anywhere ever wrote
+# is_active=False -- the only way to suspend a bad actor's access was a
+# manual DB edit. Admin-only (not Admin/Committee): this is a stronger
+# action than day-to-day account verification (which is deliberately
+# Committee-only elsewhere in this router), since it can suspend anyone
+# including Committee/Security/Maintenance accounts.
+# --------------------------------------------------------------------------
+@router.post("/users/{user_id}/deactivate")
+def deactivate_user(
+    user_id: int,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Admin-only. Suspends login access immediately (revokes every
+    refresh token the user currently holds); doesn't delete any data.
+    An admin can't deactivate their own account."""
+    user = auth_service.deactivate_user(db, user_id, admin.user_id)
+    return success_response(data=_to_me_response(user), message="Account deactivated.")
+
+
+@router.post("/users/{user_id}/reactivate")
+def reactivate_user(
+    user_id: int,
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Admin-only. Restores login access for a previously deactivated account."""
+    user = auth_service.reactivate_user(db, user_id)
+    return success_response(data=_to_me_response(user), message="Account reactivated.")

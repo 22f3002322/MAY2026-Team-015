@@ -9,7 +9,6 @@ from app.core.dependencies import (
     get_resident_profile,
     require_admin_or_committee,
     require_resident,
-    require_verified_resident,
 )
 from app.models.apartment import ResidentProfile
 from app.models.auth import RoleEnum, User
@@ -106,8 +105,38 @@ def _assert_can_touch_bill(db: Session, current_user: User, flat_id: int) -> Non
     raise NotAuthorized("You do not have permission to access this bill's payments.")
 
 
+def _require_biller(current_user: User = Depends(get_current_user)) -> User:
+    """
+    BUGFIX (CODE_REVIEW.md 1.4): create_payment's route dependency used
+    to be require_verified_resident, which hard-restricts the *entire*
+    endpoint to Residents -- but _assert_can_touch_bill (above) already
+    explicitly branches for Admin/Committee. That branch was dead code:
+    FastAPI resolves require_verified_resident before the handler body
+    ever runs, so an Admin/Committee caller got a 403 there first and
+    never reached _assert_can_touch_bill at all. In practice there was
+    no way to record a cash/manual payment an admin collected in
+    person -- every payment had to be self-reported by the resident.
+    Admin/Committee pass straight through here, same as everywhere else
+    in this router; a Resident must still be verified, matching every
+    other verified-resident-gated write path in the app. Ownership
+    (which bill a Resident may pay) is still enforced by
+    _assert_can_touch_bill, called right after this in create_payment.
+    """
+    role = current_user.role.role_name
+    if role in (RoleEnum.ADMIN, RoleEnum.COMMITTEE):
+        return current_user
+    if role == RoleEnum.RESIDENT:
+        if not current_user.is_verified:
+            raise NotAuthorized(
+                "Your account is pending verification by a committee member. "
+                "This action isn't available until then."
+            )
+        return current_user
+    raise NotAuthorized("You do not have permission to record payments.")
+
+
 @router_payments.post("")
-def create_payment(payload: PaymentCreate, current_user: User = Depends(require_verified_resident), db: Session = Depends(get_db)):
+def create_payment(payload: PaymentCreate, current_user: User = Depends(_require_biller), db: Session = Depends(get_db)):
     bill = billing_service.get_bill(db, payload.bill_id)
     _assert_can_touch_bill(db, current_user, bill.flat_id)
     payment = billing_service.create_payment(db, payload)
