@@ -17,11 +17,13 @@ import PreviousPolls from "../../components/residents/polls/PreviousPolls";
 
 
 import usePollStore from "../../store/pollStore";
+import useAuthStore from "../../store/authStore";
+import { toast } from "sonner";
 
 
 
 const Polls = () => {
-
+  const { user, isVerified } = useAuthStore();
 
   const polls =
     usePollStore(
@@ -374,11 +376,14 @@ const Polls = () => {
                       poll={
                         poll
                       }
-
-
-                      onVote={
-                        setSelectedPoll
-                      }
+                      onVote={(p) => {
+                        const userIsVerified = isVerified !== false && user?.isVerified !== false;
+                        if (!userIsVerified) {
+                          toast.error("Your account must be verified by the Committee to vote on polls.");
+                          return;
+                        }
+                        setSelectedPoll(p);
+                      }}
 
 
                       onResults={

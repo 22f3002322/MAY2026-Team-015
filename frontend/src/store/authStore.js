@@ -76,9 +76,9 @@ const useAuthStore = create(
                   block: residentInfo.block || null,
                   occupancy: "Resident",
                   isVerified: me.is_verified,
-                  staffRole: me.maintenance_profile
+                  staffRole: me.maintenance_profile || String(me.role || rawBackendRole || "").toLowerCase() === "maintenance"
                     ? "maintenance"
-                    : me.security_profile
+                    : me.security_profile || String(me.role || rawBackendRole || "").toLowerCase() === "security"
                     ? "security"
                     : null,
                   residentProfile: residentInfo,
@@ -223,9 +223,9 @@ const useAuthStore = create(
                 block: residentInfo.block || null,
                 occupancy: "Resident",
                 isVerified: me.is_verified,
-                staffRole: me.maintenance_profile
+                staffRole: me.maintenance_profile || String(me.role || "").toLowerCase() === "maintenance"
                   ? "maintenance"
-                  : me.security_profile
+                  : me.security_profile || String(me.role || "").toLowerCase() === "security"
                   ? "security"
                   : null,
                 residentProfile: residentInfo,

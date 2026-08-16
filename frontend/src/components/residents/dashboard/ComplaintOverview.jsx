@@ -13,71 +13,75 @@ import Card from "../../ui/Card";
 import Badge from "../../ui/Badge";
 
 import useComplaintStore from "../../../store/complaintStore";
-import useAuthStore from "../../../store/authStore";
 
-const COLORS = [
-  "#EF4444",
-  "#3B82F6",
-  "#F59E0B",
-  "#10B981",
-];
+const COLORS = ["#EF4444", "#3B82F6", "#F59E0B", "#10B981"];
+
+// Normalize backend status (backend stores lowercase like "open", "assigned", "in_progress", "resolved")
+const normalizeStatus = (status) => {
+  if (!status) return "Open";
+  const s = String(status).toLowerCase().replace(/_/g, " ");
+  const map = {
+    "open": "Open",
+    "assigned": "Assigned",
+    "in progress": "In Progress",
+    "resolved": "Resolved",
+    "closed": "Resolved",
+  };
+  return map[s] || status;
+};
+
+const getVariant = (status) => {
+  switch (normalizeStatus(status)) {
+    case "Open": return "danger";
+    case "Assigned": return "primary";
+    case "In Progress": return "warning";
+    case "Resolved": return "success";
+    default: return "default";
+  }
+};
 
 const ComplaintOverview = () => {
-  const complaints = useComplaintStore(
-    (state) => state.complaints
-  );
+  // Backend returns only the current resident's own complaints via /api/v1/complaints
+  const complaints = useComplaintStore((state) => state.complaints);
 
-  // Use logged-in user from authStore
-  const user = useAuthStore(
-    (state) => state.user
-  );
+  const chartData = useMemo(() => [
+    {
+      name: "Open",
+      value: complaints.filter(
+        (c) => normalizeStatus(c.status) === "Open"
+      ).length,
+    },
+    {
+      name: "Assigned",
+      value: complaints.filter(
+        (c) => normalizeStatus(c.status) === "Assigned"
+      ).length,
+    },
+    {
+      name: "In Progress",
+      value: complaints.filter(
+        (c) => normalizeStatus(c.status) === "In Progress"
+      ).length,
+    },
+    {
+      name: "Resolved",
+      value: complaints.filter(
+        (c) => normalizeStatus(c.status) === "Resolved"
+      ).length,
+    },
+  ], [complaints]);
 
-  const myComplaints = useMemo(
+  const recentComplaints = useMemo(
     () =>
-      complaints.filter(
-        (complaint) =>
-          complaint.flat === user?.flat
-      ),
-    [complaints, user]
+      [...complaints]
+        .sort(
+          (a, b) =>
+            new Date(b.created_at || b.createdAt || 0) -
+            new Date(a.created_at || a.createdAt || 0)
+        )
+        .slice(0, 4),
+    [complaints]
   );
-
-  const chartData = useMemo(
-    () => [
-      {
-        name: "Open",
-        value: myComplaints.filter(
-          (c) => c.status === "Open"
-        ).length,
-      },
-      {
-        name: "Assigned",
-        value: myComplaints.filter(
-          (c) => c.status === "Assigned"
-        ).length,
-      },
-      {
-        name: "In Progress",
-        value: myComplaints.filter(
-          (c) => c.status === "In Progress"
-        ).length,
-      },
-      {
-        name: "Resolved",
-        value: myComplaints.filter(
-          (c) => c.status === "Resolved"
-        ).length,
-      },
-    ],
-    [myComplaints]
-  );
-
-  const recentComplaints = [...myComplaints]
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt || 0) -
-        new Date(a.createdAt || 0)
-    )
-    .slice(0, 4);
 
   return (
     <Card
@@ -86,10 +90,7 @@ const ComplaintOverview = () => {
     >
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="h-72">
-          <ResponsiveContainer
-            width="100%"
-            height="100%"
-          >
+          <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={chartData}
@@ -100,17 +101,11 @@ const ComplaintOverview = () => {
                 {chartData.map((_, index) => (
                   <Cell
                     key={index}
-                    fill={
-                      COLORS[
-                        index % COLORS.length
-                      ]
-                    }
+                    fill={COLORS[index % COLORS.length]}
                   />
                 ))}
               </Pie>
-
               <Tooltip />
-
               <Legend />
             </PieChart>
           </ResponsiveContainer>
@@ -118,71 +113,37 @@ const ComplaintOverview = () => {
 
         <div className="space-y-4">
           {recentComplaints.length === 0 ? (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               No complaints found.
             </p>
           ) : (
-            recentComplaints.map(
-              (complaint) => {
-                let variant = "default";
+            recentComplaints.map((complaint) => (
+              <div
+                key={complaint.complaint_id || complaint.id}
+                className="rounded-xl border border-slate-200 dark:border-slate-700 p-4"
+              >
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-slate-800 dark:text-slate-200">
+                    {complaint.title}
+                  </h4>
+                  <Badge variant={getVariant(complaint.status)}>
+                    {normalizeStatus(complaint.status)}
+                  </Badge>
+                </div>
 
-                switch (
-                  complaint.status
-                ) {
-                  case "Open":
-                    variant = "danger";
-                    break;
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                  {complaint.category?.name || complaint.category || "General"}
+                </p>
 
-                  case "Assigned":
-                    variant = "primary";
-                    break;
-
-                  case "In Progress":
-                    variant = "warning";
-                    break;
-
-                  case "Resolved":
-                    variant = "success";
-                    break;
-
-                  default:
-                    variant = "default";
-                }
-
-                return (
-                  <div
-                    key={complaint.id}
-                    className="rounded-xl border border-slate-200 p-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-slate-800">
-                        {complaint.title}
-                      </h4>
-
-                      <Badge
-                        variant={variant}
-                      >
-                        {complaint.status}
-                      </Badge>
-                    </div>
-
-                    <p className="mt-2 text-sm text-slate-500">
-                      {
-                        complaint.category
-                      }
-                    </p>
-
-                    <p className="mt-2 text-xs text-slate-400">
-                      {complaint.createdAt
-                        ? new Date(
-                            complaint.createdAt
-                          ).toLocaleDateString()
-                        : "-"}
-                    </p>
-                  </div>
-                );
-              }
-            )
+                <p className="mt-2 text-xs text-slate-400">
+                  {complaint.created_at || complaint.createdAt
+                    ? new Date(
+                        complaint.created_at || complaint.createdAt
+                      ).toLocaleDateString()
+                    : "-"}
+                </p>
+              </div>
+            ))
           )}
         </div>
       </div>

@@ -19,27 +19,22 @@ const VisitorOverview = () => {
     (state) => state.user
   );
 
-  const [selectedVisitor, setSelectedVisitor] =
-    useState(null);
+  const [selectedVisitor, setSelectedVisitor] = useState(null);
 
   const myVisitors = useMemo(
     () =>
-      visitors
-        .filter(
-          (visitor) =>
-            visitor.residentFlat === user?.flat
-        )
+      [...visitors]
         .sort(
           (a, b) =>
             new Date(
-              `${b.visitDate} ${b.visitTime}`
+              `${b.date}T${b.visitTime}`
             ) -
             new Date(
-              `${a.visitDate} ${a.visitTime}`
+              `${a.date}T${a.visitTime}`
             )
         )
         .slice(0, 5),
-    [visitors, user]
+    [visitors]
   );
 
   return (
@@ -65,15 +60,19 @@ const VisitorOverview = () => {
               let variant = "default";
 
               switch (visitor.status) {
-                case "Approved":
-                  variant = "success";
-                  break;
-
-                case "Pending":
+                case "Expected":
                   variant = "warning";
                   break;
 
-                case "Rejected":
+                case "Checked In":
+                  variant = "primary";
+                  break;
+
+                case "Completed":
+                  variant = "success";
+                  break;
+
+                case "Cancelled":
                   variant = "danger";
                   break;
 
@@ -88,7 +87,7 @@ const VisitorOverview = () => {
                 >
                   <div>
                     <h4 className="font-semibold text-slate-800">
-                      {visitor.visitorName}
+                      {visitor.name}
                     </h4>
 
                     <p className="mt-1 text-sm text-slate-500">
@@ -96,7 +95,7 @@ const VisitorOverview = () => {
                     </p>
 
                     <p className="mt-2 text-xs text-slate-400">
-                      {visitor.visitDate} •{" "}
+                      {visitor.date} •{" "}
                       {visitor.visitTime}
                     </p>
                   </div>
