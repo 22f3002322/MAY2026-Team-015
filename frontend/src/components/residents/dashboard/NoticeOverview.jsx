@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Bell } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import Card from "../../ui/Card";
 import Badge from "../../ui/Badge";
@@ -8,6 +9,7 @@ import Button from "../../ui/Button";
 import useNoticeStore from "../../../store/noticeStore";
 
 const NoticeOverview = () => {
+  const navigate = useNavigate();
   const notices = useNoticeStore(
     (state) => state.notices
   );
@@ -103,6 +105,7 @@ const NoticeOverview = () => {
             <Button
               variant="outline"
               className="w-full"
+              onClick={() => navigate("/resident/notices")}
             >
               View All Notices
             </Button>

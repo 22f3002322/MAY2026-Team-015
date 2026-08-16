@@ -6,55 +6,46 @@ import {
 } from "lucide-react";
 
 import { useMemo } from "react";
-
 import Card from "../../ui/Card";
 
 import useAuthStore from "../../../store/authStore";
 import useComplaintStore from "../../../store/complaintStore";
 import useBillingStore from "../../../store/billingStore";
-import useFacilityStore from "../../../store/facilityStore";
+import useBookingStore from "../../../store/bookingStore";
 
 const ResidentStats = () => {
-  // Use logged-in user from authStore
   const user = useAuthStore((state) => state.user);
 
-  const complaints = useComplaintStore(
-    (state) => state.complaints
-  );
-
-  const bills = useBillingStore(
-    (state) => state.bills
-  );
-
-  const bookings = useFacilityStore(
-    (state) => state.bookings || []
-  );
+  const complaints = useComplaintStore((state) => state.complaints);
+  // Resident sees their own bills via myBills (from fetchMyBills)
+  const myBills = useBillingStore((state) => state.myBills);
+  const bookings = useBookingStore((state) => state.bookings);
 
   const stats = useMemo(() => {
-    const myComplaints = complaints.filter(
-      (c) => c.flat === user?.flat
+    const pendingBills = myBills.filter(
+      (bill) => bill.status === "Pending" || bill.status === "pending"
     );
 
-    const pendingBills = bills.filter(
-      (bill) =>
-        bill.flat === user?.flat &&
-        bill.status === "Pending"
-    );
-
-    const myBookings = bookings.filter(
-      (booking) => booking.flat === user?.flat
+    const upcomingBookings = bookings.filter(
+      (b) =>
+        b.status === "Pending" ||
+        b.status === "pending" ||
+        b.status === "Confirmed" ||
+        b.status === "confirmed" ||
+        b.status === "Approved" ||
+        b.status === "approved"
     );
 
     return [
       {
         title: "My Apartment",
         value: user?.flat || "--",
-        subtitle: user?.occupancy || "",
+        subtitle: user?.occupancy || "Resident",
         icon: Home,
       },
       {
         title: "My Complaints",
-        value: myComplaints.length,
+        value: complaints.length,
         subtitle: "Total Raised",
         icon: ClipboardList,
       },
@@ -66,17 +57,12 @@ const ResidentStats = () => {
       },
       {
         title: "Facility Bookings",
-        value: myBookings.length,
+        value: upcomingBookings.length,
         subtitle: "Active Bookings",
         icon: CalendarCheck,
       },
     ];
-  }, [
-    user,
-    complaints,
-    bills,
-    bookings,
-  ]);
+  }, [user, complaints, myBills, bookings]);
 
   return (
     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
@@ -103,7 +89,7 @@ const ResidentStats = () => {
                 </p>
               </div>
 
-              <div className="rounded-xl bg-indigo-100 p-3 text-indigo-600">
+              <div className="rounded-xl bg-indigo-100 p-3 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
                 <Icon size={24} />
               </div>
             </div>

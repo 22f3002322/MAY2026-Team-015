@@ -1,6 +1,8 @@
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import useAuthStore from "../../store/authStore";
+import { ShieldAlert } from "lucide-react";
 
 const Layout = ({
   children,
@@ -8,6 +10,9 @@ const Layout = ({
   breadcrumb = ["Home", "Dashboard"],
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { user, role, isVerified } = useAuthStore();
+
+  const showVerificationBanner = role === "resident" && (isVerified === false || user?.isVerified === false);
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 relative transition-colors duration-200">
@@ -33,6 +38,21 @@ const Layout = ({
 
         {/* Page Content */}
         <main className="flex-1 p-4 md:p-8 overflow-y-auto overflow-x-hidden">
+          {showVerificationBanner && (
+            <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border border-amber-200 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400">
+                  <ShieldAlert size={20} />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sm">Account Pending Verification</h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                    Your residency profile is currently unverified. Raising complaints, pre-registering visitors, booking facilities, and voting will be enabled once a Committee member verifies your account.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           {children}
         </main>
       </div>
@@ -40,4 +60,4 @@ const Layout = ({
   );
 };
 
-export default Layout;
+export default Layout;

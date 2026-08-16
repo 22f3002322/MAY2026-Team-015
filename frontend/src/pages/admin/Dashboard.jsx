@@ -19,11 +19,24 @@ import useBillingStore from "../../store/billingStore";
 import useAuthStore from "../../store/authStore";
 import CreateCommitteeModal from "../../components/admin/CreateCommitteeModal";
 
+// Backend stores status as lowercase: "open", "assigned", "in_progress", "resolved"
+const isResolved = (s) =>
+  String(s || "").toLowerCase().replace(/_/g, " ") === "resolved" ||
+  String(s || "").toLowerCase() === "closed";
+
+const normalizeStatus = (s) => {
+  const v = String(s || "").toLowerCase();
+  if (v === "open") return "Open";
+  if (v === "assigned") return "Assigned";
+  if (v === "in_progress" || v === "in progress") return "In Progress";
+  if (v === "resolved" || v === "closed") return "Resolved";
+  return s || "Open";
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [committeeModal, setCommitteeModal] = useState(false);
   const { backendRole } = useAuthStore();
-  // Only pure Admins (not Committee) get the "Add Committee" quick action
   const isPureAdmin = String(backendRole || "").toLowerCase() === "admin";
 
   const fetchResidents = useResidentStore((state) => state.fetchResidents);
@@ -31,6 +44,7 @@ const Dashboard = () => {
   const fetchComplaints = useComplaintStore((state) => state.fetchComplaints);
   const fetchVisitorLogs = useVisitorStore((state) => state.fetchVisitorLogs);
   const fetchBills = useBillingStore((state) => state.fetchBills);
+  const fetchBillingSummary = useBillingStore((state) => state.fetchBillingSummary);
 
   useEffect(() => {
     fetchResidents();
@@ -38,255 +52,168 @@ const Dashboard = () => {
     fetchComplaints();
     fetchVisitorLogs();
     fetchBills();
-  }, [fetchResidents, fetchFlats, fetchComplaints, fetchVisitorLogs, fetchBills]);
+    fetchBillingSummary();
+  }, [fetchResidents, fetchFlats, fetchComplaints, fetchVisitorLogs, fetchBills, fetchBillingSummary]);
 
-  const flats = useApartmentStore(
-    (state) => state.flats
-  );
+  const flats = useApartmentStore((state) => state.flats);
+  const residents = useResidentStore((state) => state.residents);
+  const complaints = useComplaintStore((state) => state.complaints);
+  const logs = useVisitorStore((state) => state.logs);
+  const bills = useBillingStore((state) => state.bills);
+  const summary = useBillingStore((state) => state.summary);
 
-  const residents = useResidentStore(
-    (state) => state.residents
-  );
+  const totalRevenue = useMemo(() => {
+    // Prefer billing summary from backend if available
+    if (summary?.total_paid) return Number(summary.total_paid);
+    return bills
+      .filter((bill) => {
+        const s = String(bill.status || "").toLowerCase();
+        return s === "paid";
+      })
+      .reduce(
+        (sum, bill) =>
+          sum + Number(bill.total_amount || bill.amount || 0),
+        0
+      );
+  }, [bills, summary]);
 
-  const complaints = useComplaintStore(
-    (state) => state.complaints
-  );
-
-  const logs = useVisitorStore(
-    (state) => state.logs
-  );
-
-  const bills = useBillingStore(
-    (state) => state.bills
-  );
-
-  const totalRevenue = useMemo(
+  const openComplaints = useMemo(
     () =>
-      bills
-        .filter(
-          (bill) =>
-            bill.status === "Paid"
-        )
-        .reduce(
-          (sum, bill) =>
-            sum +
-            Number(
-              bill.amount || 0
-            ),
-          0
-        ),
-    [bills]
+      complaints.filter((c) => !isResolved(c.status)).length,
+    [complaints]
   );
-
-  const openComplaints =
-    useMemo(
-      () =>
-        complaints.filter(
-          (complaint) =>
-            complaint.status !==
-            "Resolved"
-        ).length,
-      [complaints]
-    );
 
   const stats = useMemo(
     () => [
-      {
-        id: 1,
-        title: "Residents",
-        value: residents.length,
-      },
-      {
-        id: 2,
-        title: "Apartments",
-        value: flats.length,
-      },
-      {
-        id: 3,
-        title:
-          "Open Complaints",
-        value: openComplaints,
-      },
+      { id: 1, title: "Residents", value: residents.length },
+      { id: 2, title: "Apartments", value: flats.length },
+      { id: 3, title: "Open Complaints", value: openComplaints },
       {
         id: 4,
         title: "Revenue",
         value: `₹${totalRevenue.toLocaleString()}`,
       },
     ],
-    [
-      residents.length,
-      flats.length,
-      openComplaints,
-      totalRevenue,
-    ]
+    [residents.length, flats.length, openComplaints, totalRevenue]
   );
 
-  const complaintStatus =
-    useMemo(
-      () => [
-        {
-          name: "Open",
-          value:
-            complaints.filter(
-              (c) =>
-                c.status ===
-                "Open"
-            ).length,
-        },
-        {
-          name: "Assigned",
-          value:
-            complaints.filter(
-              (c) =>
-                c.status ===
-                "Assigned"
-            ).length,
-        },
-        {
-          name: "In Progress",
-          value:
-            complaints.filter(
-              (c) =>
-                c.status ===
-                "In Progress"
-            ).length,
-        },
-        {
-          name: "Resolved",
-          value:
-            complaints.filter(
-              (c) =>
-                c.status ===
-                "Resolved"
-            ).length,
-        },
-      ],
-      [complaints]
-    );
+  const complaintStatus = useMemo(
+    () => [
+      {
+        name: "Open",
+        value: complaints.filter(
+          (c) => String(c.status || "").toLowerCase() === "open"
+        ).length,
+      },
+      {
+        name: "Assigned",
+        value: complaints.filter(
+          (c) => String(c.status || "").toLowerCase() === "assigned"
+        ).length,
+      },
+      {
+        name: "In Progress",
+        value: complaints.filter(
+          (c) =>
+            String(c.status || "").toLowerCase() === "in_progress" ||
+            String(c.status || "").toLowerCase() === "in progress"
+        ).length,
+      },
+      {
+        name: "Resolved",
+        value: complaints.filter((c) => isResolved(c.status)).length,
+      },
+    ],
+    [complaints]
+  );
 
-  const monthlyComplaints =
-    useMemo(() => {
-      const currentYear =
-        new Date().getFullYear();
+  const monthlyComplaints = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const months = Array.from({ length: 12 }, (_, i) => ({
+      month: new Date(currentYear, i).toLocaleString("default", {
+        month: "short",
+      }),
+      complaints: 0,
+    }));
 
-      const months =
-        Array.from(
-          {
-            length: 12,
-          },
-          (_, i) => ({
-            month: new Date(
-              currentYear,
-              i
-            ).toLocaleString(
-              "default",
-              {
-                month: "short",
-              }
-            ),
-            complaints: 0,
-          })
-        );
+    complaints.forEach((complaint) => {
+      const dateStr = complaint.created_at || complaint.createdAt;
+      if (!dateStr) return;
+      const d = new Date(dateStr);
+      if (d.getFullYear() === currentYear) {
+        months[d.getMonth()].complaints++;
+      }
+    });
 
-      complaints.forEach(
-        (complaint) => {
-          if (
-            !complaint.createdAt
-          )
-            return;
+    return months;
+  }, [complaints]);
 
-          const month =
-            new Date(
-              complaint.createdAt
-            ).getMonth();
-
-          months[
-            month
-          ].complaints++;
-        }
-      );
-
-      return months;
-    }, [complaints]);
-      const recentComplaints =
-    useMemo(
-      () =>
-        [...complaints]
-          .sort(
-            (a, b) =>
-              new Date(
-                b.createdAt || 0
-              ) -
-              new Date(
-                a.createdAt || 0
-              )
-          )
-          .slice(0, 5),
-      [complaints]
-    );
+  const recentComplaints = useMemo(
+    () =>
+      [...complaints]
+        .sort(
+          (a, b) =>
+            new Date(b.created_at || b.createdAt || 0) -
+            new Date(a.created_at || a.createdAt || 0)
+        )
+        .slice(0, 5)
+        .map((c) => ({
+          ...c,
+          resident:
+            c.resident_name ||
+            (c.resident && c.resident.name) ||
+            `Resident #${c.resident_id}`,
+          flat:
+            c.flat_number ||
+            (c.resident && c.resident.flat_number) ||
+            `Flat #${c.flat_id}`,
+          status: normalizeStatus(c.status),
+        })),
+    [complaints]
+  );
 
   const recentVisitors = useMemo(() => {
     return [...logs]
-      .sort((a, b) => new Date(b.entry_time || 0) - new Date(a.entry_time || 0))
+      .sort(
+        (a, b) =>
+          new Date(b.entry_time || 0) - new Date(a.entry_time || 0)
+      )
       .slice(0, 5)
       .map((log) => ({
         id: log.log_id || log.id,
-        name: log.visitor_name || (log.visitor && log.visitor.visitor_name) || `Visitor #${log.visitor_id}`,
-        flat: log.flat_number || (log.visitor && log.visitor.flat_number) || `Flat #${log.flat_id}`,
-        visitTime: log.entry_time ? new Date(log.entry_time).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' }) : "N/A",
+        name:
+          log.visitor_name ||
+          (log.visitor && log.visitor.visitor_name) ||
+          `Visitor #${log.visitor_id}`,
+        flat:
+          log.flat_number ||
+          (log.visitor && log.visitor.flat_number) ||
+          `Flat #${log.flat_id}`,
+        visitTime: log.entry_time
+          ? new Date(log.entry_time).toLocaleTimeString("en-IN", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "N/A",
       }));
   }, [logs]);
 
   const complaintColumns = [
-    {
-      key: "resident",
-      header: "Resident",
-    },
-    {
-      key: "flat",
-      header: "Flat",
-    },
-    {
-      key: "title",
-      header: "Issue",
-    },
+    { key: "resident", header: "Resident" },
+    { key: "flat", header: "Flat" },
+    { key: "title", header: "Issue" },
     {
       key: "status",
       header: "Status",
       render: (row) => {
-        let variant =
-          "default";
-
-        switch (row.status) {
-          case "Open":
-            variant =
-              "danger";
-            break;
-
-          case "Assigned":
-            variant =
-              "primary";
-            break;
-
-          case "In Progress":
-            variant =
-              "warning";
-            break;
-
-          case "Resolved":
-            variant =
-              "success";
-            break;
-
-          default:
-            variant =
-              "default";
-        }
-
+        const variants = {
+          Open: "danger",
+          Assigned: "primary",
+          "In Progress": "warning",
+          Resolved: "success",
+        };
         return (
-          <Badge
-            variant={variant}
-          >
+          <Badge variant={variants[row.status] || "default"}>
             {row.status}
           </Badge>
         );
@@ -295,44 +222,28 @@ const Dashboard = () => {
   ];
 
   const visitorColumns = [
-    {
-      key: "name",
-      header: "Visitor",
-    },
-    {
-      key: "flat",
-      header:
-        "Resident Flat",
-    },
-    {
-      key: "visitTime",
-      header:
-        "Arrival Time",
-    },
+    { key: "name", header: "Visitor" },
+    { key: "flat", header: "Resident Flat" },
+    { key: "visitTime", header: "Arrival Time" },
   ];
 
   return (
     <Layout
       title="Dashboard"
-      breadcrumb={[
-        "Home",
-        "Dashboard",
-      ]}
+      breadcrumb={["Home", "Dashboard"]}
     >
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((item) => (
-          <StatCard
-            key={item.id}
-            title={item.title}
-            value={item.value}
-          />
+          <StatCard key={item.id} title={item.title} value={item.value} />
         ))}
       </div>
 
       <div className="mt-8">
         <QuickActions
           onAddResident={() => navigate("/admin/residents")}
-          onAddCommittee={isPureAdmin ? () => setCommitteeModal(true) : undefined}
+          onAddCommittee={
+            isPureAdmin ? () => setCommitteeModal(true) : undefined
+          }
         />
       </div>
 
@@ -343,37 +254,23 @@ const Dashboard = () => {
       />
 
       <div className="mt-8 grid gap-6 xl:grid-cols-2">
-        <ComplaintStatusChart
-          data={
-            complaintStatus
-          }
-        />
-
-        <ComplaintTrendChart
-          data={
-            monthlyComplaints
-          }
-        />
+        <ComplaintStatusChart data={complaintStatus} />
+        <ComplaintTrendChart data={monthlyComplaints} />
       </div>
-            <div className="mt-8 grid gap-6 xl:grid-cols-2">
+
+      <div className="mt-8 grid gap-6 xl:grid-cols-2">
         <Card
           title="Recent Complaints"
           subtitle="Latest maintenance requests"
         >
-          <Table
-            columns={complaintColumns}
-            data={recentComplaints}
-          />
+          <Table columns={complaintColumns} data={recentComplaints} />
         </Card>
 
         <Card
           title="Today's Visitors"
           subtitle="Latest visitor entries"
         >
-          <Table
-            columns={visitorColumns}
-            data={recentVisitors}
-          />
+          <Table columns={visitorColumns} data={recentVisitors} />
         </Card>
       </div>
     </Layout>

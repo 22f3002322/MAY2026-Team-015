@@ -15,8 +15,10 @@ import VisitorDetails from "../../components/residents/visitors/VisitorDetails";
 
 import useVisitorStore from "../../store/visitorStore";
 import useResidentStore from "../../store/residentStore";
+import useAuthStore from "../../store/authStore";
 
 const Visitors = () => {
+  const { user, isVerified } = useAuthStore();
   // Zustand
   const visitors = useVisitorStore(
     (state) => state.visitors
@@ -117,9 +119,14 @@ const Visitors = () => {
         setStatus={setStatus}
         purpose={purpose}
         setPurpose={setPurpose}
-        onAddVisitor={() =>
-          setOpenModal(true)
-        }
+        onAddVisitor={() => {
+          const userIsVerified = isVerified !== false && user?.isVerified !== false;
+          if (!userIsVerified) {
+            toast.error("Your account must be verified by the Committee to register visitors.");
+            return;
+          }
+          setOpenModal(true);
+        }}
       />
 
       <Card

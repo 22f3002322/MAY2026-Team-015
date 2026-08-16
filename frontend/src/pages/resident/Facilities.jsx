@@ -12,8 +12,11 @@ import BookingHistory from "../../components/residents/facilities/BookingHistory
 import BookingDetails from "../../components/residents/facilities/BookingDetails";
 
 import useFacilityStore from "../../store/facilityStore";
+import useAuthStore from "../../store/authStore";
+import { toast } from "sonner";
 
 const Facilities = () => {
+  const { user, isVerified } = useAuthStore();
   const facilities = useFacilityStore(
     (state) => state.facilities
   );
@@ -156,9 +159,14 @@ const Facilities = () => {
                 <FacilityCard
                   key={facility.id}
                   facility={facility}
-                  onBook={
-                    setSelectedFacility
-                  }
+                  onBook={(f) => {
+                    const userIsVerified = isVerified !== false && user?.isVerified !== false;
+                    if (!userIsVerified) {
+                      toast.error("Your account must be verified by the Committee to book facilities.");
+                      return;
+                    }
+                    setSelectedFacility(f);
+                  }}
                 />
               )
             )}

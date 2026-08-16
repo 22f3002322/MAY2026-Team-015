@@ -23,7 +23,7 @@ const Complaints = () => {
     (state) => state.complaints
   );
   
-  const { user } = useAuthStore();
+  const { user, isVerified } = useAuthStore();
 
   const addComplaint = useComplaintStore(
     (state) => state.addComplaint
@@ -135,9 +135,14 @@ const Complaints = () => {
         setStatus={setStatus}
         category={category}
         setCategory={setCategory}
-        onRaiseComplaint={() =>
-          setOpenModal(true)
-        }
+        onRaiseComplaint={() => {
+          const userIsVerified = isVerified !== false && user?.isVerified !== false;
+          if (!userIsVerified) {
+            toast.error("Your account must be verified by the Committee to raise complaints.");
+            return;
+          }
+          setOpenModal(true);
+        }}
       />
 
       <Card>
@@ -149,14 +154,24 @@ const Complaints = () => {
             setSelectedComplaint
           }
           onEdit={(complaint) => {
+            const userIsVerified = isVerified !== false && user?.isVerified !== false;
+            if (!userIsVerified) {
+              toast.error("Your account must be verified by the Committee to edit complaints.");
+              return;
+            }
             setEditingComplaint(
               complaint
             );
             setEditModal(true);
           }}
-          onDelete={
-            setDeleteItem
-          }
+          onDelete={(complaint) => {
+            const userIsVerified = isVerified !== false && user?.isVerified !== false;
+            if (!userIsVerified) {
+              toast.error("Your account must be verified by the Committee to delete complaints.");
+              return;
+            }
+            setDeleteItem(complaint);
+          }}
         />
       </Card>
 
