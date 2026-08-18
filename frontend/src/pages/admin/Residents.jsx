@@ -13,11 +13,14 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import Pagination from "../../components/ui/Pagination";
 
 import useResidentStore from "../../store/residentStore";
+import useAuthStore from "../../store/authStore";
 import PendingVerifications from "../../components/admin/PendingVerifications";
 
 const Residents = () => {
-  // Zustand
+  const { backendRole } = useAuthStore();
+  const isCommittee = String(backendRole || "").toLowerCase() === "committee";
 
+  // Zustand
   const residents = useResidentStore(
     (state) => state.residents
   );
@@ -115,8 +118,8 @@ const Residents = () => {
         setBlock={setBlock}
         occupancy={occupancy}
         setOccupancy={setOccupancy}
-        onAddResident={() =>
-          setOpenModal(true)
+        onAddResident={
+          isCommittee ? () => setOpenModal(true) : undefined
         }
       />
 

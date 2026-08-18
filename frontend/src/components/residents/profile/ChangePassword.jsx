@@ -57,42 +57,39 @@ const ChangePassword = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      formData.newPassword !==
-      formData.confirmPassword
-    ) {
-      setError(
-        "Passwords do not match."
-      );
+    if (formData.newPassword !== formData.confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
 
-    if (
-      formData.newPassword.length < 6
-    ) {
-      setError(
-        "Password must be at least 6 characters."
-      );
+    if (formData.newPassword.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
 
-    changePassword(
+    setLoading(true);
+    const res = await changePassword(
       formData.currentPassword,
       formData.newPassword
     );
+    setLoading(false);
 
-    toast.success(
-      "Password changed successfully."
-    );
-
-    setFormData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
+    if (res && res.success) {
+      toast.success(res.message || "Password changed successfully.");
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } else {
+      setError(res?.message || "Current password is incorrect.");
+      toast.error(res?.message || "Current password is incorrect.");
+    }
   };
 
   return (
@@ -202,8 +199,9 @@ const ChangePassword = () => {
           <Button
             type="submit"
             className="w-full"
+            loading={loading}
           >
-            Update Password
+            {loading ? "Updating..." : "Update Password"}
           </Button>
         </div>
       </form>

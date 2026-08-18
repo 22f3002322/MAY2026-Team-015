@@ -126,26 +126,27 @@ const useNoticeStore = create(
       },
 
       markRead: async (notificationId) => {
+        set((state) => {
+          const updated = state.notifications.map((n) =>
+            n.notification_id === notificationId ? { ...n, is_read: true } : n
+          );
+          const unread = updated.filter((n) => !n.is_read).length;
+          return { notifications: updated, unreadCount: unread };
+        });
         try {
           await communicationApi.markNotificationRead(notificationId);
-          set((state) => ({
-            notifications: state.notifications.map((n) =>
-              n.notification_id === notificationId ? { ...n, is_read: true } : n
-            ),
-            unreadCount: Math.max(0, state.unreadCount - 1),
-          }));
         } catch (err) {
           console.warn("Mark read failed:", err.message);
         }
       },
 
       markAllRead: async () => {
+        set((state) => ({
+          notifications: state.notifications.map((n) => ({ ...n, is_read: true })),
+          unreadCount: 0,
+        }));
         try {
           await communicationApi.markAllRead();
-          set((state) => ({
-            notifications: state.notifications.map((n) => ({ ...n, is_read: true })),
-            unreadCount: 0,
-          }));
         } catch (err) {
           console.warn("Mark all read failed:", err.message);
         }

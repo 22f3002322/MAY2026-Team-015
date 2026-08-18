@@ -31,7 +31,6 @@ export const complaintApi = {
     return apiRequest("/api/v1/complaints", {
       method: "POST",
       body: JSON.stringify(payload),
-      // payload: { category_id, title, description, priority }
     });
   },
 
@@ -49,7 +48,6 @@ export const complaintApi = {
   },
 
   // Assign complaint to maintenance staff (Admin/Committee only)
-  // Backend expects { staff_id } in request body
   assignComplaint: async (complaintId, staffId) => {
     return apiRequest(`/api/v1/complaints/${complaintId}/assign`, {
       method: "POST",
@@ -64,6 +62,16 @@ export const complaintApi = {
     return apiRequest(`/api/v1/complaints/${complaintId}/comments`, {
       method: "POST",
       body: JSON.stringify(body),
+    });
+  },
+
+  // Upload complaint attachment image (POST /api/v1/complaints/{id}/images)
+  uploadComplaintImage: async (complaintId, file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiRequest(`/api/v1/complaints/${complaintId}/images`, {
+      method: "POST",
+      body: formData,
     });
   },
 };

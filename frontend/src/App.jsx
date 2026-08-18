@@ -1,78 +1,124 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import useAuthStore from "./store/authStore";
 
-// Auth
+// Auth & Fallback pages
 import Login from "./pages/Login";
-import RoleRoute from "./components/auth/RoleRoute";
+import NotFound from "./pages/NotFound";
+import ServerError from "./pages/ServerError";
 
-// Admin Pages
+// Admin / Committee pages
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminResidents from "./pages/admin/Residents";
 import AdminApartments from "./pages/admin/Apartments";
 import AdminComplaints from "./pages/admin/Complaints";
 import AdminVisitors from "./pages/admin/Visitors";
-import AdminFacilityBookings from "./pages/admin/FacilityBookings";
+import AdminFacilities from "./pages/admin/FacilityBookings";
 import AdminBilling from "./pages/admin/Billing";
 import AdminNotices from "./pages/admin/Notices";
 import AdminPolls from "./pages/admin/Polls";
 
-// Resident Pages
+// Resident pages
 import ResidentDashboard from "./pages/resident/Dashboard";
-import ResidentBills from "./pages/resident/Bills";
 import ResidentComplaints from "./pages/resident/Complaints";
 import ResidentFacilities from "./pages/resident/Facilities";
+import ResidentVisitors from "./pages/resident/Visitors";
+import ResidentBilling from "./pages/resident/Bills";
 import ResidentNotices from "./pages/resident/Notices";
 import ResidentPolls from "./pages/resident/Polls";
 import ResidentProfile from "./pages/resident/Profile";
-import ResidentVisitors from "./pages/resident/Visitors";
 
-// Staff Pages
-import StaffDashboard from "./pages/staff/Dashboard";
-import VisitorVerification from "./pages/staff/VisitorVerification";
-import AssignedComplaints from "./pages/staff/AssignedComplaints";
+// Staff pages (Security & Maintenance)
+import StaffVisitorVerification from "./pages/staff/VisitorVerification";
+import StaffAssignedComplaints from "./pages/staff/AssignedComplaints";
 
-import NotFound from "./pages/NotFound";
-import useAuthStore from "./store/authStore";
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { token, role } = useAuthStore();
 
-const RootRedirect = () => {
-  const { isAuthenticated, role } = useAuthStore();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  return <Navigate to={`/${role}/dashboard`} replace />;
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(role)) {
+    if (role === "admin" || role === "committee") return <Navigate to="/admin/dashboard" replace />;
+    if (role === "staff" || role === "security" || role === "maintenance") return <Navigate to="/staff/visitors" replace />;
+    return <Navigate to="/resident/dashboard" replace />;
+  }
+
+  return children;
 };
 
 function App() {
+  const { role, token } = useAuthStore();
+
+  const getDefaultRedirect = () => {
+    if (!token) return "/login";
+    if (role === "admin" || role === "committee") return "/admin/dashboard";
+    if (role === "staff" || role === "security" || role === "maintenance") return "/staff/visitors";
+    return "/resident/dashboard";
+  };
+
   return (
     <Routes>
-      <Route path="/" element={<RootRedirect />} />
       <Route path="/login" element={<Login />} />
-      
-      {/* Admin Routes — Modules 1-9 */}
-      <Route path="/admin/dashboard" element={<RoleRoute requiredRole="admin"><AdminDashboard /></RoleRoute>} />
-      <Route path="/admin/residents" element={<RoleRoute requiredRole="admin"><AdminResidents /></RoleRoute>} />
-      <Route path="/admin/apartments" element={<RoleRoute requiredRole="admin"><AdminApartments/></RoleRoute>} />
-      <Route path="/admin/complaints" element={<RoleRoute requiredRole="admin"><AdminComplaints /></RoleRoute>} />
-      <Route path="/admin/visitors" element={<RoleRoute requiredRole="admin"><AdminVisitors /></RoleRoute>} />
-      <Route path="/admin/bookings" element={<RoleRoute requiredRole="admin"><AdminFacilityBookings /></RoleRoute>} />
-      <Route path="/admin/billing" element={<RoleRoute requiredRole="admin"><AdminBilling /></RoleRoute>} />
-      <Route path="/admin/notices" element={<RoleRoute requiredRole="admin"><AdminNotices /></RoleRoute>} />
-      <Route path="/admin/polls" element={<RoleRoute requiredRole="admin"><AdminPolls /></RoleRoute>} />
+      <Route path="/" element={<Navigate to={getDefaultRedirect()} replace />} />
 
-      {/* Resident Routes — Modules 1-9 */}
-      <Route path="/resident/dashboard" element={<RoleRoute requiredRole="resident"><ResidentDashboard /></RoleRoute>} />
-      <Route path="/resident/bills" element={<RoleRoute requiredRole="resident"><ResidentBills /></RoleRoute>} />
-      <Route path="/resident/complaints" element={<RoleRoute requiredRole="resident"><ResidentComplaints /></RoleRoute>} />
-      <Route path="/resident/facilities" element={<RoleRoute requiredRole="resident"><ResidentFacilities /></RoleRoute>} />
-      <Route path="/resident/notices" element={<RoleRoute requiredRole="resident"><ResidentNotices /></RoleRoute>} />
-      <Route path="/resident/polls" element={<RoleRoute requiredRole="resident"><ResidentPolls /></RoleRoute>} />
-      <Route path="/resident/profile" element={<RoleRoute requiredRole="resident"><ResidentProfile /></RoleRoute>} />
-      <Route path="/resident/visitors" element={<RoleRoute requiredRole="resident"><ResidentVisitors /></RoleRoute>} />
-      
-      {/* Staff Routes — Modules 4 & 5 */}
-      <Route path="/staff/dashboard" element={<RoleRoute requiredRole="staff"><StaffDashboard /></RoleRoute>} />
-      <Route path="/staff/verify-visitors" element={<RoleRoute requiredRole="staff"><VisitorVerification /></RoleRoute>} />
-      <Route path="/staff/assigned-complaints" element={<RoleRoute requiredRole="staff"><AssignedComplaints /></RoleRoute>} />
+      {/* Admin & Committee Routes */}
+      <Route
+        path="/admin/*"
+        element={
+          <ProtectedRoute allowedRoles={["admin", "committee"]}>
+            <Routes>
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="residents" element={<AdminResidents />} />
+              <Route path="apartments" element={<AdminApartments />} />
+              <Route path="complaints" element={<AdminComplaints />} />
+              <Route path="maintenance" element={<AdminComplaints />} />
+              <Route path="visitors" element={<AdminVisitors />} />
+              <Route path="facilities" element={<AdminFacilities />} />
+              <Route path="billing" element={<AdminBilling />} />
+              <Route path="notices" element={<AdminNotices />} />
+              <Route path="polls" element={<AdminPolls />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Fallback */}
-      <Route path="/dashboard" element={<Navigate to="/" replace />} />
+      {/* Resident Routes */}
+      <Route
+        path="/resident/*"
+        element={
+          <ProtectedRoute allowedRoles={["resident"]}>
+            <Routes>
+              <Route path="dashboard" element={<ResidentDashboard />} />
+              <Route path="complaints" element={<ResidentComplaints />} />
+              <Route path="facilities" element={<ResidentFacilities />} />
+              <Route path="visitors" element={<ResidentVisitors />} />
+              <Route path="billing" element={<ResidentBilling />} />
+              <Route path="notices" element={<ResidentNotices />} />
+              <Route path="polls" element={<ResidentPolls />} />
+              <Route path="profile" element={<ResidentProfile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Staff Routes (Security & Maintenance) */}
+      <Route
+        path="/staff/*"
+        element={
+          <ProtectedRoute allowedRoles={["staff", "security", "maintenance"]}>
+            <Routes>
+              <Route path="visitors" element={<StaffVisitorVerification />} />
+              <Route path="complaints" element={<StaffAssignedComplaints />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route path="/500" element={<ServerError />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

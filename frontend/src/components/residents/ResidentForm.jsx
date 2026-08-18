@@ -8,18 +8,16 @@ const ResidentForm = ({
   onSubmit,
   initialData = null,
 }) => {
-  const [form, setForm] = useState(
-    initialData || {
-      name: "",
-      email: "",
-      password: "",
-      phone: "",
-      block: "",
-      flat: "",
-      occupancy: "Owner",
-      status: "Active",
-    }
-  );
+  const [form, setForm] = useState({
+    name: initialData?.name || "",
+    email: initialData?.email || "",
+    password: "",
+    phone: initialData?.phone || "",
+    block: initialData?.block || "",
+    flat: initialData?.flat || "",
+    occupancy: initialData?.occupancy || initialData?.occupation || "Owner",
+    status: initialData?.status || "Active",
+  });
 
   const handleChange = (e) => {
     setForm((prev) => ({
@@ -55,13 +53,13 @@ const ResidentForm = ({
           required
          placeholder="Enter Email..." />
 
-        <Input label="Password (for Resident Login)"
-          type="text"
+        <Input label={initialData ? "New Password (Leave blank to keep existing)" : "Password (for Resident Login)"}
+          type="password"
           name="password"
-          value={form.password || ""}
+          value={form.password}
           onChange={handleChange}
-          required
-         placeholder="Enter Password (for Resident Login)..." />
+          required={!initialData}
+         placeholder={initialData ? "Leave blank to keep current..." : "Enter Password..."} />
       </div>
 
       <Input label="Phone"

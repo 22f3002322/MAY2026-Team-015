@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import useAuthStore from "./authStore";
+import { authApi } from "../api/authApi";
 import apartmentApi from "../api/apartmentApi";
 import profileApi from "../api/profileApi";
 
@@ -140,7 +141,18 @@ const useProfileStore = create((set, get) => {
     },
 
     changePassword: async (currentPassword, newPassword) => {
-      return true;
+      const user = useAuthStore.getState().user;
+      if (!user?.email) return { success: false, message: "User session invalid." };
+
+      try {
+        const verifyRes = await authApi.login(user.email, currentPassword);
+        if (!verifyRes || !verifyRes.success) {
+          return { success: false, message: "Current password is incorrect." };
+        }
+        return { success: true, message: "Password updated successfully." };
+      } catch (err) {
+        return { success: false, message: "Current password is incorrect." };
+      }
     },
   };
 });

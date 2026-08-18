@@ -1,7 +1,6 @@
-import { Component } from "react";
-import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import React from "react";
 
-class ErrorBoundary extends Component {
+class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -12,43 +11,31 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("ErrorBoundary caught:", error, errorInfo);
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
-          <div className="w-full max-w-md text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-              <AlertTriangle className="h-10 w-10 text-red-600 dark:text-red-400" />
-            </div>
-            <h1 className="mb-2 text-2xl font-bold text-slate-900 dark:text-white">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6 text-center dark:bg-slate-900">
+          <div className="max-w-md rounded-2xl bg-white p-8 shadow-xl dark:bg-slate-800">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
               Something went wrong
-            </h1>
-            <p className="mb-8 text-slate-500 dark:text-slate-400">
-              An unexpected error occurred. Please try refreshing the page.
+            </h2>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              An unexpected error occurred. Please refresh the page.
             </p>
-            <div className="flex items-center justify-center gap-3">
-              <button
-                onClick={() => window.location.reload()}
-                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Refresh Page
-              </button>
-              <a
-                href="/"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
-              >
-                <Home className="h-4 w-4" />
-                Go Home
-              </a>
-            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-6 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+            >
+              Refresh Page
+            </button>
           </div>
         </div>
       );
     }
+
     return this.props.children;
   }
 }

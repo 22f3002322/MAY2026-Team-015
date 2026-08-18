@@ -22,6 +22,18 @@ const useVisitorStore = create(
           };
           const res = await visitorApi.preRegisterVisitor(payload);
           if (res && res.success && res.data) {
+            const newVisitor = {
+              id: res.data.request_id || Date.now(),
+              name: payload.visitor_name,
+              phone: payload.visitor_phone,
+              purpose: payload.visitor_type,
+              date: payload.expected_date,
+              visitTime: payload.expected_time,
+              status: "Expected",
+              otp: res.data.otp,
+              createdAt: res.data.created_at || payload.expected_date,
+            };
+            set((state) => ({ visitors: [newVisitor, ...state.visitors] }));
             get().fetchVisitorRequests();
             return { success: true, data: res.data, otp: res.data.otp };
           }
@@ -33,17 +45,6 @@ const useVisitorStore = create(
 
       // Fetch visitor requests for current resident
       fetchVisitorRequests: async () => {
-        let role = "";
-        try {
-          const stored = JSON.parse(localStorage.getItem("auth-storage") || "{}");
-          role = stored?.state?.role || "";
-        } catch { /* ignore */ }
-
-        if (role !== "resident") {
-          set({ loading: false });
-          return { success: true, data: get().visitors };
-        }
-
         set({ loading: true });
         try {
           const res = await visitorApi.getVisitorRequests();
@@ -55,7 +56,7 @@ const useVisitorStore = create(
               purpose: r.visitor_type,
               date: r.expected_date,
               visitTime: r.expected_time,
-              status: r.status === "pre_registered" ? "Expected" : r.status === "arrived" ? "Checked In" : r.status === "departed" ? "Completed" : r.status,
+              status: r.status === "pre_registered" || r.status === "expected" ? "Expected" : r.status === "arrived" ? "Checked In" : r.status === "departed" ? "Completed" : r.status,
               otp: r.otp,
               createdAt: r.created_at || r.expected_date,
             }));

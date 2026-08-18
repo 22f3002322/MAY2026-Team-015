@@ -29,13 +29,19 @@ const CreateCommitteeModal = ({ open, onClose }) => {
     }
     setLoading(true);
     try {
+      const generatedPassword = form.password?.trim() || `Committee@${Math.floor(1000 + Math.random() * 9000)}`;
       const res = await registerCommitteeMember({
         full_name: form.full_name.trim(),
         email: form.email.trim(),
         phone: form.phone.trim() || null,
+        password: generatedPassword,
       });
       if (res.success) {
-        setResult(res.data);
+        setResult({
+          ...(res.data || {}),
+          email: form.email.trim(),
+          initial_password: res.data?.initial_password || generatedPassword,
+        });
         toast.success("Committee member created successfully!");
       } else {
         toast.error(res.message || "Failed to create committee member.");
@@ -116,6 +122,20 @@ const CreateCommitteeModal = ({ open, onClose }) => {
               value={form.phone}
               onChange={handleChange}
               placeholder="+91 98765 43210"
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Initial Password <span className="text-xs text-slate-400">(Optional - auto-generates if empty)</span>
+            </label>
+            <input
+              type="password"
+              name="password"
+              value={form.password || ""}
+              onChange={handleChange}
+              placeholder="Min 8 characters (or leave blank)"
               className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

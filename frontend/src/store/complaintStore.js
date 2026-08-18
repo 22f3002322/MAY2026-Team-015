@@ -80,6 +80,14 @@ const useComplaintStore = create(
               : "medium",
           });
           if (res && res.success) {
+            const complaintId = res.data?.complaint_id || res.data?.id;
+            if (complaintId && complaint.imageFile) {
+              try {
+                await complaintApi.uploadComplaintImage(complaintId, complaint.imageFile);
+              } catch (imgErr) {
+                console.warn("Complaint image upload failed:", imgErr.message);
+              }
+            }
             get().fetchComplaints();
             return { success: true, data: res.data, message: res.message };
           }

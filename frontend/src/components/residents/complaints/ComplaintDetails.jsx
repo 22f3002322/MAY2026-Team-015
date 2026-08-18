@@ -106,15 +106,34 @@ const ComplaintDetails = ({
             </p>
 
             <p className="font-medium">
-              {complaint.createdAt
+              {complaint.createdAt || complaint.created_at
                 ? new Date(
-                    complaint.createdAt
+                    complaint.createdAt || complaint.created_at
                   ).toLocaleString()
                 : "-"}
             </p>
           </div>
 
         </div>
+
+        {/* Attached Images */}
+        {((complaint.images && complaint.images.length > 0) || (complaint.image_urls && complaint.image_urls.length > 0)) && (
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+              Attached Images
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {(complaint.images || complaint.image_urls || []).map((img, idx) => (
+                <img
+                  key={idx}
+                  src={typeof img === "string" ? img : img.image_url}
+                  alt={`Attachment ${idx + 1}`}
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 object-cover w-full h-36"
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </Modal>
   );
