@@ -210,9 +210,9 @@ def seed_demo(db) -> None:
     db.flush()
 
     # ── Blocks & flats ─────────────────────────────────────────────────────
-    block_a = Block(block_name="A-Wing", total_flats=8)
-    block_b = Block(block_name="B-Wing", total_flats=8)
-    block_c = Block(block_name="C-Wing", total_flats=6)
+    block_a = Block(block_name="A-Wing", total_flats=12)
+    block_b = Block(block_name="B-Wing", total_flats=12)
+    block_c = Block(block_name="C-Wing", total_flats=10)
     db.add_all([block_a, block_b, block_c])
     db.flush()
 

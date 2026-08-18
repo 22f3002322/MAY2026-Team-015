@@ -125,6 +125,25 @@ def create_flat(db: Session, payload: FlatCreate) -> Flat:
     return flat
 
 
+def delete_flat(db: Session, flat_id: int) -> None:
+    flat = get_flat(db, flat_id)
+    if flat.occupancy_status == "occupied":
+        raise BadRequest("Cannot delete an occupied flat. Move residents out first.")
+    has_current = (
+        db.query(OccupancyHistory)
+        .filter(OccupancyHistory.flat_id == flat_id, OccupancyHistory.is_current.is_(True))
+        .first()
+    )
+    if has_current:
+        raise BadRequest("Cannot delete a flat with a current occupancy record.")
+    # Refuse if any resident profile still points here (e.g. unverified claim)
+    claimed = db.query(ResidentProfile).filter(ResidentProfile.flat_id == flat_id).first()
+    if claimed:
+        raise BadRequest("Cannot delete a flat still linked to a resident profile.")
+    db.delete(flat)
+    db.commit()
+
+
 def get_flat(db: Session, flat_id: int, for_update: bool = False) -> Flat:
     query = db.query(Flat).filter(Flat.flat_id == flat_id)
     if for_update:
@@ -207,12 +226,19 @@ def get_resident_profile(db: Session, resident_id: int) -> ResidentProfile:
     return profile
 
 
-def list_residents(db: Session, block_id: int | None = None, flat_id: int | None = None) -> list[ResidentProfile]:
+def list_residents(
+    db: Session,
+    block_id: int | None = None,
+    flat_id: int | None = None,
+    current_only: bool = False,
+) -> list[ResidentProfile]:
     query = db.query(ResidentProfile)
     if flat_id is not None:
         query = query.filter(ResidentProfile.flat_id == flat_id)
     elif block_id is not None:
         query = query.join(Flat, ResidentProfile.flat_id == Flat.flat_id).filter(Flat.block_id == block_id)
+    if current_only:
+        query = query.filter(ResidentProfile.flat_id.isnot(None))
     return query.order_by(ResidentProfile.resident_id.asc()).all()
 
 

@@ -24,7 +24,7 @@ const adminMenuItems = [
   { title: "Residents", icon: Users, path: "/admin/residents" },
   { title: "Complaints", icon: ClipboardList, path: "/admin/complaints" },
   { title: "Visitors", icon: UserRoundCheck, path: "/admin/visitors" },
-  { title: "Facility Booking", icon: CalendarDays, path: "/admin/bookings" },
+  { title: "Facility Booking", icon: CalendarDays, path: "/admin/facilities" },
   { title: "Billing", icon: ReceiptIndianRupee, path: "/admin/billing" },
   { title: "Notice Board", icon: Megaphone, path: "/admin/notices" },
   { title: "Polls", icon: Vote, path: "/admin/polls" },
@@ -33,7 +33,7 @@ const adminMenuItems = [
 // Resident menu — matches backend Modules 1-9
 const residentMenuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/resident/dashboard" },
-  { title: "Bills", icon: ReceiptIndianRupee, path: "/resident/bills" },
+  { title: "Bills", icon: ReceiptIndianRupee, path: "/resident/billing" },
   { title: "Complaints", icon: ClipboardList, path: "/resident/complaints" },
   { title: "Facilities", icon: Building2, path: "/resident/facilities" },
   { title: "Notices", icon: Megaphone, path: "/resident/notices" },
@@ -44,14 +44,12 @@ const residentMenuItems = [
 
 // Security staff menu — Module 5 (Visitor Management)
 const securityMenuItems = [
-  { title: "Dashboard", icon: LayoutDashboard, path: "/staff/dashboard" },
-  { title: "Verify Visitors", icon: Shield, path: "/staff/verify-visitors" },
+  { title: "Verify Visitors", icon: Shield, path: "/staff/visitors" },
 ];
 
 // Maintenance staff menu — Module 4 (Maintenance Tasks)
 const maintenanceMenuItems = [
-  { title: "Dashboard", icon: LayoutDashboard, path: "/staff/dashboard" },
-  { title: "Assigned Complaints", icon: Wrench, path: "/staff/assigned-complaints" },
+  { title: "Assigned Complaints", icon: Wrench, path: "/staff/complaints" },
 ];
 
 const Sidebar = ({ isOpen, setIsOpen }) => {

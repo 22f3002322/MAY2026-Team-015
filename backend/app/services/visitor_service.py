@@ -1,7 +1,7 @@
 from typing import Optional
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.mixins import ist_now
 from app.models.visitor import Visitor, VisitorRequest, VisitorLog
@@ -37,11 +37,11 @@ def create_visitor_request(db: Session, payload: VisitorRequestCreate, otp: str)
 
 
 def list_visitor_requests(db: Session, resident_id: Optional[int] = None) -> list[VisitorRequest]:
-    stmt = select(VisitorRequest)
+    stmt = select(VisitorRequest).options(joinedload(VisitorRequest.visitor))
     if resident_id is not None:
         stmt = stmt.where(VisitorRequest.resident_id == resident_id)
     result = db.execute(stmt.order_by(VisitorRequest.created_at.desc()))
-    return list(result.scalars().all())
+    return list(result.scalars().unique().all())
 
 
 def get_visitor_request(db: Session, request_id: int) -> Optional[VisitorRequest]:
@@ -145,5 +145,9 @@ def get_visitor_log(db: Session, log_id: int) -> Optional[VisitorLog]:
 
 
 def list_visitor_logs(db: Session) -> list[VisitorLog]:
-    result = db.execute(select(VisitorLog).order_by(VisitorLog.created_at.desc()))
-    return list(result.scalars().all())
+    result = db.execute(
+        select(VisitorLog)
+        .options(joinedload(VisitorLog.visitor))
+        .order_by(VisitorLog.created_at.desc())
+    )
+    return list(result.scalars().unique().all())

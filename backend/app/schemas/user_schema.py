@@ -1,16 +1,24 @@
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class ResidentProfileOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    resident_id: Optional[int] = None
     flat_id: Optional[int] = None
     emergency_contact: Optional[str] = None
     alternate_phone: Optional[str] = None
     occupation: Optional[str] = None
     profile_image: Optional[str] = None
+
+
+class ResidentSelfUpdate(BaseModel):
+    phone: Optional[str] = Field(default=None, max_length=20)
+    emergency_contact: Optional[str] = Field(default=None, max_length=20)
+    alternate_phone: Optional[str] = Field(default=None, max_length=20)
+    occupation: Optional[str] = Field(default=None, max_length=100)
 
 
 class MaintenanceProfileOut(BaseModel):

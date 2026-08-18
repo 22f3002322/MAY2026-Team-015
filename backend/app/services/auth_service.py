@@ -459,10 +459,17 @@ def reactivate_user(db: Session, user_id: int) -> User:
 
 
 # --------------------------------------------------------------------------
-# Password reset -- the only way to get a new password (no self-service
-# change-password endpoint). Still backed by Redis (short-lived, TTL is
-# exactly what Redis is good at); unrelated to the refresh-token store.
+# Password change (authenticated) + password reset (forgot flow)
 # --------------------------------------------------------------------------
+def change_password(db: Session, user: User, current_password: str, new_password: str) -> None:
+    if not verify_password(current_password, user.password_hash):
+        raise InvalidCredentials("Current password is incorrect.")
+
+    user.password_hash = hash_password(new_password)
+    db.commit()
+    revoke_all_refresh_tokens(db, user.user_id)
+
+
 def start_password_reset(db: Session, redis, email: str) -> None:
     user = get_user_by_email(db, email)
     if user is None:

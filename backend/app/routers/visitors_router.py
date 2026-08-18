@@ -5,7 +5,7 @@ from app.core.database import get_db
 from app.core.dependencies import (
     get_resident_profile,
     get_security_guard_profile,
-    require_admin,
+    require_admin_or_committee,
     require_verified_resident,
     require_verified_security,
 )
@@ -25,6 +25,42 @@ from app.utils.api_response import success_response
 from app.utils.otp import generate_otp
 
 router = APIRouter(prefix="/api/v1/visitors", tags=["visitors"])
+
+
+def _request_out(request, otp: str | None = None) -> VisitorRequestOut:
+    visitor = getattr(request, "visitor", None)
+    return VisitorRequestOut(
+        request_id=request.request_id,
+        resident_id=request.resident_id,
+        visitor_id=request.visitor_id,
+        expected_date=request.expected_date,
+        expected_time=request.expected_time,
+        status=request.status,
+        approved_at=request.approved_at,
+        otp=otp if otp is not None else request.otp,
+        created_at=request.created_at,
+        visitor_name=visitor.visitor_name if visitor else None,
+        visitor_phone=visitor.phone if visitor else None,
+        visitor_type=visitor.visitor_type if visitor else None,
+    )
+
+
+def _log_out(log) -> VisitorLogOut:
+    visitor = getattr(log, "visitor", None)
+    return VisitorLogOut(
+        log_id=log.log_id,
+        visitor_id=log.visitor_id,
+        resident_id=log.resident_id,
+        security_guard_id=log.security_guard_id,
+        request_id=log.request_id,
+        otp_verified=log.otp_verified,
+        entry_time=log.entry_time,
+        exit_time=log.exit_time,
+        created_at=log.created_at,
+        visitor_name=visitor.visitor_name if visitor else None,
+        visitor_phone=visitor.phone if visitor else None,
+        visitor_type=visitor.visitor_type if visitor else None,
+    )
 
 
 @router.post("/pre-register")
@@ -60,17 +96,11 @@ def pre_register_visitor(
     )
     otp = generate_otp(6)
     request = visitor_service.create_visitor_request(db, request_payload, otp)
-    data = VisitorRequestOut(
-        request_id=request.request_id,
-        resident_id=request.resident_id,
-        visitor_id=request.visitor_id,
-        expected_date=request.expected_date,
-        expected_time=request.expected_time,
-        status=request.status,
-        approved_at=request.approved_at,
-        otp=otp,
-        created_at=request.created_at,
-    )
+    # Reload with visitor relationship for denormalized fields
+    db.refresh(request)
+    if request.visitor is None:
+        request.visitor = visitor
+    data = _request_out(request, otp=otp)
     return success_response(data=data, message="Visitor pre-registered. Share the OTP with your visitor.")
 
 
@@ -81,7 +111,7 @@ def list_my_requests(
     db: Session = Depends(get_db),
 ):
     requests = visitor_service.list_visitor_requests(db, resident_id=profile.resident_id)
-    return success_response(data=[VisitorRequestOut.model_validate(r) for r in requests])
+    return success_response(data=[_request_out(r) for r in requests])
 
 
 @router.post("/{request_id}/deny")
@@ -94,7 +124,7 @@ def deny_visitor_request(
     """Gap-fill (CODE_REVIEW.md 3.2): lets the resident who
     pre-registered a visitor call it off before they arrive."""
     request = visitor_service.deny_visitor_request(db, request_id, profile.resident_id)
-    return success_response(data=VisitorRequestOut.model_validate(request), message="Visitor request denied.")
+    return success_response(data=_request_out(request), message="Visitor request denied.")
 
 
 @router.post("/{request_id}/verify-otp")
@@ -123,6 +153,6 @@ def log_exit(
 
 
 @router.get("/logs")
-def list_visitor_logs(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+def list_visitor_logs(_staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
     logs = visitor_service.list_visitor_logs(db)
-    return success_response(data=[VisitorLogOut.model_validate(l) for l in logs])
+    return success_response(data=[_log_out(l) for l in logs])

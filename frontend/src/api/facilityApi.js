@@ -3,7 +3,7 @@ import { apiRequest } from "./client";
 export const facilityApi = {
   // Admin / Committee facilities list
   getFacilities: async () => {
-    return apiRequest("/api/v1/facilities", {
+    return apiRequest("/api/v1/admin/facilities", {
       method: "GET",
     });
   },

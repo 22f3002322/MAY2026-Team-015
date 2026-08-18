@@ -39,6 +39,10 @@ class VisitorRequestOut(VisitorRequestBase):
     approved_at: Optional[datetime] = None
     otp: Optional[str] = None
     created_at: Optional[datetime] = None
+    # Denormalized from related Visitor for list UIs
+    visitor_name: Optional[str] = None
+    visitor_phone: Optional[str] = None
+    visitor_type: Optional[str] = None
 
 
 class VisitorPreRegisterRequest(BaseModel):
@@ -68,6 +72,9 @@ class VisitorLogOut(VisitorLogBase):
 
     log_id: int
     created_at: Optional[datetime] = None
+    visitor_name: Optional[str] = None
+    visitor_phone: Optional[str] = None
+    visitor_type: Optional[str] = None
 
 
 class VisitorOtpVerifyRequest(BaseModel):

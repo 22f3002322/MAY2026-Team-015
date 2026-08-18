@@ -5,7 +5,7 @@ from app.core.database import get_db
 from app.core.dependencies import require_resident
 from app.models.apartment import ResidentProfile
 from app.models.auth import User
-from app.schemas.user_schema import ResidentProfileOut
+from app.schemas.user_schema import ResidentProfileOut, ResidentSelfUpdate
 from app.services import profile_service
 from app.utils.api_error import NotFound
 from app.utils.api_response import success_response
@@ -20,6 +20,31 @@ def _get_own_resident_profile(current_user: User) -> ResidentProfile:
     if current_user.resident_profile is None:
         raise NotFound("Resident profile not found for this account.")
     return current_user.resident_profile
+
+
+@router.patch("")
+def update_my_profile(
+    payload: ResidentSelfUpdate,
+    current_user: User = Depends(require_resident),
+    db: Session = Depends(get_db),
+):
+    """Resident self-service: update phone and profile contact fields."""
+    profile = _get_own_resident_profile(current_user)
+    data = payload.model_dump(exclude_unset=True)
+    if "phone" in data:
+        current_user.phone = data.pop("phone")
+    for field, value in data.items():
+        setattr(profile, field, value)
+    db.commit()
+    db.refresh(profile)
+    db.refresh(current_user)
+    return success_response(
+        data={
+            "phone": current_user.phone,
+            "resident_profile": ResidentProfileOut.model_validate(profile),
+        },
+        message="Profile updated.",
+    )
 
 
 @router.post("/profile-picture")

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import Layout from "../../components/layout/Layout";
 import ApartmentStats from "../../components/apartments/ApartmentStat";
@@ -13,77 +14,109 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import useApartmentStore from "../../store/apartmentStore";
 import useAuthStore from "../../store/authStore";
 
+const mapFlatToRow = (flat, blocks) => {
+  const block = blocks.find((b) => b.block_id === flat.block_id);
+  return {
+    id: flat.flat_id,
+    flat_id: flat.flat_id,
+    flat: flat.flat_number,
+    block: block?.block_name || flat.block_name || `Block ${flat.block_id}`,
+    block_id: flat.block_id,
+    floor: flat.floor_number,
+    type: flat.flat_type,
+    owner: "—",
+    occupancy: flat.occupancy_status === "occupied" ? "Occupied" : "Vacant",
+    raw: flat,
+  };
+};
+
 const Apartments = () => {
   const { backendRole } = useAuthStore();
   const isPureAdmin = String(backendRole || "").toLowerCase() === "admin";
 
-  // Zustand Store
+  const flats = useApartmentStore((state) => state.flats);
+  const blocks = useApartmentStore((state) => state.blocks);
+  const fetchFlats = useApartmentStore((state) => state.fetchFlats);
+  const fetchBlocks = useApartmentStore((state) => state.fetchBlocks);
+  const createFlat = useApartmentStore((state) => state.createFlat);
+  const updateFlat = useApartmentStore((state) => state.updateFlat);
+  const deleteFlat = useApartmentStore((state) => state.deleteFlat);
 
-  const apartments = useApartmentStore(
-    (state) => state.apartments
+  useEffect(() => {
+    fetchBlocks();
+    fetchFlats();
+  }, [fetchBlocks, fetchFlats]);
+
+  const apartments = useMemo(
+    () => flats.map((f) => mapFlatToRow(f, blocks)),
+    [flats, blocks]
   );
-
-  const addApartment = useApartmentStore(
-    (state) => state.addApartment
-  );
-
-  const updateApartment = useApartmentStore(
-    (state) => state.updateApartment
-  );
-
-  const removeApartment = useApartmentStore(
-    (state) => state.deleteApartment
-  );
-
-  // Filters
 
   const [search, setSearch] = useState("");
   const [block, setBlock] = useState("");
   const [occupancy, setOccupancy] = useState("");
-
-  // Modals
-
   const [openModal, setOpenModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
-
-  // Selected Data
-
   const [selectedApartment, setSelectedApartment] = useState(null);
   const [editingApartment, setEditingApartment] = useState(null);
   const [deleteApartment, setDeleteApartment] = useState(null);
-
-  // Filter
+  const [deleting, setDeleting] = useState(false);
 
   const query = search.toLowerCase();
-
   const filteredApartments = apartments.filter((flat) => {
     const matchesSearch =
-      String(flat?.flat ?? "")
-        .toLowerCase()
-        .includes(query) ||
-      String(flat?.owner ?? "")
-        .toLowerCase()
-        .includes(query);
-
-    const matchesBlock =
-      block === "" || flat?.block === block;
-
-    const matchesOccupancy =
-      occupancy === "" ||
-      flat?.occupancy === occupancy;
-
-    return (
-      matchesSearch &&
-      matchesBlock &&
-      matchesOccupancy
-    );
+      String(flat?.flat ?? "").toLowerCase().includes(query) ||
+      String(flat?.block ?? "").toLowerCase().includes(query);
+    const matchesBlock = block === "" || flat?.block === block;
+    const matchesOccupancy = occupancy === "" || flat?.occupancy === occupancy;
+    return matchesSearch && matchesBlock && matchesOccupancy;
   });
 
+  const handleCreate = async (data) => {
+    const res = await createFlat({
+      block_id: data.block_id,
+      flat_number: data.flat,
+      floor_number: data.floor,
+      flat_type: (data.type || "2BHK").replace(/\s+/g, ""),
+    });
+    if (res.success) {
+      toast.success("Flat created.");
+      setOpenModal(false);
+    } else {
+      toast.error(res.message || "Failed to create flat.");
+    }
+  };
+
+  const handleUpdate = async (data) => {
+    const res = await updateFlat(editingApartment.flat_id, {
+      flat_number: data.flat,
+      floor_number: Number(data.floor) || undefined,
+      flat_type: (data.type || "2BHK").replace(/\s+/g, ""),
+    });
+    if (res.success) {
+      toast.success("Flat updated.");
+      setEditModal(false);
+      setEditingApartment(null);
+    } else {
+      toast.error(res.message || "Failed to update flat.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteApartment) return;
+    setDeleting(true);
+    const res = await deleteFlat(deleteApartment.flat_id);
+    setDeleting(false);
+    if (res.success) {
+      toast.success("Flat deleted.");
+      setDeleteApartment(null);
+    } else {
+      toast.error(res.message || "Failed to delete flat.");
+    }
+  };
+
   return (
-    <Layout
-      title="Apartments"
-      breadcrumb={["Home", "Apartments"]}
-    >
+    <Layout title="Apartments" breadcrumb={["Home", "Apartments"]}>
       <ApartmentStats />
 
       <ApartmentFilters
@@ -103,50 +136,34 @@ const Apartments = () => {
           setEditingApartment(flat);
           setEditModal(true);
         }}
-        onDelete={setDeleteApartment}
+        onDelete={isPureAdmin ? setDeleteApartment : undefined}
       />
 
-      {/* Add Apartment */}
-
-      <Modal
-        open={openModal}
-        title="Add Apartment"
-        onClose={() => setOpenModal(false)}
-      >
-        <ApartmentForm
-          onSubmit={(data) => {
-            addApartment({
-              ...data,
-              id: Date.now(),
-            });
-
-            setOpenModal(false);
-          }}
-          onClose={() => setOpenModal(false)}
-        />
+      <Modal open={openModal} title="Add Flat" onClose={() => setOpenModal(false)}>
+        <ApartmentForm onSubmit={handleCreate} onClose={() => setOpenModal(false)} />
       </Modal>
-
-      {/* Edit Apartment */}
 
       <Modal
         open={editModal}
-        title="Edit Apartment"
+        title="Edit Flat"
         onClose={() => {
           setEditModal(false);
           setEditingApartment(null);
         }}
       >
         <ApartmentForm
-          initialData={editingApartment}
-          onSubmit={(data) => {
-            updateApartment(
-              editingApartment.id,
-              data
-            );
-
-            setEditModal(false);
-            setEditingApartment(null);
-          }}
+          isEdit
+          initialData={
+            editingApartment
+              ? {
+                  flat: editingApartment.flat,
+                  block_id: String(editingApartment.block_id || ""),
+                  floor: editingApartment.floor,
+                  type: String(editingApartment.type || "2BHK").replace(/\s+/g, ""),
+                }
+              : null
+          }
+          onSubmit={handleUpdate}
           onClose={() => {
             setEditModal(false);
             setEditingApartment(null);
@@ -154,30 +171,26 @@ const Apartments = () => {
         />
       </Modal>
 
-      {/* View Details */}
-
-      <ApartmentDetails
-        apartment={selectedApartment}
-        onClose={() =>
-          setSelectedApartment(null)
-        }
-      />
-
-      {/* Delete */}
+      <Modal
+        open={!!selectedApartment}
+        title="Flat Details"
+        onClose={() => setSelectedApartment(null)}
+      >
+        {selectedApartment && (
+          <ApartmentDetails
+            apartment={selectedApartment}
+            onClose={() => setSelectedApartment(null)}
+          />
+        )}
+      </Modal>
 
       <ConfirmDialog
         open={!!deleteApartment}
-        title="Delete Apartment"
-        message={`Are you sure you want to delete ${deleteApartment?.flat}?`}
-        confirmText="Delete"
-        onCancel={() =>
-          setDeleteApartment(null)
-        }
-        onConfirm={() => {
-          removeApartment(deleteApartment.id);
-
-          setDeleteApartment(null);
-        }}
+        title="Delete Flat"
+        message={`Delete flat ${deleteApartment?.flat} in ${deleteApartment?.block}? Only vacant flats can be deleted.`}
+        confirmText={deleting ? "Deleting…" : "Delete"}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteApartment(null)}
       />
     </Layout>
   );

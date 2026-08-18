@@ -137,3 +137,7 @@ class ComplaintOut(ComplaintBase):
     assignments: list[ComplaintAssignmentOut] = []
     tasks: list[MaintenanceTaskOut] = []
     comments: list[ComplaintCommentOut] = []
+    # List/detail enrichment for admin UI (not ORM columns)
+    category_name: Optional[str] = None
+    resident_name: Optional[str] = None
+    flat_number: Optional[str] = None

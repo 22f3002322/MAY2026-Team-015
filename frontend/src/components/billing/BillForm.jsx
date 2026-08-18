@@ -1,331 +1,190 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 
 import useBillingStore from "../../store/billingStore";
+import useApartmentStore from "../../store/apartmentStore";
 
-const BillForm = ({
-  initialData = null,
-  onClose,
-}) => {
-  const addBill = useBillingStore(
-    (state) => state.addBill
-  );
+const BillForm = ({ initialData = null, onClose }) => {
+  const createBill = useBillingStore((state) => state.createBill);
+  const updateBill = useBillingStore((state) => state.updateBill);
+  const flats = useApartmentStore((state) => state.flats);
+  const fetchFlats = useApartmentStore((state) => state.fetchFlats);
 
-  const updateBill = useBillingStore(
-    (state) => state.updateBill
-  );
+  useEffect(() => {
+    fetchFlats();
+  }, [fetchFlats]);
+
+  const today = new Date().toISOString().split("T")[0];
+  const defaultMonth = today.slice(0, 7);
 
   const [form, setForm] = useState(
     initialData
       ? {
-        ...initialData,
-        dueDate: initialData.dueDate
-          ? initialData.dueDate.split("T")[0]
-          : "",
-        paidDate: initialData.paidDate
-          ? initialData.paidDate.split("T")[0]
-          : "",
-      }
+          flat_id: String(initialData.flat_id || ""),
+          billing_month: initialData.billing_month || defaultMonth,
+          due_date: (initialData.due_date || today).toString().slice(0, 10),
+          amount: String(initialData.amount || ""),
+          description: initialData.description || "Maintenance charges",
+          status: initialData.status || "unpaid",
+        }
       : {
-        resident: "",
-        flat: "",
-        category: "Maintenance",
-        amount: "",
-        dueDate: "",
-        paidDate: "",
-        status: "Pending",
-        paymentMethod: "",
-        description: "",
-      }
+          flat_id: "",
+          billing_month: defaultMonth,
+          due_date: today,
+          amount: "",
+          description: "Maintenance charges",
+          status: "unpaid",
+        }
   );
-
   const [errors, setErrors] = useState({});
-
-  const today = new Date()
-    .toISOString()
-    .split("T")[0];
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (field, value) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-
-    setErrors((prev) => ({
-      ...prev,
-      [field]: "",
-    }));
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const validate = () => {
-    const newErrors = {};
-
-    if (!form.resident.trim())
-      newErrors.resident =
-        "Resident name is required.";
-
-    if (!form.flat.trim())
-      newErrors.flat =
-        "Flat number is required.";
-
-    if (!form.category)
-      newErrors.category =
-        "Category is required.";
-
-    if (!form.amount)
-      newErrors.amount =
-        "Amount is required.";
-
-    if (Number(form.amount) <= 0)
-      newErrors.amount =
-        "Amount must be greater than 0.";
-
-    if (!form.dueDate)
-      newErrors.dueDate =
-        "Due date is required.";
-
-    if (form.dueDate < today)
-      newErrors.dueDate =
-        "Due date cannot be before today.";
-
-    if (
-      form.status === "Paid" &&
-      !form.paidDate
-    )
-      newErrors.paidDate =
-        "Paid date is required.";
-
-    return newErrors;
+    const next = {};
+    if (!form.flat_id) next.flat_id = "Flat is required.";
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(form.billing_month)) {
+      next.billing_month = "Use YYYY-MM format.";
+    }
+    if (!form.due_date) next.due_date = "Due date is required.";
+    if (!form.amount || Number(form.amount) <= 0) {
+      next.amount = "Amount must be greater than 0.";
+    }
+    return next;
   };
 
-  const formatDate = (date) => {
-    if (!date) return "";
-
-    return new Date(date).toLocaleDateString(
-      "en-GB",
-      {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }
-    );
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
     const validation = validate();
-
     if (Object.keys(validation).length) {
       setErrors(validation);
       return;
     }
 
-    const billData = {
-      ...form,
-      amount: Number(form.amount),
-
-      // Store ISO dates
-      dueDate: form.dueDate
-        ? new Date(form.dueDate).toISOString()
-        : "",
-
-      paidDate: form.paidDate
-        ? new Date(form.paidDate).toISOString()
-        : "",
-    };
-
-    if (initialData) {
-      updateBill({
-        ...initialData,
-        ...billData,
-      });
-    } else {
-      addBill({
-        ...billData,
-        billId: `BILL-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-      });
+    setLoading(true);
+    try {
+      if (initialData?.bill_id || initialData?.id) {
+        const billId = initialData.bill_id || initialData.id;
+        const res = await updateBill(billId, {
+          due_date: form.due_date,
+          status: form.status === "paid" || form.status === "Paid" ? "paid" : "unpaid",
+        });
+        if (res.success) {
+          toast.success(res.message || "Bill updated.");
+          onClose();
+        } else {
+          toast.error(res.message || "Update failed.");
+        }
+      } else {
+        const amount = Number(form.amount);
+        const res = await createBill({
+          flat_id: Number(form.flat_id),
+          billing_month: form.billing_month,
+          due_date: form.due_date,
+          amount,
+          items: [
+            {
+              description: form.description || "Maintenance charges",
+              amount,
+            },
+          ],
+        });
+        if (res.success) {
+          toast.success(res.message || "Bill created.");
+          onClose();
+        } else {
+          toast.error(res.message || "Failed to create bill.");
+        }
+      }
+    } finally {
+      setLoading(false);
     }
-
-    onClose();
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-6"
-    >
-      <div className="grid gap-5 md:grid-cols-2">
-        <Input label="Resident Name"
-          value={form.resident}
-          error={errors.resident}
-          placeholder="Enter Resident Name..." onChange={(e) =>
-            handleChange(
-              "resident",
-              e.target.value
-            )
-          }
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div>
+        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+          Flat
+        </label>
+        <select
+          value={form.flat_id}
+          disabled={Boolean(initialData)}
+          onChange={(e) => handleChange("flat_id", e.target.value)}
+          className="h-12 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 outline-none focus:border-indigo-600"
+        >
+          <option value="">Select flat</option>
+          {flats.map((f) => (
+            <option key={f.flat_id} value={f.flat_id}>
+              {f.block_name ? `${f.block_name} - ` : ""}
+              {f.flat_number} (#{f.flat_id})
+            </option>
+          ))}
+        </select>
+        {errors.flat_id && <p className="mt-1 text-sm text-red-600">{errors.flat_id}</p>}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Input
+          label="Billing Month (YYYY-MM)"
+          value={form.billing_month}
+          disabled={Boolean(initialData)}
+          error={errors.billing_month}
+          onChange={(e) => handleChange("billing_month", e.target.value)}
         />
-
-        <Input label="Flat Number"
-          value={form.flat}
-          error={errors.flat}
-          placeholder="Enter Flat Number..." onChange={(e) =>
-            handleChange(
-              "flat",
-              e.target.value
-            )
-          }
+        <Input
+          label="Due Date"
+          type="date"
+          value={form.due_date}
+          error={errors.due_date}
+          onChange={(e) => handleChange("due_date", e.target.value)}
         />
+      </div>
 
-        <div>
-          <label className="mb-2 block text-sm font-medium">
-            Category
-          </label>
-
-          <select
-            value={form.category}
-            onChange={(e) =>
-              handleChange(
-                "category",
-                e.target.value
-              )
-            }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4"
-          >
-            <option>Maintenance</option>
-            <option>Water</option>
-            <option>Electricity</option>
-            <option>Parking</option>
-            <option>Club House</option>
-            <option>Other</option>
-          </select>
-
-          {errors.category && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.category}
-            </p>
-          )}
-        </div>
-
-        <Input type="number"
-          label="Amount"
-          value={form.amount}
-          error={errors.amount}
-          placeholder="Enter Amount..." onChange={(e) =>
-            handleChange(
-              "amount",
-              e.target.value
-            )
-          }
-        />
-
-        <div>
-          <label className="mb-2 block text-sm font-medium">
-            Due Date
-          </label>
-
-          <input
-            type="date"
-            min={today}
-            value={form.dueDate}
-            onChange={(e) =>
-              handleChange(
-                "dueDate",
-                e.target.value
-              )
-            }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4"
+      {!initialData && (
+        <>
+          <Input
+            label="Amount (INR)"
+            type="number"
+            value={form.amount}
+            error={errors.amount}
+            onChange={(e) => handleChange("amount", e.target.value)}
           />
-
-          {errors.dueDate && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.dueDate}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-medium">
-            Paid Date
-          </label>
-
-          <input
-            type="date"
-            value={form.paidDate}
-            disabled={form.status !== "Paid"}
-            onChange={(e) =>
-              handleChange(
-                "paidDate",
-                e.target.value
-              )
-            }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 disabled:bg-slate-100"
+          <Input
+            label="Line item description"
+            value={form.description}
+            onChange={(e) => handleChange("description", e.target.value)}
           />
+        </>
+      )}
 
-          {errors.paidDate && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.paidDate}
-            </p>
-          )}
-        </div>
-
+      {initialData && (
         <div>
-          <label className="mb-2 block text-sm font-medium">
-            Status
-          </label>
-
+          <label className="mb-2 block text-sm font-medium">Status</label>
           <select
             value={form.status}
-            onChange={(e) =>
-              handleChange(
-                "status",
-                e.target.value
-              )
-            }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4"
+            onChange={(e) => handleChange("status", e.target.value)}
+            className="h-12 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-4"
           >
-            <option>Pending</option>
-            <option>Paid</option>
-            <option>Overdue</option>
+            <option value="unpaid">Unpaid</option>
+            <option value="paid">Paid</option>
           </select>
         </div>
-      </div>
+      )}
 
-      <div>
-        <label className="mb-2 block text-sm font-medium">
-          Description
-        </label>
-
-        <textarea
-          rows={4}
-          value={form.description}
-          onChange={(e) =>
-            handleChange(
-              "description",
-              e.target.value
-            )
-          }
-          className="w-full rounded-xl border border-slate-300 p-4"
-        />
-      </div>
-
-      <div className="flex justify-end gap-3">
-        <Button
-          variant="outline"
-          type="button"
-          onClick={onClose}
-        >
+      <div className="flex gap-3 pt-2">
+        <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
           Cancel
         </Button>
-
-        <Button type="submit">
-          {initialData
-            ? "Update Bill"
-            : "Generate Bill"}
+        <Button type="submit" className="flex-1" loading={loading}>
+          {initialData ? "Update Bill" : "Create Bill"}
         </Button>
       </div>
     </form>

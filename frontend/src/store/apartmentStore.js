@@ -88,11 +88,15 @@ const useApartmentStore = create(
 
       createFlat: async (flatData) => {
         try {
+          const blockId = Number(flatData.block_id);
+          if (!blockId) {
+            return { success: false, message: "Please select a block." };
+          }
           const res = await apartmentApi.createFlat({
-            block_id:    Number(flatData.block_id || 1),
+            block_id: blockId,
             flat_number: flatData.flat_number || flatData.number,
-            floor_number: Number(flatData.floor_number || 1),
-            flat_type:   flatData.flat_type || "2BHK",
+            floor_number: Number(flatData.floor_number || flatData.floor || 1),
+            flat_type: flatData.flat_type || "2BHK",
           });
           if (res && res.success) {
             get().fetchFlats();
@@ -114,6 +118,19 @@ const useApartmentStore = create(
           return { success: false, message: res?.message || "Update failed." };
         } catch (err) {
           return { success: false, message: err.message || "Failed to update flat." };
+        }
+      },
+
+      deleteFlat: async (flatId) => {
+        try {
+          const res = await apartmentApi.deleteFlat(flatId);
+          if (res && res.success) {
+            get().fetchFlats();
+            return { success: true, message: res.message };
+          }
+          return { success: false, message: res?.message || "Delete failed." };
+        } catch (err) {
+          return { success: false, message: err.message || "Failed to delete flat." };
         }
       },
 
