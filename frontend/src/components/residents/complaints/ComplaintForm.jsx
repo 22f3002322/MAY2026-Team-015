@@ -112,12 +112,12 @@ const ComplaintForm = ({
       {/* Description */}
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">
+        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
           Description
         </label>
 
         <textarea
-          rows={5}
+          rows={4}
           required
           value={formData.description}
           onChange={(e) =>
@@ -126,7 +126,26 @@ const ComplaintForm = ({
               e.target.value
             )
           }
-          className="w-full rounded-xl border border-slate-300 p-4 outline-none focus:border-indigo-600"
+          placeholder="Describe the issue in detail..."
+          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-4 outline-none focus:border-indigo-600"
+        />
+      </div>
+
+      {/* Attachment Image */}
+      <div>
+        <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+          Attach Image <span className="text-xs text-slate-400">(Optional - max 5 MB)</span>
+        </label>
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              setFormData((prev) => ({ ...prev, imageFile: file }));
+            }
+          }}
+          className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 dark:file:bg-indigo-950 dark:file:text-indigo-300"
         />
       </div>
 

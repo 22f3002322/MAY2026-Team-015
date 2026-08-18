@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 
 import Layout from "../../components/layout/Layout";
@@ -6,98 +6,77 @@ import Layout from "../../components/layout/Layout";
 import VisitorStats from "../../components/visitors/VisitorStats";
 import VisitorFilters from "../../components/visitors/VisitorFilters";
 import VisitorTable from "../../components/visitors/VisitorTable";
-import VisitorForm from "../../components/visitors/VisitorForm";
 import VisitorDetails from "../../components/visitors/VisitorDetails";
-import CheckInOutModal from "../../components/visitors/CheckInOutModal";
 import VisitorPurposeChart from "../../components/visitors/VisitorPurposeChart";
 import VisitorTrendChart from "../../components/visitors/VisitorTrendChart";
-
-import Modal from "../../components/ui/Modal";
-import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 import useVisitorStore from "../../store/visitorStore";
 
 const Visitors = () => {
-  // Zustand
+  const logs = useVisitorStore((state) => state.logs);
+  const fetchVisitorLogs = useVisitorStore((state) => state.fetchVisitorLogs);
 
-  const visitors = useVisitorStore(
-    (state) => state.visitors
-  );
-
-  const addVisitor = useVisitorStore(
-    (state) => state.addVisitor
-  );
-
-  const updateVisitor = useVisitorStore(
-    (state) => state.updateVisitor
-  );
-
-  const removeVisitor = useVisitorStore(
-    (state) => state.deleteVisitor
-  );
+  useEffect(() => {
+    fetchVisitorLogs();
+  }, [fetchVisitorLogs]);
 
   // Filters
-
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [date, setDate] = useState("");
 
-  // Modals
+  const [selectedVisitor, setSelectedVisitor] = useState(null);
 
-  const [openModal, setOpenModal] = useState(false);
+  // Map backend logs to table format
+  const mappedVisitors = useMemo(() => {
+    return logs.map((log) => ({
+      id: log.log_id || log.id,
+      name: log.visitor_name || `Visitor #${log.visitor_id || log.log_id}`,
+      phone: log.visitor_phone || "N/A",
+      flat: log.flat_number ? `Flat ${log.flat_number}` : `Flat #${log.flat_id || log.resident_id}`,
+      purpose: log.visitor_type || "Guest",
+      status: log.exit_time ? "Completed" : "Checked In",
+      date: log.entry_time
+        ? new Date(log.entry_time).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "N/A",
+      entryTime: log.entry_time
+        ? new Date(log.entry_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : "N/A",
+      exitTime: log.exit_time
+        ? new Date(log.exit_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : "N/A",
+    }));
+  }, [logs]);
 
-  // Selected
-
-  const [selectedVisitor, setSelectedVisitor] =
-    useState(null);
-
-  const [editingVisitor, setEditingVisitor] =
-    useState(null);
-
-  const [deleteVisitor, setDeleteVisitor] =
-    useState(null);
-
-  const [checkVisitor, setCheckVisitor] =
-    useState(null);
-
-  const filteredVisitors = visitors.filter(
-    (visitor) => {
+  const filteredVisitors = useMemo(() => {
+    return mappedVisitors.filter((visitor) => {
       const matchesSearch =
-        visitor.name
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        visitor.flat
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        visitor.phone.includes(search);
+        (visitor.name || "").toLowerCase().includes(search.toLowerCase()) ||
+        (visitor.flat || "").toLowerCase().includes(search.toLowerCase()) ||
+        (visitor.phone || "").includes(search);
 
-      const matchesStatus =
-        status === "" ||
-        visitor.status === status;
+      const matchesStatus = status === "" || visitor.status === status;
 
       const matchesDate =
         date === "" ||
         visitor.date ===
-          new Date(date).toLocaleDateString(
-            "en-GB",
-            {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            }
-          );
+          new Date(date).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          });
 
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesDate
-      );
-    }
-  );
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  }, [mappedVisitors, search, status, date]);
 
   return (
     <Layout
-      title="Visitor Management"
+      title="Visitor Management Log"
       breadcrumb={["Home", "Visitors"]}
     >
       <VisitorStats />
@@ -114,98 +93,17 @@ const Visitors = () => {
         setStatus={setStatus}
         date={date}
         setDate={setDate}
-        onRegisterVisitor={() =>
-          setOpenModal(true)
-        }
       />
 
       <VisitorTable
         visitors={filteredVisitors}
         onView={setSelectedVisitor}
-        onEdit={(visitor) => {
-          setEditingVisitor(visitor);
-          setOpenModal(true);
-        }}
-        onCheck={setCheckVisitor}
-        onDelete={setDeleteVisitor}
       />
-
-      {/* Add / Edit */}
-
-      <Modal
-        open={openModal}
-        title={
-          editingVisitor
-            ? "Edit Visitor"
-            : "Register Visitor"
-        }
-        onClose={() => {
-          setOpenModal(false);
-          setEditingVisitor(null);
-        }}
-      >
-        <VisitorForm
-          initialData={editingVisitor}
-          onSubmit={(data) => {
-            if (editingVisitor) {
-              updateVisitor(
-                editingVisitor.id,
-                data
-              );
-              toast.success("Visitor updated successfully!");
-            } else {
-              addVisitor({
-                ...data,
-                id: Date.now(),
-                createdAt:
-                  new Date().toISOString(),
-              });
-              toast.success("Visitor added successfully!");
-            }
-
-            setOpenModal(false);
-            setEditingVisitor(null);
-          }}
-          onClose={() => {
-            setOpenModal(false);
-            setEditingVisitor(null);
-          }}
-        />
-      </Modal>
 
       {/* Details */}
-
       <VisitorDetails
         visitor={selectedVisitor}
-        onClose={() =>
-          setSelectedVisitor(null)
-        }
-      />
-
-      {/* Delete */}
-
-      <ConfirmDialog
-        open={!!deleteVisitor}
-        title="Delete Visitor"
-        message={`Delete ${deleteVisitor?.name}?`}
-        confirmText="Delete"
-        onCancel={() =>
-          setDeleteVisitor(null)
-        }
-        onConfirm={() => {
-          removeVisitor(deleteVisitor.id);
-
-          setDeleteVisitor(null);
-        }}
-      />
-
-      {/* Check In / Out */}
-
-      <CheckInOutModal
-        visitor={checkVisitor}
-        onClose={() =>
-          setCheckVisitor(null)
-        }
+        onClose={() => setSelectedVisitor(null)}
       />
     </Layout>
   );

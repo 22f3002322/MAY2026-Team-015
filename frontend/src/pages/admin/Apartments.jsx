@@ -11,8 +11,12 @@ import Modal from "../../components/ui/Modal";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 import useApartmentStore from "../../store/apartmentStore";
+import useAuthStore from "../../store/authStore";
 
 const Apartments = () => {
+  const { backendRole } = useAuthStore();
+  const isPureAdmin = String(backendRole || "").toLowerCase() === "admin";
+
   // Zustand Store
 
   const apartments = useApartmentStore(
@@ -89,7 +93,7 @@ const Apartments = () => {
         setBlock={setBlock}
         occupancy={occupancy}
         setOccupancy={setOccupancy}
-        onAddApartment={() => setOpenModal(true)}
+        onAddApartment={isPureAdmin ? () => setOpenModal(true) : undefined}
       />
 
       <ApartmentTable

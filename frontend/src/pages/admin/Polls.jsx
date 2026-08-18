@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import toast from "react-hot-toast";
 
 import Layout from "../../components/layout/Layout";
 
@@ -16,78 +17,64 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import usePollStore from "../../store/pollStore";
 
 const Polls = () => {
-  // Zustand
+  const polls = usePollStore((state) => state.polls);
+  const fetchPolls = usePollStore((state) => state.fetchPolls);
+  const updatePoll = usePollStore((state) => state.updatePoll);
 
-  const polls = usePollStore(
-    (state) => state.polls
-  );
-
-  const deletePollById = usePollStore(
-    (state) => state.deletePoll
-  );
+  useEffect(() => {
+    fetchPolls();
+  }, [fetchPolls]);
 
   // Filters
-
   const [search, setSearch] = useState("");
-
-  const [category, setCategory] =
-    useState("");
-
-  const [status, setStatus] =
-    useState("");
+  const [category, setCategory] = useState("");
+  const [status, setStatus] = useState("");
 
   // CRUD
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedPoll, setSelectedPoll] = useState(null);
+  const [editingPoll, setEditingPoll] = useState(null);
+  const [deletePoll, setDeletePoll] = useState(null);
 
-  const [openModal, setOpenModal] =
-    useState(false);
+  const mappedPolls = useMemo(() => {
+    return polls.map((p) => ({
+      id: p.poll_id || p.id,
+      pollId: `POLL-${p.poll_id || p.id}`,
+      question: p.question || p.title || "Community Poll",
+      category: p.category || "General",
+      status: p.is_active ? "Active" : "Closed",
+      totalVotes: p.total_votes || p.totalVotes || 0,
+      options: p.options || [],
+      startDate: p.start_date || p.startDate,
+      endDate: p.end_date || p.endDate,
+    }));
+  }, [polls]);
 
-  const [selectedPoll, setSelectedPoll] =
-    useState(null);
-
-  const [editingPoll, setEditingPoll] =
-    useState(null);
-
-  const [deletePoll, setDeletePoll] =
-    useState(null);
-
-  // Filtered Polls
-
-  const filteredPolls = polls.filter(
-    (poll) => {
+  const filteredPolls = useMemo(() => {
+    return mappedPolls.filter((poll) => {
       const matchesSearch =
-        poll.question
-          ?.toLowerCase()
-          .includes(search.toLowerCase()) ||
-        poll.pollId
-          ?.toLowerCase()
-          .includes(search.toLowerCase());
+        (poll.question || "").toLowerCase().includes(search.toLowerCase()) ||
+        (poll.pollId || "").toLowerCase().includes(search.toLowerCase());
 
       const matchesCategory =
-        category === "" ||
-        poll.category === category;
+        category === "" || poll.category === category;
 
       const matchesStatus =
-        status === "" ||
-        poll.status === status;
+        status === "" || poll.status === status;
 
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesStatus
-      );
-    }
-  );
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }, [mappedPolls, search, category, status]);
 
   return (
     <Layout
-      title="Polls"
+      title="Community Polls Management"
       breadcrumb={["Home", "Polls"]}
     >
       <PollStats />
 
       <div className="mb-6 grid gap-6 xl:grid-cols-2">
         <PollResultsChart />
-
         <PollStatusChart />
       </div>
 
@@ -114,15 +101,10 @@ const Polls = () => {
         onDelete={setDeletePoll}
       />
 
-      {/* Add / Edit */}
-
+      {/* Add / Edit Modal */}
       <Modal
         open={openModal}
-        title={
-          editingPoll
-            ? "Edit Poll"
-            : "Create Poll"
-        }
+        title={editingPoll ? "Edit Poll" : "Create Poll"}
         onClose={() => {
           setOpenModal(false);
           setEditingPoll(null);
@@ -137,29 +119,25 @@ const Polls = () => {
         />
       </Modal>
 
-      {/* Details */}
-
+      {/* Details Modal */}
       <PollDetails
         poll={selectedPoll}
-        onClose={() =>
-          setSelectedPoll(null)
-        }
+        onClose={() => setSelectedPoll(null)}
       />
 
-      {/* Delete */}
-
+      {/* Close/Deactivate Confirm Dialog */}
       <ConfirmDialog
         open={!!deletePoll}
-        title="Delete Poll"
-        message={`Delete "${deletePoll?.question}"?`}
-        confirmText="Delete"
-        onCancel={() =>
-          setDeletePoll(null)
-        }
-        onConfirm={() => {
-          deletePollById(deletePoll.id);
-
-          setDeletePoll(null);
+        title="Close Poll"
+        message={`Are you sure you want to end/close "${deletePoll?.question}"?`}
+        confirmText="Close Poll"
+        onCancel={() => setDeletePoll(null)}
+        onConfirm={async () => {
+          if (deletePoll) {
+            await updatePoll(deletePoll.id, { is_active: false });
+            toast.success("Poll closed successfully.");
+            setDeletePoll(null);
+          }
         }}
       />
     </Layout>
