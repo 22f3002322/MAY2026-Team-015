@@ -32,9 +32,9 @@ import StaffVisitorVerification from "./pages/staff/VisitorVerification";
 import StaffAssignedComplaints from "./pages/staff/AssignedComplaints";
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { token, role } = useAuthStore();
+  const { accessToken, isAuthenticated, role } = useAuthStore();
 
-  if (!token) {
+  if (!accessToken && !isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
@@ -48,10 +48,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 };
 
 function App() {
-  const { role, token } = useAuthStore();
+  const { role, accessToken, isAuthenticated } = useAuthStore();
 
   const getDefaultRedirect = () => {
-    if (!token) return "/login";
+    if (!accessToken && !isAuthenticated) return "/login";
     if (role === "admin" || role === "committee") return "/admin/dashboard";
     if (role === "staff" || role === "security" || role === "maintenance") return "/staff/visitors";
     return "/resident/dashboard";

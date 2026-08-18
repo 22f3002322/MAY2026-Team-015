@@ -29,6 +29,13 @@ from app.utils.api_response import success_response
 router = APIRouter(prefix="/api/v1/residents", tags=["residents"])
 
 
+def _current_occupancy_type(profile: ResidentProfile) -> Optional[str]:
+    for row in profile.occupancy_history or []:
+        if row.is_current:
+            return row.occupancy_type
+    return None
+
+
 def _to_directory_out(profile: ResidentProfile) -> ResidentDirectoryOut:
     flat = profile.flat
     return ResidentDirectoryOut(
@@ -42,6 +49,7 @@ def _to_directory_out(profile: ResidentProfile) -> ResidentDirectoryOut:
         flat_number=flat.flat_number if flat else None,
         block_name=flat.block.block_name if flat and flat.block else None,
         occupation=profile.occupation,
+        occupancy_type=_current_occupancy_type(profile),
         emergency_contact=profile.emergency_contact,
         alternate_phone=profile.alternate_phone,
     )
@@ -51,10 +59,13 @@ def _to_directory_out(profile: ResidentProfile) -> ResidentDirectoryOut:
 def list_residents(
     block_id: Optional[int] = Query(default=None),
     flat_id: Optional[int] = Query(default=None),
+    current_only: bool = Query(default=True),
     _staff=Depends(require_admin_or_committee),
     db: Session = Depends(get_db),
 ):
-    residents = apartment_service.list_residents(db, block_id=block_id, flat_id=flat_id)
+    residents = apartment_service.list_residents(
+        db, block_id=block_id, flat_id=flat_id, current_only=current_only
+    )
     return success_response(data=[_to_directory_out(r) for r in residents])
 
 

@@ -71,3 +71,5 @@ class FacilityBookingOut(FacilityBookingBase):
     cancelled_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    facility_name: Optional[str] = None
+    resident_name: Optional[str] = None

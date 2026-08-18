@@ -29,7 +29,7 @@ const ComplaintStats = () => {
   ).length;
 
   const resolved = complaints.filter(
-    (c) => c.status === "Resolved"
+    (c) => c.status === "Resolved" || c.status === "Closed"
   ).length;
 
   const stats = [

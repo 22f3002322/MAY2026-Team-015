@@ -27,6 +27,14 @@ from app.utils.api_response import success_response
 router = APIRouter(prefix="/api/v1/admin/facilities", tags=["facilities"])
 
 
+def _to_booking_out(booking) -> FacilityBookingOut:
+    data = FacilityBookingOut.model_validate(booking)
+    data.facility_name = booking.facility.facility_name if booking.facility else None
+    if booking.resident and booking.resident.user:
+        data.resident_name = booking.resident.user.full_name
+    return data
+
+
 @router.post("")
 def create_facility(payload: FacilityCreate, _staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
     facility = booking_service.create_facility(db, payload)
@@ -65,7 +73,7 @@ def create_booking(
     # resident_id is always the caller's own profile, never
     # client-supplied -- see FacilityBookingCreate in facility_schema.py.
     booking = booking_service.create_booking(db, payload, profile.resident_id)
-    return success_response(data=FacilityBookingOut.model_validate(booking), message="Facility booked.")
+    return success_response(data=_to_booking_out(booking), message="Facility booked.")
 
 
 @router_bookings.get("")
@@ -75,7 +83,7 @@ def list_bookings(current_user: User = Depends(get_current_user), db: Session = 
         bookings = booking_service.list_bookings(db, resident_id=profile.resident_id)
     else:
         bookings = booking_service.list_bookings(db)
-    return success_response(data=[FacilityBookingOut.model_validate(b) for b in bookings])
+    return success_response(data=[_to_booking_out(b) for b in bookings])
 
 
 @router_bookings.get("/{booking_id}")
@@ -90,7 +98,7 @@ def get_booking(booking_id: int, current_user: User = Depends(get_current_user),
         if booking.resident_id != profile.resident_id:
             raise NotAuthorized("You can only access your own bookings.")
 
-    return success_response(data=FacilityBookingOut.model_validate(booking))
+    return success_response(data=_to_booking_out(booking))
 
 
 @router_bookings.patch("/{booking_id}")
@@ -114,7 +122,7 @@ def update_booking(
 
     if role in (RoleEnum.ADMIN, RoleEnum.COMMITTEE):
         updated = booking_service.update_booking(db, booking_id, payload, actor_user_id=current_user.user_id)
-        return success_response(data=FacilityBookingOut.model_validate(updated), message="Booking updated.")
+        return success_response(data=_to_booking_out(updated), message="Booking updated.")
 
     if role == RoleEnum.RESIDENT:
         if not current_user.is_verified:
@@ -134,6 +142,6 @@ def update_booking(
             raise NotAuthorized("You can only cancel your own booking, not set any other status.")
 
         updated = booking_service.update_booking(db, booking_id, payload, actor_user_id=current_user.user_id)
-        return success_response(data=FacilityBookingOut.model_validate(updated), message="Booking updated.")
+        return success_response(data=_to_booking_out(updated), message="Booking updated.")
 
     raise NotAuthorized("You do not have permission to modify this booking.")

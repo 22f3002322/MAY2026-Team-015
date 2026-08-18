@@ -1,11 +1,9 @@
-import {
-  Search,
-  Plus,
-  Download,
-} from "lucide-react";
+import { Search } from "lucide-react";
+import { useEffect } from "react";
 
-import Button from "../ui/Button";
 import Input from "../ui/Input";
+import useComplaintStore from "../../store/complaintStore";
+import { COMPLAINT_PRIORITY, COMPLAINT_STATUS } from "../../utils/adminMaps";
 
 const ComplaintFilters = ({
   search,
@@ -16,13 +14,17 @@ const ComplaintFilters = ({
   setPriority,
   status,
   setStatus,
-  onRaiseComplaint,
 }) => {
+  const categories = useComplaintStore((s) => s.categories);
+  const fetchCategories = useComplaintStore((s) => s.fetchCategories);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
   return (
     <div className="mb-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
-
       <div className="grid grid-cols-12 gap-5 items-end">
-
         <div className="col-span-12 xl:col-span-3">
           <Input
             label="Search"
@@ -33,92 +35,60 @@ const ComplaintFilters = ({
           />
         </div>
 
-        <div className="col-span-12 md:col-span-4 xl:col-span-2">
+        <div className="col-span-12 md:col-span-4 xl:col-span-3">
           <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Category
           </label>
-
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4"
           >
             <option value="">All</option>
-            <option>Electrical</option>
-            <option>Plumbing</option>
-            <option>Maintenance</option>
-            <option>Cleaning</option>
-            <option>Security</option>
+            {categories.map((c) => (
+              <option key={c.category_id} value={c.category_name}>
+                {c.category_name}
+              </option>
+            ))}
           </select>
         </div>
 
-        <div className="col-span-12 md:col-span-4 xl:col-span-2">
+        <div className="col-span-12 md:col-span-4 xl:col-span-3">
           <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Priority
           </label>
-
           <select
             value={priority}
             onChange={(e) => setPriority(e.target.value)}
-            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4"
           >
             <option value="">All</option>
-            <option>Low</option>
-            <option>Medium</option>
-            <option>High</option>
-            <option>Critical</option>
+            {COMPLAINT_PRIORITY.map((o) => (
+              <option key={o.value} value={o.label}>
+                {o.label}
+              </option>
+            ))}
           </select>
         </div>
 
-        <div className="col-span-12 md:col-span-4 xl:col-span-2">
+        <div className="col-span-12 md:col-span-4 xl:col-span-3">
           <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Status
           </label>
-
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4"
           >
             <option value="">All</option>
-            <option>Open</option>
-            <option>Assigned</option>
-            <option>In Progress</option>
-            <option>Resolved</option>
-            <option>Closed</option>
+            {COMPLAINT_STATUS.map((o) => (
+              <option key={o.value} value={o.label}>
+                {o.label}
+              </option>
+            ))}
           </select>
         </div>
-
-        <div className="col-span-12 xl:col-span-3">
-          <label className="mb-2 block opacity-0">
-            Actions
-          </label>
-
-          <div className="flex gap-3">
-
-            <Button
-              variant="outline"
-              className="h-14 w-14 p-0"
-            >
-              <Download size={18} />
-            </Button>
-
-            {onRaiseComplaint && (
-              <Button
-                className="h-14 flex-1"
-                onClick={onRaiseComplaint}
-              >
-                <Plus size={18} />
-                Raise Complaint
-              </Button>
-            )}
-
-          </div>
-
-        </div>
-
       </div>
-
     </div>
   );
 };

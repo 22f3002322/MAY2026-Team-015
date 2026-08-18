@@ -26,13 +26,23 @@ from app.schemas.billing_schema import (
 from app.utils.api_error import NotAuthorized
 from app.utils.api_response import success_response
 
+
+def _to_bill_out(bill) -> MaintenanceBillOut:
+    data = MaintenanceBillOut.model_validate(bill)
+    flat = getattr(bill, "flat", None)
+    if flat:
+        data.flat_number = flat.flat_number
+        data.block_name = flat.block.block_name if flat.block else None
+    return data
+
+
 router = APIRouter(prefix="/api/v1/admin/bills", tags=["billing"])
 
 
 @router.post("")
 def create_bill(payload: MaintenanceBillCreate, _staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
     bill = billing_service.create_bill(db, payload)
-    return success_response(data=MaintenanceBillOut.model_validate(bill), message="Bill generated.")
+    return success_response(data=_to_bill_out(bill), message="Bill generated.")
 
 
 @router.get("/summary")
@@ -48,19 +58,19 @@ def list_bills(
     db: Session = Depends(get_db),
 ):
     bills = billing_service.list_bills(db, flat_id=flat_id)
-    return success_response(data=[MaintenanceBillOut.model_validate(b) for b in bills])
+    return success_response(data=[_to_bill_out(b) for b in bills])
 
 
 @router.get("/{bill_id}")
 def get_bill(bill_id: int, _staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
     bill = billing_service.get_bill(db, bill_id)
-    return success_response(data=MaintenanceBillOut.model_validate(bill))
+    return success_response(data=_to_bill_out(bill))
 
 
 @router.patch("/{bill_id}")
 def update_bill(bill_id: int, payload: MaintenanceBillUpdate, _staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
     bill = billing_service.update_bill(db, bill_id, payload)
-    return success_response(data=MaintenanceBillOut.model_validate(bill), message="Bill updated.")
+    return success_response(data=_to_bill_out(bill), message="Bill updated.")
 
 
 # --------------------------------------------------------------------------
@@ -75,7 +85,7 @@ router_my_billing = APIRouter(prefix="/api/v1/billing/me", tags=["billing"])
 @router_my_billing.get("/bills")
 def list_my_bills(current_user: User = Depends(require_resident), profile: ResidentProfile = Depends(get_resident_profile), db: Session = Depends(get_db)):
     bills = billing_service.list_my_bills(db, profile.flat_id) if profile.flat_id else []
-    return success_response(data=[MaintenanceBillOut.model_validate(b) for b in bills])
+    return success_response(data=[_to_bill_out(b) for b in bills])
 
 
 @router_my_billing.get("/payments")

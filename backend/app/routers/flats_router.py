@@ -5,11 +5,18 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_admin_or_committee
+from app.models.apartment import Flat
 from app.schemas.apartment_schema import FlatCreate, FlatDetailOut, FlatOut, FlatUpdate, ResidentSummaryOut
 from app.services import apartment_service
 from app.utils.api_response import success_response
 
 router = APIRouter(prefix="/api/v1/flats", tags=["apartments"])
+
+
+def _to_flat_out(flat: Flat) -> FlatOut:
+    data = FlatOut.model_validate(flat)
+    data.block_name = flat.block.block_name if flat.block else None
+    return data
 
 
 @router.post("")
@@ -20,7 +27,7 @@ def create_flat(
 ):
     """Admin/Committee only."""
     flat = apartment_service.create_flat(db, payload)
-    return success_response(data=FlatOut.model_validate(flat), message="Flat created successfully.")
+    return success_response(data=_to_flat_out(flat), message="Flat created successfully.")
 
 
 @router.get("")
@@ -41,7 +48,7 @@ def list_flats(
     flats = apartment_service.list_flats(
         db, block_id=block_id, occupancy_status=occupancy_status, flat_number=flat_number
     )
-    return success_response(data=[FlatOut.model_validate(f) for f in flats])
+    return success_response(data=[_to_flat_out(f) for f in flats])
 
 
 @router.get("/{flat_id}")
@@ -52,7 +59,7 @@ def get_flat(flat_id: int, _user=Depends(get_current_user), db: Session = Depend
     flat = apartment_service.get_flat(db, flat_id)
     residents = apartment_service.current_residents_of_flat(db, flat_id)
     data = FlatDetailOut(
-        **FlatOut.model_validate(flat).model_dump(),
+        **_to_flat_out(flat).model_dump(),
         current_residents=[
             ResidentSummaryOut(
                 resident_id=r.resident_id,
@@ -76,4 +83,15 @@ def update_flat(
     """Admin/Committee only. occupancy_status isn't editable here -- it's
     derived from occupancy_history via move-in/move-out."""
     flat = apartment_service.update_flat(db, flat_id, payload)
-    return success_response(data=FlatOut.model_validate(flat), message="Flat updated successfully.")
+    return success_response(data=_to_flat_out(flat), message="Flat updated successfully.")
+
+
+@router.delete("/{flat_id}")
+def delete_flat(
+    flat_id: int,
+    _staff=Depends(require_admin_or_committee),
+    db: Session = Depends(get_db),
+):
+    """Admin/Committee only. Refuses occupied flats or flats with linked profiles."""
+    apartment_service.delete_flat(db, flat_id)
+    return success_response(message="Flat deleted successfully.")

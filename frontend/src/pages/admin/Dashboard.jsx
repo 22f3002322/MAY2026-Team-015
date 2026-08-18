@@ -64,7 +64,8 @@ const Dashboard = () => {
 
   const totalRevenue = useMemo(() => {
     // Prefer billing summary from backend if available
-    if (summary?.total_paid) return Number(summary.total_paid);
+    if (summary?.total_collected != null) return Number(summary.total_collected);
+    if (summary?.total_paid != null) return Number(summary.total_paid);
     return bills
       .filter((bill) => {
         const s = String(bill.status || "").toLowerCase();
@@ -159,21 +160,24 @@ const Dashboard = () => {
         .slice(0, 5)
         .map((c) => ({
           ...c,
+          title: c.title || (c.description || "").slice(0, 40),
           resident:
             c.resident_name ||
-            (c.resident && c.resident.name) ||
+            c.resident ||
             `Resident #${c.resident_id}`,
-          flat:
-            c.flat_number ||
-            (c.resident && c.resident.flat_number) ||
-            `Flat #${c.flat_id}`,
-          status: normalizeStatus(c.status),
+          flat: c.flat_number || c.flat || "—",
+          status: normalizeStatus(c.statusValue || c.status),
         })),
     [complaints]
   );
 
   const recentVisitors = useMemo(() => {
+    const today = new Date().toDateString();
     return [...logs]
+      .filter((log) => {
+        if (!log.entry_time) return false;
+        return new Date(log.entry_time).toDateString() === today;
+      })
       .sort(
         (a, b) =>
           new Date(b.entry_time || 0) - new Date(a.entry_time || 0)
@@ -240,7 +244,13 @@ const Dashboard = () => {
 
       <div className="mt-8">
         <QuickActions
-          onAddResident={() => navigate("/admin/residents")}
+          onAddResident={
+            String(backendRole || "").toLowerCase() === "committee"
+              ? () => navigate("/admin/residents")
+              : undefined
+          }
+          onBookFacility={() => navigate("/admin/facilities")}
+          onRaiseComplaint={() => navigate("/admin/complaints")}
           onAddCommittee={
             isPureAdmin ? () => setCommitteeModal(true) : undefined
           }
@@ -268,7 +278,7 @@ const Dashboard = () => {
 
         <Card
           title="Today's Visitors"
-          subtitle="Latest visitor entries"
+          subtitle="Visitor entries from today"
         >
           <Table columns={visitorColumns} data={recentVisitors} />
         </Card>

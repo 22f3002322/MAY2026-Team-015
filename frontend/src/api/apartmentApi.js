@@ -56,12 +56,18 @@ export const apartmentApi = {
     });
   },
 
+  deleteFlat: async (flatId) => {
+    return apiRequest(`/api/v1/flats/${flatId}`, { method: "DELETE" });
+  },
+
   // ─── Residents directory (Admin / Committee) ─────────────────────────────
   // GET /api/v1/residents — list all residents with optional filters
   getResidents: async (params = {}) => {
     const query = new URLSearchParams();
     if (params.block_id) query.append("block_id", params.block_id);
     if (params.flat_id)  query.append("flat_id",  params.flat_id);
+    if (params.current_only === false) query.append("current_only", "false");
+    if (params.current_only === true) query.append("current_only", "true");
     const qs = query.toString() ? `?${query.toString()}` : "";
     return apiRequest(`/api/v1/residents${qs}`, { method: "GET" });
   },

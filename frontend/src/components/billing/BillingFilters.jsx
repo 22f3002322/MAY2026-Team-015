@@ -37,10 +37,7 @@ const BillingFilters = ({
             className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-4 outline-none focus:border-indigo-600"
           >
             <option value="">All Categories</option>
-            <option>Maintenance</option>
-            <option>Water</option>
-            <option>Parking</option>
-            <option>Electricity</option>
+            <option value="Maintenance">Maintenance</option>
           </select>
         </div>
 
@@ -55,9 +52,8 @@ const BillingFilters = ({
             className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-4 outline-none focus:border-indigo-600"
           >
             <option value="">All Status</option>
-            <option>Paid</option>
-            <option>Pending</option>
-            <option>Overdue</option>
+            <option value="Paid">Paid</option>
+            <option value="Unpaid">Unpaid</option>
           </select>
         </div>
 

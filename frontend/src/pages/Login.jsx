@@ -30,7 +30,7 @@ const Login = () => {
       } else if (role === "resident") {
         navigate("/resident/dashboard");
       } else if (role === "staff") {
-        navigate("/staff/dashboard");
+        navigate("/staff/visitors");
       }
     }
   }, [isAuthenticated, role, navigate]);
@@ -81,7 +81,7 @@ const Login = () => {
         } else if (result.role === "resident") {
           navigate("/resident/dashboard");
         } else {
-          navigate("/staff/dashboard");
+          navigate("/staff/visitors");
         }
       } else {
         toast.error(result.message);

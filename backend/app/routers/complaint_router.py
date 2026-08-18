@@ -29,6 +29,18 @@ from app.schemas.complaint_schema import (
 from app.utils.api_error import NotAuthorized
 from app.utils.api_response import success_response
 
+
+def _to_complaint_out(complaint: Complaint) -> ComplaintOut:
+    data = ComplaintOut.model_validate(complaint)
+    data.category_name = complaint.category.category_name if complaint.category else None
+    resident = complaint.resident
+    if resident and resident.user:
+        data.resident_name = resident.user.full_name
+    if resident and resident.flat:
+        data.flat_number = resident.flat.flat_number
+    return data
+
+
 router = APIRouter(prefix="/api/v1/admin/complaint-categories", tags=["complaint-categories"])
 
 
@@ -107,7 +119,7 @@ def create_complaint(
     db: Session = Depends(get_db),
 ):
     complaint = complaint_service.create_complaint(db, payload, profile.resident_id)
-    return success_response(data=ComplaintOut.model_validate(complaint), message="Complaint filed successfully.")
+    return success_response(data=_to_complaint_out(complaint), message="Complaint filed successfully.")
 
 
 @router_complaints.get("")
@@ -128,14 +140,14 @@ def list_complaints(current_user: User = Depends(get_current_user), db: Session 
         ]
     else:
         complaints = complaint_service.list_complaints(db)
-    return success_response(data=[ComplaintOut.model_validate(c) for c in complaints])
+    return success_response(data=[_to_complaint_out(c) for c in complaints])
 
 
 @router_complaints.get("/{complaint_id}")
 def get_complaint(complaint_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     complaint = complaint_service.get_complaint_or_404(db, complaint_id)
     _authorize_complaint_access(db, complaint, current_user)
-    return success_response(data=ComplaintOut.model_validate(complaint))
+    return success_response(data=_to_complaint_out(complaint))
 
 
 @router_complaints.patch("/{complaint_id}")
@@ -152,7 +164,7 @@ def update_complaint(complaint_id: int, payload: ComplaintUpdate, current_user: 
 
     effective_role = "Admin" if role in (RoleEnum.ADMIN, RoleEnum.COMMITTEE) else role.value
     updated = complaint_service.update_complaint(db, complaint_id, payload, effective_role)
-    return success_response(data=ComplaintOut.model_validate(updated), message="Complaint updated.")
+    return success_response(data=_to_complaint_out(updated), message="Complaint updated.")
 
 
 @router_complaints.post("/{complaint_id}/assign")

@@ -142,46 +142,31 @@ const ComplaintTable = ({
             header: "Actions",
             render: (row) => (
                 <div className="flex gap-2">
-
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onView(row)}
-                    >
-                        <Eye size={16} />
-                    </Button>
-
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEdit(row)}
-                    >
-                        <Pencil size={16} />
-                    </Button>
-
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onAssign(row)}
-                    >
-                        <UserCog size={16} />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onStatus(row)}
-                    >
-                        <RefreshCcw size={16} />
-                    </Button>
-
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onDelete(row)}
-                    >
-                        <Trash2 size={16} />
-                    </Button>
-
+                    {typeof onView === "function" && (
+                        <Button variant="ghost" size="sm" onClick={() => onView(row)}>
+                            <Eye size={16} />
+                        </Button>
+                    )}
+                    {typeof onEdit === "function" && (
+                        <Button variant="ghost" size="sm" onClick={() => onEdit(row)}>
+                            <Pencil size={16} />
+                        </Button>
+                    )}
+                    {typeof onAssign === "function" && (
+                        <Button variant="ghost" size="sm" onClick={() => onAssign(row)}>
+                            <UserCog size={16} />
+                        </Button>
+                    )}
+                    {typeof onStatus === "function" && (
+                        <Button variant="ghost" size="sm" onClick={() => onStatus(row)}>
+                            <RefreshCcw size={16} />
+                        </Button>
+                    )}
+                    {typeof onDelete === "function" && (
+                        <Button variant="ghost" size="sm" onClick={() => onDelete(row)}>
+                            <Trash2 size={16} />
+                        </Button>
+                    )}
                 </div>
             ),
         },

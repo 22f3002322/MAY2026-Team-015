@@ -2,141 +2,101 @@ import { useState } from "react";
 
 import Button from "../ui/Button";
 import Input from "../ui/Input";
+import { useBlockOptions } from "../../utils/useBlockOptions";
 
 const ApartmentForm = ({
   onClose,
   onSubmit,
   initialData = null,
+  isEdit = false,
 }) => {
+  const blocks = useBlockOptions();
   const [form, setForm] = useState(
     initialData || {
       flat: "",
-      block: "",
+      block_id: "",
       floor: "",
-      type: "2 BHK",
-      owner: "",
-      occupancy: "Occupied",
+      type: "2BHK",
     }
   );
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (key, value) => {
-    setForm((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    onSubmit(form);
-
-    onClose();
+    if (!isEdit && !form.block_id) return;
+    setSubmitting(true);
+    try {
+      await onSubmit(form);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-5"
-    >
-      <Input label="Flat Number"
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <Input
+        label="Flat Number"
         value={form.flat}
-        placeholder="Enter Flat Number..." onChange={(e) =>
-          handleChange("flat", e.target.value)
-        }
-      />
-
-      <Input label="Owner"
-        value={form.owner}
-        placeholder="Enter Owner..." onChange={(e) =>
-          handleChange("owner", e.target.value)
-        }
+        placeholder="e.g. 101"
+        required
+        onChange={(e) => handleChange("flat", e.target.value)}
       />
 
       <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="mb-2 block text-sm font-medium">Block</label>
+          <select
+            value={form.block_id || ""}
+            onChange={(e) => handleChange("block_id", e.target.value)}
+            disabled={isEdit}
+            required={!isEdit}
+            className="h-14 w-full rounded-xl border border-slate-300 px-4 disabled:opacity-60"
+          >
+            <option value="">Select Block</option>
+            {blocks.map((b) => (
+              <option key={b.block_id} value={b.block_id}>
+                {b.block_name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <Input label="Block"
-          value={form.block}
-          placeholder="Enter Block..." onChange={(e) =>
-            handleChange("block", e.target.value)
-          }
-        />
-
-        <Input label="Floor"
+        <Input
+          label="Floor"
           type="number"
           value={form.floor}
-          placeholder="Enter Floor..." onChange={(e) =>
-            handleChange("floor", e.target.value)
-          }
+          placeholder="Floor"
+          required
+          onChange={(e) => handleChange("floor", e.target.value)}
         />
-
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-
-        <div>
-
-          <label className="mb-2 block text-sm font-medium">
-            Flat Type
-          </label>
-
-          <select
-            value={form.type}
-            onChange={(e) =>
-              handleChange("type", e.target.value)
-            }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4"
-          >
-            <option>1 BHK</option>
-            <option>2 BHK</option>
-            <option>3 BHK</option>
-            <option>4 BHK</option>
-          </select>
-
-        </div>
-
-        <div>
-
-          <label className="mb-2 block text-sm font-medium">
-            Occupancy
-          </label>
-
-          <select
-            value={form.occupancy}
-            onChange={(e) =>
-              handleChange(
-                "occupancy",
-                e.target.value
-              )
-            }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4"
-          >
-            <option>Occupied</option>
-            <option>Vacant</option>
-          </select>
-
-        </div>
-
+      <div>
+        <label className="mb-2 block text-sm font-medium">Flat Type</label>
+        <select
+          value={form.type}
+          onChange={(e) => handleChange("type", e.target.value)}
+          className="h-14 w-full rounded-xl border border-slate-300 px-4"
+        >
+          <option value="1BHK">1 BHK</option>
+          <option value="2BHK">2 BHK</option>
+          <option value="3BHK">3 BHK</option>
+          <option value="4BHK">4 BHK</option>
+        </select>
       </div>
 
       <div className="flex justify-end gap-3 pt-4">
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onClose}
-        >
+        <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
-
-        <Button type="submit">
-          {initialData
-            ? "Update Flat"
-            : "Add Flat"}
+        <Button type="submit" disabled={submitting}>
+          {initialData ? "Update Flat" : "Add Flat"}
         </Button>
-
       </div>
-
     </form>
   );
 };

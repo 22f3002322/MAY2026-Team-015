@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 import Layout from "../../components/layout/Layout";
 
@@ -10,7 +11,6 @@ import ResidentStats from "../../components/residents/ResidentStats";
 
 import Modal from "../../components/ui/Modal";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
-import Pagination from "../../components/ui/Pagination";
 
 import useResidentStore from "../../store/residentStore";
 import useAuthStore from "../../store/authStore";
@@ -20,93 +20,72 @@ const Residents = () => {
   const { backendRole } = useAuthStore();
   const isCommittee = String(backendRole || "").toLowerCase() === "committee";
 
-  // Zustand
-  const residents = useResidentStore(
-    (state) => state.residents
-  );
-
-  const addResident = useResidentStore(
-    (state) => state.addResident
-  );
-
-  const updateResident = useResidentStore(
-    (state) => state.updateResident
-  );
-
-  const removeResident = useResidentStore(
-    (state) => state.deleteResident
-  );
-
-  const fetchResidents = useResidentStore(
-    (state) => state.fetchResidents
-  );
+  const residents = useResidentStore((state) => state.residents);
+  const addResident = useResidentStore((state) => state.addResident);
+  const updateResident = useResidentStore((state) => state.updateResident);
+  const removeResident = useResidentStore((state) => state.deleteResident);
+  const fetchResidents = useResidentStore((state) => state.fetchResidents);
 
   useEffect(() => {
     fetchResidents();
   }, [fetchResidents]);
 
-  // Filters
-
   const [search, setSearch] = useState("");
   const [block, setBlock] = useState("");
   const [occupancy, setOccupancy] = useState("");
+  const [selectedResident, setSelectedResident] = useState(null);
+  const [deleteResident, setDeleteResident] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [editingResident, setEditingResident] = useState(null);
+  const [editModal, setEditModal] = useState(false);
 
-  // Details
+  const filteredResidents = residents.filter((resident) => {
+    const q = search.toLowerCase();
+    const matchesSearch =
+      String(resident.name || "").toLowerCase().includes(q) ||
+      String(resident.flat || "").toLowerCase().includes(q) ||
+      String(resident.phone || "").includes(search);
 
-  const [selectedResident, setSelectedResident] =
-    useState(null);
+    const matchesBlock = block === "" || resident.block === block;
+    const matchesOccupancy = occupancy === "" || resident.occupancy === occupancy;
 
-  // Delete
+    return matchesSearch && matchesBlock && matchesOccupancy;
+  });
 
-  const [deleteResident, setDeleteResident] =
-    useState(null);
+  const handleAdd = async (data) => {
+    const res = await addResident(data);
+    if (res.success) {
+      toast.success(res.message || "Resident added.");
+      setOpenModal(false);
+    } else {
+      toast.error(res.message || "Failed to add resident.");
+    }
+  };
 
-  // Add
+  const handleEdit = async (data) => {
+    const res = await updateResident(editingResident.id, data);
+    if (res.success) {
+      toast.success("Resident updated.");
+      setEditModal(false);
+      setEditingResident(null);
+    } else {
+      toast.error(res.message || "Failed to update resident.");
+    }
+  };
 
-  const [openModal, setOpenModal] =
-    useState(false);
-
-  // Edit
-
-  const [editingResident, setEditingResident] =
-    useState(null);
-
-  const [editModal, setEditModal] =
-    useState(false);
-
-  // Filter
-
-  const filteredResidents =
-    residents.filter((resident) => {
-      const matchesSearch =
-        resident.name
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        resident.flat
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        resident.phone.includes(search);
-
-      const matchesBlock =
-        block === "" ||
-        resident.block === block;
-
-      const matchesOccupancy =
-        occupancy === "" ||
-        resident.occupancy === occupancy;
-
-      return (
-        matchesSearch &&
-        matchesBlock &&
-        matchesOccupancy
-      );
-    });
+  const handleMoveOut = async () => {
+    if (!deleteResident) return;
+    const res = await removeResident(deleteResident.id);
+    if (res.success) {
+      toast.success("Resident moved out.");
+      setDeleteResident(null);
+    } else {
+      toast.error(res.message || "Move-out failed.");
+    }
+  };
 
   return (
-    <Layout
-      title="Residents"
-      breadcrumb={["Home", "Residents"]}
-    >
+    <Layout title="Residents" breadcrumb={["Home", "Residents"]}>
       <PendingVerifications />
 
       <ResidentStats />
@@ -118,9 +97,7 @@ const Residents = () => {
         setBlock={setBlock}
         occupancy={occupancy}
         setOccupancy={setOccupancy}
-        onAddResident={
-          isCommittee ? () => setOpenModal(true) : undefined
-        }
+        onAddResident={isCommittee ? () => setOpenModal(true) : undefined}
       />
 
       <ResidentTable
@@ -133,33 +110,9 @@ const Residents = () => {
         onDelete={setDeleteResident}
       />
 
-      <Pagination />
-
-      {/* Add */}
-
-      <Modal
-        open={openModal}
-        title="Add Resident"
-        onClose={() =>
-          setOpenModal(false)
-        }
-      >
-        <ResidentForm
-          onSubmit={(data) => {
-            addResident({
-              ...data,
-              id: Date.now(),
-            });
-
-            setOpenModal(false);
-          }}
-          onClose={() =>
-            setOpenModal(false)
-          }
-        />
+      <Modal open={openModal} title="Add Resident" onClose={() => setOpenModal(false)}>
+        <ResidentForm onSubmit={handleAdd} onClose={() => setOpenModal(false)} />
       </Modal>
-
-      {/* Edit */}
 
       <Modal
         open={editModal}
@@ -171,15 +124,7 @@ const Residents = () => {
       >
         <ResidentForm
           initialData={editingResident}
-          onSubmit={(data) => {
-            updateResident(
-              editingResident.id,
-              data
-            );
-
-            setEditModal(false);
-            setEditingResident(null);
-          }}
+          onSubmit={handleEdit}
           onClose={() => {
             setEditModal(false);
             setEditingResident(null);
@@ -187,30 +132,18 @@ const Residents = () => {
         />
       </Modal>
 
-      {/* Details */}
-
       <ResidentDetails
         resident={selectedResident}
-        onClose={() =>
-          setSelectedResident(null)
-        }
+        onClose={() => setSelectedResident(null)}
       />
-
-      {/* Delete */}
 
       <ConfirmDialog
         open={!!deleteResident}
-        title="Delete Resident"
-        message={`Are you sure you want to delete ${deleteResident?.name}?`}
-        confirmText="Delete"
-        onCancel={() =>
-          setDeleteResident(null)
-        }
-        onConfirm={() => {
-          removeResident(deleteResident.id);
-
-          setDeleteResident(null);
-        }}
+        title="Move Out Resident"
+        message={`Move out ${deleteResident?.name}? They will leave their current flat.`}
+        confirmText="Move Out"
+        onCancel={() => setDeleteResident(null)}
+        onConfirm={handleMoveOut}
       />
     </Layout>
   );

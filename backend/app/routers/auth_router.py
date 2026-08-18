@@ -7,6 +7,7 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_admin, require_committee
 from app.models.auth import User
 from app.schemas.auth_schema import (
+    ChangePasswordRequest,
     CreateCommitteeRequest,
     CreateCommitteeResponse,
     ForgotPasswordRequest,
@@ -129,6 +130,18 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db
 def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db), redis=Depends(get_redis)):
     auth_service.complete_password_reset(db, redis, payload.token, payload.new_password)
     return success_response(message="Password reset successfully. Please log in.")
+
+
+@router.post("/change-password")
+def change_password(
+    payload: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    auth_service.change_password(
+        db, current_user, payload.current_password, payload.new_password
+    )
+    return success_response(message="Password changed successfully. Please log in again.")
 
 
 @router.get("/me")

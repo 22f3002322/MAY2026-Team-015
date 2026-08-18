@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 import Layout from "../../components/layout/Layout";
 
@@ -13,72 +13,83 @@ import BookingTrendChart from "../../components/bookings/BookingTrendChart";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 import useBookingStore from "../../store/bookingStore";
+import { BOOKING_STATUS, labelFor } from "../../utils/adminMaps";
 
 const FacilityBookings = () => {
   const bookings = useBookingStore((state) => state.bookings);
   const fetchBookings = useBookingStore((state) => state.fetchBookings);
   const deleteBookingById = useBookingStore((state) => state.deleteBooking);
+  const approveBooking = useBookingStore((state) => state.approveBooking);
 
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
 
-  // Filters
   const [search, setSearch] = useState("");
   const [facility, setFacility] = useState("");
   const [status, setStatus] = useState("");
   const [date, setDate] = useState("");
-
   const [selectedBooking, setSelectedBooking] = useState(null);
-  const [deleteBooking, setDeleteBooking] = useState(null);
+  const [cancelBooking, setCancelBooking] = useState(null);
 
   const mappedBookings = useMemo(() => {
-    return bookings.map((b) => ({
-      id: b.booking_id || b.id,
-      bookingId: `BK-${b.booking_id || b.id}`,
-      facility: b.facility_name || b.facility || `Facility #${b.facility_id}`,
-      resident: b.resident_name || b.resident || `Resident #${b.resident_id}`,
-      flat: b.flat_number ? `Flat ${b.flat_number}` : (b.flat || "—"),
-      date: b.booking_date || b.date,
-      time: b.time_slot || b.time || `${b.start_time?.slice(0, 5)} - ${b.end_time?.slice(0, 5)}`,
-      purpose: b.description || b.purpose || "Facility Reservation",
-      status: b.status || "Pending",
-      createdAt: b.created_at || b.createdAt,
-    }));
+    return bookings.map((b) => {
+      const rawStatus = String(b.status || "booked").toLowerCase();
+      return {
+        id: b.booking_id || b.id,
+        bookingId: `BK-${b.booking_id || b.id}`,
+        facility: b.facility_name || b.facility || `Facility #${b.facility_id}`,
+        resident: b.resident_name || b.resident || `Resident #${b.resident_id}`,
+        flat: b.flat_number ? `Flat ${b.flat_number}` : b.flat || "—",
+        date: b.booking_date || b.date,
+        time:
+          b.time_slot ||
+          b.time ||
+          `${String(b.start_time || "").slice(0, 5)} - ${String(b.end_time || "").slice(0, 5)}`,
+        purpose: b.description || b.purpose || "Facility Reservation",
+        status: rawStatus,
+        statusLabel: labelFor(BOOKING_STATUS, rawStatus) || rawStatus,
+        createdAt: b.created_at || b.createdAt,
+      };
+    });
   }, [bookings]);
 
   const filteredBookings = useMemo(() => {
     return mappedBookings.filter((booking) => {
+      const q = search.toLowerCase();
       const matchesSearch =
-        (booking.resident || "").toLowerCase().includes(search.toLowerCase()) ||
-        (booking.flat || "").toLowerCase().includes(search.toLowerCase()) ||
-        (booking.facility || "").toLowerCase().includes(search.toLowerCase()) ||
-        (booking.bookingId || "").toLowerCase().includes(search.toLowerCase());
+        String(booking.resident || "").toLowerCase().includes(q) ||
+        String(booking.flat || "").toLowerCase().includes(q) ||
+        String(booking.facility || "").toLowerCase().includes(q) ||
+        String(booking.bookingId || "").toLowerCase().includes(q);
 
-      const matchesFacility =
-        facility === "" || booking.facility === facility;
-
-      const matchesStatus =
-        status === "" || booking.status === status;
-
-      const matchesDate =
-        date === "" ||
-        booking.date ===
-          new Date(date).toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          });
+      const matchesFacility = facility === "" || booking.facility === facility;
+      const matchesStatus = status === "" || booking.status === status;
+      const matchesDate = date === "" || booking.date === date;
 
       return matchesSearch && matchesFacility && matchesStatus && matchesDate;
     });
   }, [mappedBookings, search, facility, status, date]);
 
+  const handleApprove = async (row) => {
+    const res = await approveBooking(row.id);
+    if (res.success) toast.success("Booking approved.");
+    else toast.error(res.message || "Approve failed.");
+  };
+
+  const handleCancel = async () => {
+    if (!cancelBooking) return;
+    const res = await deleteBookingById(cancelBooking.id);
+    if (res.success) {
+      toast.success("Booking cancelled.");
+      setCancelBooking(null);
+    } else {
+      toast.error(res.message || "Cancel failed.");
+    }
+  };
+
   return (
-    <Layout
-      title="Facility Booking Management"
-      breadcrumb={["Home", "Facility Booking"]}
-    >
+    <Layout title="Facility Booking Management" breadcrumb={["Home", "Facility Booking"]}>
       <BookingStats />
 
       <div className="mb-6 grid gap-6 xl:grid-cols-2">
@@ -100,25 +111,19 @@ const FacilityBookings = () => {
       <BookingTable
         bookings={filteredBookings}
         onView={setSelectedBooking}
-        onDelete={setDeleteBooking}
+        onApprove={handleApprove}
+        onDelete={setCancelBooking}
       />
 
-      <BookingDetails
-        booking={selectedBooking}
-        onClose={() => setSelectedBooking(null)}
-      />
+      <BookingDetails booking={selectedBooking} onClose={() => setSelectedBooking(null)} />
 
       <ConfirmDialog
-        open={!!deleteBooking}
+        open={!!cancelBooking}
         title="Cancel Reservation"
-        message={`Are you sure you want to cancel booking ${deleteBooking?.bookingId}?`}
+        message={`Cancel booking ${cancelBooking?.bookingId}?`}
         confirmText="Cancel Booking"
-        onCancel={() => setDeleteBooking(null)}
-        onConfirm={() => {
-          deleteBookingById(deleteBooking.id);
-          setDeleteBooking(null);
-          toast.success("Booking cancelled.");
-        }}
+        onCancel={() => setCancelBooking(null)}
+        onConfirm={handleCancel}
       />
     </Layout>
   );

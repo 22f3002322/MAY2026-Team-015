@@ -1,312 +1,129 @@
 import { useState } from "react";
+import { toast } from "sonner";
 
 import Input from "../ui/Input";
 import Button from "../ui/Button";
-
 import useNoticeStore from "../../store/noticeStore";
-import { toast } from "sonner";
+import { NOTICE_PRIORITY } from "../../utils/adminMaps";
 
-const NoticeForm = ({
-  initialData = null,
-  onClose,
-}) => {
-  const addNotice = useNoticeStore(
-    (state) => state.addNotice
-  );
+const NoticeForm = ({ initialData = null, onClose }) => {
+  const addNotice = useNoticeStore((state) => state.addNotice);
+  const updateNotice = useNoticeStore((state) => state.updateNotice);
 
-  const updateNotice = useNoticeStore(
-    (state) => state.updateNotice
-  );
-
-  const [form, setForm] = useState(
-    initialData || {
-      title: "",
-      category: "General",
-      priority: "Medium",
-      status: "Published",
-      author: "",
-      publishDate: "",
-      expiryDate: "",
-      description: "",
-    }
-  );
-
+  const [form, setForm] = useState({
+    title: initialData?.title || "",
+    priority: initialData?.priority || "Normal",
+    status: initialData?.status || "Published",
+    expiryDate: initialData?.expiryDate || "",
+    description: initialData?.description || "",
+  });
   const [errors, setErrors] = useState({});
-
-  const today = new Date()
-    .toISOString()
-    .split("T")[0];
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (field, value) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-
-    setErrors((prev) => ({
-      ...prev,
-      [field]: "",
-    }));
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  const validate = () => {
-    const newErrors = {};
-
-    if (!form.title.trim())
-      newErrors.title =
-        "Title is required.";
-
-    if (!form.author.trim())
-      newErrors.author =
-        "Author is required.";
-
-    if (!form.publishDate)
-      newErrors.publishDate =
-        "Publish date is required.";
-
-    if (!form.expiryDate)
-      newErrors.expiryDate =
-        "Expiry date is required.";
-
-    if (
-      form.publishDate &&
-      form.expiryDate &&
-      form.expiryDate < form.publishDate
-    ) {
-      newErrors.expiryDate =
-        "Expiry date cannot be before publish date.";
-    }
-
-    if (!form.description.trim())
-      newErrors.description =
-        "Description is required.";
-
-    return newErrors;
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const validation = validate();
-
-    if (Object.keys(validation).length) {
-      setErrors(validation);
+    const newErrors = {};
+    if (!form.title.trim()) newErrors.title = "Title is required.";
+    if (!form.description.trim()) newErrors.description = "Description is required.";
+    if (Object.keys(newErrors).length) {
+      setErrors(newErrors);
       return;
     }
 
-    if (initialData) {
-      updateNotice({
-        ...initialData,
-        ...form,
-        updatedAt:
-          new Date().toISOString(),
-      });
-      toast.success('Notice updated successfully!');
-    } else {
-      addNotice(form);
-      toast.success('Notice published successfully!');
+    setSubmitting(true);
+    try {
+      if (initialData) {
+        const res = await updateNotice({ ...initialData, ...form });
+        if (res?.success === false) {
+          toast.error(res.message || "Update failed.");
+          return;
+        }
+        toast.success("Notice updated.");
+      } else {
+        const res = await addNotice(form);
+        if (res?.success === false) {
+          toast.error(res.message || "Publish failed.");
+          return;
+        }
+        toast.success("Notice published.");
+      }
+      onClose();
+    } finally {
+      setSubmitting(false);
     }
-
-    onClose();
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-6"
-    >
-      <Input label="Notice Title"
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <Input
+        label="Notice Title"
         value={form.title}
         error={errors.title}
-        placeholder="Enter Notice Title..." onChange={(e) =>
-          handleChange(
-            "title",
-            e.target.value
-          )
-        }
+        placeholder="Enter Notice Title..."
+        onChange={(e) => handleChange("title", e.target.value)}
       />
 
       <div className="grid gap-5 md:grid-cols-2">
-        {/* Category */}
-
         <div>
-          <label className="mb-2 block text-sm font-medium">
-            Category
-          </label>
-
-          <select
-            value={form.category}
-            onChange={(e) =>
-              handleChange(
-                "category",
-                e.target.value
-              )
-            }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
-          >
-            <option>General</option>
-            <option>Maintenance</option>
-            <option>Meeting</option>
-            <option>Parking</option>
-            <option>Safety</option>
-            <option>Events</option>
-          </select>
-        </div>
-
-        {/* Priority */}
-
-        <div>
-          <label className="mb-2 block text-sm font-medium">
-            Priority
-          </label>
-
+          <label className="mb-2 block text-sm font-medium">Priority</label>
           <select
             value={form.priority}
-            onChange={(e) =>
-              handleChange(
-                "priority",
-                e.target.value
-              )
-            }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            onChange={(e) => handleChange("priority", e.target.value)}
+            className="h-14 w-full rounded-xl border border-slate-300 px-4"
           >
-            <option>High</option>
-            <option>Medium</option>
-            <option>Low</option>
+            {NOTICE_PRIORITY.map((o) => (
+              <option key={o.value} value={o.label}>
+                {o.label}
+              </option>
+            ))}
           </select>
         </div>
 
-        {/* Status */}
-
         <div>
-          <label className="mb-2 block text-sm font-medium">
-            Status
-          </label>
-
+          <label className="mb-2 block text-sm font-medium">Status</label>
           <select
             value={form.status}
-            onChange={(e) =>
-              handleChange(
-                "status",
-                e.target.value
-              )
-            }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
+            onChange={(e) => handleChange("status", e.target.value)}
+            className="h-14 w-full rounded-xl border border-slate-300 px-4"
           >
-            <option>Published</option>
-            <option>Draft</option>
+            <option value="Published">Published</option>
+            <option value="Draft">Draft</option>
           </select>
-        </div>
-
-        <Input label="Author"
-          value={form.author}
-          error={errors.author}
-          placeholder="Enter Author..." onChange={(e) =>
-            handleChange(
-              "author",
-              e.target.value
-            )
-          }
-        />
-
-        {/* Publish Date */}
-
-        <div>
-          <label className="mb-2 block text-sm font-medium">
-            Publish Date
-          </label>
-
-          <input
-            type="date"
-            min={today}
-            value={form.publishDate}
-            onChange={(e) =>
-              handleChange(
-                "publishDate",
-                e.target.value
-              )
-            }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
-          />
-
-          {errors.publishDate && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.publishDate}
-            </p>
-          )}
-        </div>
-
-        {/* Expiry Date */}
-
-        <div>
-          <label className="mb-2 block text-sm font-medium">
-            Expiry Date
-          </label>
-
-          <input
-            type="date"
-            min={
-              form.publishDate ||
-              today
-            }
-            value={form.expiryDate}
-            onChange={(e) =>
-              handleChange(
-                "expiryDate",
-                e.target.value
-              )
-            }
-            className="h-14 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
-          />
-
-          {errors.expiryDate && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.expiryDate}
-            </p>
-          )}
         </div>
       </div>
 
-      {/* Description */}
+      <Input
+        label="Expiry Date (optional)"
+        type="date"
+        value={form.expiryDate}
+        onChange={(e) => handleChange("expiryDate", e.target.value)}
+      />
 
       <div>
-        <label className="mb-2 block text-sm font-medium">
-          Description
-        </label>
-
+        <label className="mb-2 block text-sm font-medium">Description</label>
         <textarea
-          rows={6}
           value={form.description}
-          onChange={(e) =>
-            handleChange(
-              "description",
-              e.target.value
-            )
-          }
-          placeholder="Enter notice description..."
-          className="w-full rounded-xl border border-slate-300 p-4 outline-none focus:border-indigo-600"
+          onChange={(e) => handleChange("description", e.target.value)}
+          rows={4}
+          className="w-full rounded-xl border border-slate-300 px-4 py-3"
+          placeholder="Notice details..."
         />
-
         {errors.description && (
-          <p className="mt-1 text-sm text-red-600">
-            {errors.description}
-          </p>
+          <p className="mt-1 text-sm text-red-500">{errors.description}</p>
         )}
       </div>
 
       <div className="flex justify-end gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onClose}
-        >
+        <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
-
-        <Button type="submit">
-          {initialData
-            ? "Update Notice"
-            : "Publish Notice"}
+        <Button type="submit" disabled={submitting}>
+          {initialData ? "Update Notice" : "Publish Notice"}
         </Button>
       </div>
     </form>

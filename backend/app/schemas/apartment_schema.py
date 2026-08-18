@@ -51,6 +51,7 @@ class FlatOut(BaseModel):
     floor_number: Optional[int] = None
     flat_type: Optional[str] = None
     occupancy_status: str
+    block_name: Optional[str] = None
 
 
 class ResidentSummaryOut(BaseModel):
@@ -105,6 +106,7 @@ class ResidentDirectoryOut(BaseModel):
     flat_number: Optional[str] = None
     block_name: Optional[str] = None
     occupation: Optional[str] = None
+    occupancy_type: Optional[str] = None  # Owner | Rental from current occupancy
     emergency_contact: Optional[str] = None
     alternate_phone: Optional[str] = None
 

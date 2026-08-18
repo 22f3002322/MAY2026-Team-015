@@ -93,14 +93,27 @@ const useBookingStore = create(
 
       deleteBooking: async (id) => {
         try {
-          // Backend booking cancel is done via patch status
-          const res = await facilityApi.updateBooking(id, { status: "Cancelled" });
+          const res = await facilityApi.updateBooking(id, { status: "cancelled" });
           if (res && res.success) {
             await get().fetchBookings();
             return { success: true };
           }
+          return { success: false, message: res?.message || "Cancel failed." };
         } catch (err) {
           console.warn("Cancel booking failed:", err.message);
+          return { success: false, message: err.message };
+        }
+      },
+
+      approveBooking: async (id) => {
+        try {
+          const res = await facilityApi.updateBooking(id, { status: "approved" });
+          if (res && res.success) {
+            await get().fetchBookings();
+            return { success: true };
+          }
+          return { success: false, message: res?.message || "Approve failed." };
+        } catch (err) {
           return { success: false, message: err.message };
         }
       },
