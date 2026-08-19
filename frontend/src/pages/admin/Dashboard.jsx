@@ -463,12 +463,6 @@ const Dashboard = () => {
               ? () => navigate("/admin/residents")
               : undefined
           }
-          onBookFacility={() =>
-            navigate("/admin/facilities")
-          }
-          onRaiseComplaint={() =>
-            navigate("/admin/complaints")
-          }
           onAddCommittee={
             isPureAdmin
               ? () => setCommitteeModal(true)
