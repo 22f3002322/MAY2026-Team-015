@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 import Layout from "../../components/layout/Layout";
 
@@ -16,89 +17,44 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import useNoticeStore from "../../store/noticeStore";
 
 const Notices = () => {
-  // Zustand Store
-
-  const notices = useNoticeStore(
-    (state) => state.notices
-  );
-
-  const deleteNoticeById = useNoticeStore(
-    (state) => state.deleteNotice
-  );
-
-  const fetchAnnouncements = useNoticeStore(
-    (state) => state.fetchAnnouncements
-  );
+  const notices = useNoticeStore((state) => state.notices);
+  const deleteNoticeById = useNoticeStore((state) => state.deleteNotice);
+  const fetchAnnouncements = useNoticeStore((state) => state.fetchAnnouncements);
 
   useEffect(() => {
     fetchAnnouncements();
   }, [fetchAnnouncements]);
 
-  // Filters
-
   const [search, setSearch] = useState("");
+  const [priority, setPriority] = useState("");
+  const [status, setStatus] = useState("");
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedNotice, setSelectedNotice] = useState(null);
+  const [editingNotice, setEditingNotice] = useState(null);
+  const [deleteNotice, setDeleteNotice] = useState(null);
 
-  const [category, setCategory] =
-    useState("");
+  const filteredNotices = notices.filter((notice) => {
+    const matchesSearch =
+      notice.title?.toLowerCase().includes(search.toLowerCase()) ||
+      notice.noticeId?.toLowerCase().includes(search.toLowerCase());
+    const matchesPriority = priority === "" || notice.priority === priority;
+    const matchesStatus = status === "" || notice.status === status;
+    return matchesSearch && matchesPriority && matchesStatus;
+  });
 
-  const [priority, setPriority] =
-    useState("");
-
-  const [status, setStatus] =
-    useState("");
-
-  // CRUD
-
-  const [openModal, setOpenModal] =
-    useState(false);
-
-  const [selectedNotice, setSelectedNotice] =
-    useState(null);
-
-  const [editingNotice, setEditingNotice] =
-    useState(null);
-
-  const [deleteNotice, setDeleteNotice] =
-    useState(null);
-
-  // Filter Notices
-
-  const filteredNotices = notices.filter(
-    (notice) => {
-      const matchesSearch =
-        notice.title
-          ?.toLowerCase()
-          .includes(search.toLowerCase()) ||
-        notice.noticeId
-          ?.toLowerCase()
-          .includes(search.toLowerCase());
-
-      const matchesCategory =
-        category === "" ||
-        notice.category === category;
-
-      const matchesPriority =
-        priority === "" ||
-        notice.priority === priority;
-
-      const matchesStatus =
-        status === "" ||
-        notice.status === status;
-
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesPriority &&
-        matchesStatus
-      );
+  const handleDelete = async () => {
+    if (!deleteNotice) return;
+    const res = await deleteNoticeById(deleteNotice.id);
+    if (res?.success === false) {
+      toast.error(res.message || "Delete failed.");
+      return;
     }
-  );
+    toast.success("Notice deleted.");
+    setDeleteNotice(null);
+  };
 
   return (
-    <Layout
-      title="Notice Board"
-      breadcrumb={["Home", "Notice Board"]}
-    >
+    <Layout title="Notice Board" breadcrumb={["Home", "Notice Board"]}>
       <NoticeStats />
 
       <div className="mb-6 grid gap-6 xl:grid-cols-2">
@@ -109,8 +65,6 @@ const Notices = () => {
       <NoticeFilters
         search={search}
         setSearch={setSearch}
-        category={category}
-        setCategory={setCategory}
         priority={priority}
         setPriority={setPriority}
         status={status}
@@ -131,15 +85,9 @@ const Notices = () => {
         onDelete={setDeleteNotice}
       />
 
-      {/* Create / Edit */}
-
       <Modal
         open={openModal}
-        title={
-          editingNotice
-            ? "Edit Notice"
-            : "Publish Notice"
-        }
+        title={editingNotice ? "Edit Notice" : "Publish Notice"}
         onClose={() => {
           setOpenModal(false);
           setEditingNotice(null);
@@ -154,30 +102,15 @@ const Notices = () => {
         />
       </Modal>
 
-      {/* Details */}
-
-      <NoticeDetails
-        notice={selectedNotice}
-        onClose={() =>
-          setSelectedNotice(null)
-        }
-      />
-
-      {/* Delete */}
+      <NoticeDetails notice={selectedNotice} onClose={() => setSelectedNotice(null)} />
 
       <ConfirmDialog
         open={!!deleteNotice}
         title="Delete Notice"
         message={`Delete "${deleteNotice?.title}"?`}
         confirmText="Delete"
-        onCancel={() =>
-          setDeleteNotice(null)
-        }
-        onConfirm={() => {
-          deleteNoticeById(deleteNotice.id);
-
-          setDeleteNotice(null);
-        }}
+        onCancel={() => setDeleteNotice(null)}
+        onConfirm={handleDelete}
       />
     </Layout>
   );

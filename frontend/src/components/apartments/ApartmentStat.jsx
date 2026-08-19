@@ -6,27 +6,16 @@ import {
 } from "lucide-react";
 
 import Card from "../ui/Card";
-
 import useApartmentStore from "../../store/apartmentStore";
 
 const ApartmentStats = () => {
-  const apartments = useApartmentStore(
-    (state) => state.apartments
-  );
+  const flats = useApartmentStore((state) => state.flats);
+  const blocks = useApartmentStore((state) => state.blocks);
 
-  const totalFlats = apartments.length;
-
-  const occupied = apartments.filter(
-    (flat) => flat.occupancy === "Occupied"
-  ).length;
-
-  const vacant = apartments.filter(
-    (flat) => flat.occupancy === "Vacant"
-  ).length;
-
-  const totalBlocks = new Set(
-    apartments.map((flat) => flat.block)
-  ).size;
+  const totalFlats = flats.length;
+  const occupied = flats.filter((f) => f.occupancy_status === "occupied").length;
+  const vacant = flats.filter((f) => f.occupancy_status === "vacant").length;
+  const totalBlocks = blocks.length || new Set(flats.map((f) => f.block_id)).size;
 
   const stats = [
     {
@@ -59,29 +48,16 @@ const ApartmentStats = () => {
     <div className="mb-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((item) => {
         const Icon = item.icon;
-
         return (
           <Card key={item.title}>
             <div className="flex items-center justify-between">
-
               <div>
-
-                <p className="text-sm text-slate-500">
-                  {item.title}
-                </p>
-
-                <h2 className="mt-2 text-3xl font-bold text-slate-800">
-                  {item.value}
-                </h2>
-
+                <p className="text-sm text-slate-500">{item.title}</p>
+                <h2 className="mt-2 text-3xl font-bold text-slate-800 dark:text-slate-100">{item.value}</h2>
               </div>
-
-              <div
-                className={`flex h-14 w-14 items-center justify-center rounded-xl ${item.color}`}
-              >
+              <div className={`flex h-14 w-14 items-center justify-center rounded-xl ${item.color}`}>
                 <Icon size={28} />
               </div>
-
             </div>
           </Card>
         );

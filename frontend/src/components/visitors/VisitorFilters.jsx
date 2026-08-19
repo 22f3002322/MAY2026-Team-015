@@ -55,21 +55,23 @@ const VisitorFilters = ({
             className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-4 outline-none transition focus:border-indigo-600"
           >
             <option value="">All Status</option>
-            <option>Checked In</option>
-            <option>Checked Out</option>
+            <option value="Checked In">Checked In</option>
+            <option value="Completed">Completed</option>
           </select>
         </div>
 
         {/* Button */}
 
         <div className="flex h-full items-end">
-          <Button
-            className="h-14 w-full"
-            onClick={onRegisterVisitor}
-          >
-            <Plus size={18} />
-            Register Visitor
-          </Button>
+          {typeof onRegisterVisitor === "function" && (
+            <Button
+              className="h-14 w-full"
+              onClick={onRegisterVisitor}
+            >
+              <Plus size={18} />
+              Register Visitor
+            </Button>
+          )}
         </div>
 
       </div>

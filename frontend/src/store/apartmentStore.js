@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-
 import apartmentApi from "../api/apartmentApi";
 
 const useApartmentStore = create(
@@ -10,7 +9,7 @@ const useApartmentStore = create(
       apartments: [],
       blocks: [],
       flats: [],
-      residents: [],       // backend resident directory
+      residents: [],        // backend resident directory
       occupancyHistory: {}, // keyed by resident_id
       loading: false,
 
@@ -88,11 +87,15 @@ const useApartmentStore = create(
 
       createFlat: async (flatData) => {
         try {
+          const blockId = Number(flatData.block_id);
+          if (!blockId) {
+            return { success: false, message: "Please select a block." };
+          }
           const res = await apartmentApi.createFlat({
-            block_id:    Number(flatData.block_id || 1),
+            block_id: blockId,
             flat_number: flatData.flat_number || flatData.number,
-            floor_number: Number(flatData.floor_number || 1),
-            flat_type:   flatData.flat_type || "2BHK",
+            floor_number: Number(flatData.floor_number || flatData.floor || 1),
+            flat_type: flatData.flat_type || "2BHK",
           });
           if (res && res.success) {
             get().fetchFlats();
@@ -117,11 +120,29 @@ const useApartmentStore = create(
         }
       },
 
+      deleteFlat: async (flatId) => {
+        try {
+          const res = await apartmentApi.deleteFlat(flatId);
+          if (res && res.success) {
+            get().fetchFlats();
+            return { success: true, message: res.message };
+          }
+          return { success: false, message: res?.message || "Delete failed." };
+        } catch (err) {
+          return { success: false, message: err.message || "Failed to delete flat." };
+        }
+      },
+
       // ── Resident Directory (Admin / Committee) ────────────────────────────
+      // Defaults to current_only: true so the owner map only reflects
+      // residents who actually live in the flat right now.
       fetchResidents: async (params = {}) => {
         set({ loading: true });
         try {
-          const res = await apartmentApi.getResidents(params);
+          const res = await apartmentApi.getResidents({
+            current_only: true,
+            ...params,
+          });
           if (res && res.success && Array.isArray(res.data)) {
             set({ residents: res.data, loading: false });
             return { success: true, data: res.data };
@@ -138,7 +159,6 @@ const useApartmentStore = create(
         try {
           const res = await apartmentApi.updateResident(residentId, payload);
           if (res && res.success) {
-            // refresh directory
             get().fetchResidents();
             return { success: true, data: res.data, message: res.message };
           }

@@ -27,7 +27,6 @@ const Polls = () => {
 
   // Filters
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
 
   // CRUD
@@ -56,15 +55,11 @@ const Polls = () => {
         (poll.question || "").toLowerCase().includes(search.toLowerCase()) ||
         (poll.pollId || "").toLowerCase().includes(search.toLowerCase());
 
-      const matchesCategory =
-        category === "" || poll.category === category;
+      const matchesStatus = status === "" || poll.status === status;
 
-      const matchesStatus =
-        status === "" || poll.status === status;
-
-      return matchesSearch && matchesCategory && matchesStatus;
+      return matchesSearch && matchesStatus;
     });
-  }, [mappedPolls, search, category, status]);
+  }, [mappedPolls, search, status]);
 
   return (
     <Layout
@@ -81,8 +76,6 @@ const Polls = () => {
       <PollFilters
         search={search}
         setSearch={setSearch}
-        category={category}
-        setCategory={setCategory}
         status={status}
         setStatus={setStatus}
         onCreate={() => {

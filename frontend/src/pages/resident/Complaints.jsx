@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 
 import Layout from "../../components/layout/Layout";
@@ -14,13 +14,16 @@ import Modal from "../../components/ui/Modal";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 import useComplaintStore from "../../store/complaintStore";
-import useResidentStore from "../../store/residentStore";
 import useAuthStore from "../../store/authStore";
 
 const Complaints = () => {
   // Zustand Store
   const complaints = useComplaintStore(
     (state) => state.complaints
+  );
+
+  const fetchComplaints = useComplaintStore(
+    (state) => state.fetchComplaints
   );
   
   const { user, isVerified } = useAuthStore();
@@ -37,7 +40,9 @@ const Complaints = () => {
     (state) => state.deleteComplaint
   );
 
-  // Filters
+  useEffect(() => {
+    fetchComplaints();
+  }, [fetchComplaints]);
 
   const [search, setSearch] =
     useState("");
@@ -185,15 +190,14 @@ const Complaints = () => {
         }
       >
         <ComplaintForm
-          onSubmit={(data) => {
-            addComplaint({
-              ...data,
-              resident: user ? user.name : "Current Resident",
-              flat: user ? user.flat : "101",
-            });
-            toast.success("Complaint submitted successfully!");
-
-            setOpenModal(false);
+          onSubmit={async (data) => {
+            const res = await addComplaint(data);
+            if (res?.success) {
+              toast.success(res.message || "Complaint submitted successfully!");
+              setOpenModal(false);
+            } else {
+              toast.error(res?.message || "Failed to submit complaint.");
+            }
           }}
           onClose={() =>
             setOpenModal(false)

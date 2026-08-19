@@ -103,43 +103,30 @@ const VisitorTable = ({
       header: "Actions",
       render: (row) => (
         <div className="flex gap-2">
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onView(row)}
-          >
-            <Eye size={16} />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onEdit(row)}
-          >
-            <Pencil size={16} />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onCheck(row)}
-          >
-            {row.status === "Checked In" ? (
-              <LogOut size={16} />
-            ) : (
-              <LogIn size={16} />
-            )}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(row)}
-          >
-            <Trash2 size={16} />
-          </Button>
-
+          {typeof onView === "function" && (
+            <Button variant="ghost" size="sm" onClick={() => onView(row)}>
+              <Eye size={16} />
+            </Button>
+          )}
+          {typeof onEdit === "function" && (
+            <Button variant="ghost" size="sm" onClick={() => onEdit(row)}>
+              <Pencil size={16} />
+            </Button>
+          )}
+          {typeof onCheck === "function" && (
+            <Button variant="ghost" size="sm" onClick={() => onCheck(row)}>
+              {row.status === "Checked In" ? (
+                <LogOut size={16} />
+              ) : (
+                <LogIn size={16} />
+              )}
+            </Button>
+          )}
+          {typeof onDelete === "function" && (
+            <Button variant="ghost" size="sm" onClick={() => onDelete(row)}>
+              <Trash2 size={16} />
+            </Button>
+          )}
         </div>
       ),
     },

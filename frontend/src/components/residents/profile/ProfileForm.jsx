@@ -94,8 +94,8 @@ const ProfileForm = ({
           type="tel"
           name="phone"
           value={formData.phone}
-          disabled
-          className={`h-12 w-full rounded-xl border border-slate-300 px-4 outline-none ${disabledClass}`}
+          onChange={handleChange}
+          className="h-12 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-indigo-600"
         />
       </div>
 

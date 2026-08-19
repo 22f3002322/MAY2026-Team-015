@@ -7,6 +7,15 @@ export const maintenanceApi = {
     return apiRequest("/api/v1/maintenance/tasks", { method: "GET" });
   },
 
+  // GET /api/v1/maintenance-staff — Admin/Committee directory
+  getStaffDirectory: async (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.is_available != null) query.append("is_available", params.is_available);
+    if (params.specialization) query.append("specialization", params.specialization);
+    const qs = query.toString() ? `?${query.toString()}` : "";
+    return apiRequest(`/api/v1/maintenance-staff${qs}`, { method: "GET" });
+  },
+
   // GET /api/v1/maintenance/tasks/{task_id}
   getTask: async (taskId) => {
     return apiRequest(`/api/v1/maintenance/tasks/${taskId}`, { method: "GET" });

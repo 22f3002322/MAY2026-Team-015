@@ -1,17 +1,51 @@
+import complaintApi from "../api/complaintApi";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import complaintApi from "../api/complaintApi";
+import { COMPLAINT_PRIORITY, COMPLAINT_STATUS, labelFor } from "../utils/adminMaps";
+
+const mapComplaint = (c) => {
+  if (!c) return null;
+  const id = c.complaint_id || c.id;
+  const assignments = Array.isArray(c.assignments) ? c.assignments : [];
+  const latestAssignment = [...assignments].sort(
+    (a, b) => new Date(b.assigned_at || 0) - new Date(a.assigned_at || 0)
+  )[0];
+  const assignedStaffId = latestAssignment?.assigned_to;
+
+  return {
+    ...c,
+    id,
+    complaint_id: id,
+    ticket: `CMP-${id}`,
+    title: (c.description || "").slice(0, 60) || c.title || "Complaint",
+    description: c.description || "",
+    category: c.category_name || c.category || "—",
+    category_id: c.category_id,
+    resident: c.resident_name || c.resident || `Resident #${c.resident_id}`,
+    flat: c.flat_number || c.flat || "—",
+    priority: labelFor(COMPLAINT_PRIORITY, c.priority) || c.priority,
+    priorityValue: String(c.priority || "medium").toLowerCase(),
+    status: labelFor(COMPLAINT_STATUS, c.status) || c.status,
+    statusValue: String(c.status || "open").toLowerCase(),
+    assignedTo: assignedStaffId != null ? `Staff #${assignedStaffId}` : undefined,
+    createdAt: c.created_at
+      ? new Date(c.created_at).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : "",
+  };
+};
 
 const useComplaintStore = create(
   persist(
     (set, get) => ({
       complaints: [],
-      categories: [],       // for complaint filing (public endpoint)
-      adminCategories: [],  // for admin/committee management
+      categories: [],
+      adminCategories: [],
       loading: false,
 
-      // ── Categories ─────────────────────────────────────────────────────
-      // Public — any logged-in user can read; used to populate category dropdown
       fetchCategories: async () => {
         try {
           const res = await complaintApi.getCategories();
@@ -25,7 +59,6 @@ const useComplaintStore = create(
         return { success: false, data: get().categories };
       },
 
-      // Admin/Committee categories management
       fetchAdminCategories: async () => {
         try {
           const res = await complaintApi.getAdminCategories();
@@ -52,13 +85,12 @@ const useComplaintStore = create(
         }
       },
 
-      // ── Complaints ─────────────────────────────────────────────────────
       fetchComplaints: async () => {
         set({ loading: true });
         try {
           const res = await complaintApi.getComplaints();
           if (res && res.success && Array.isArray(res.data)) {
-            set({ complaints: res.data, loading: false });
+            set({ complaints: res.data.map(mapComplaint), loading: false });
             return { success: true, data: res.data };
           }
         } catch (err) {
@@ -68,13 +100,11 @@ const useComplaintStore = create(
         return { success: false, data: get().complaints };
       },
 
-      // Create (verified Resident) — category_id required
       addComplaint: async (complaint) => {
         try {
           const res = await complaintApi.createComplaint({
             category_id: complaint.category_id || 1,
-            title: complaint.title || complaint.subject || "Issue Report",
-            description: complaint.description || complaint.details || "",
+            description: complaint.description || complaint.details || complaint.title || "",
             priority: complaint.priority
               ? complaint.priority.toLowerCase()
               : "medium",
@@ -88,7 +118,7 @@ const useComplaintStore = create(
                 console.warn("Complaint image upload failed:", imgErr.message);
               }
             }
-            get().fetchComplaints();
+            await get().fetchComplaints();
             return { success: true, data: res.data, message: res.message };
           }
           return { success: false, message: res?.message || "Failed to file complaint." };
@@ -97,16 +127,21 @@ const useComplaintStore = create(
         }
       },
 
-      // Update (Resident: description/priority only; Admin/Committee: any field)
       updateComplaint: async (id, updatedData) => {
         try {
-          const res = await complaintApi.updateComplaint(id, updatedData);
+          const payload = { ...updatedData };
+          if (payload.status) {
+            payload.status = String(payload.status)
+              .toLowerCase()
+              .replace(/\s+/g, "_");
+          }
+          if (payload.priority) {
+            payload.priority = String(payload.priority).toLowerCase();
+          }
+          delete payload.remarks;
+          const res = await complaintApi.updateComplaint(id, payload);
           if (res && res.success) {
-            set((state) => ({
-              complaints: state.complaints.map((c) =>
-                (c.complaint_id || c.id) === id ? { ...c, ...res.data } : c
-              ),
-            }));
+            await get().fetchComplaints();
             return { success: true, data: res.data, message: res.message };
           }
           return { success: false, message: res?.message || "Update failed." };
@@ -115,20 +150,11 @@ const useComplaintStore = create(
         }
       },
 
-      // Admin/Committee — assign to maintenance staff
-      // backend creates a MaintenanceTask row automatically
       assignComplaint: async (id, staffId) => {
         try {
           const res = await complaintApi.assignComplaint(id, staffId);
           if (res && res.success) {
-            // Update local status immediately
-            set((state) => ({
-              complaints: state.complaints.map((c) =>
-                (c.complaint_id || c.id) === id
-                  ? { ...c, status: "assigned" }
-                  : c
-              ),
-            }));
+            await get().fetchComplaints();
             return { success: true, data: res.data, message: res.message };
           }
           return { success: false, message: res?.message || "Assignment failed." };
@@ -137,7 +163,6 @@ const useComplaintStore = create(
         }
       },
 
-      // Add feedback comment (optional rating, only accepted after resolved)
       addComment: async (complaintId, feedback, rating = null) => {
         try {
           const res = await complaintApi.addComment(complaintId, feedback, rating);
@@ -151,7 +176,6 @@ const useComplaintStore = create(
         }
       },
 
-      // Selectors
       getComplaintById: (id) =>
         get().complaints.find((c) => c.complaint_id === id || c.id === id),
 
@@ -160,12 +184,7 @@ const useComplaintStore = create(
           (c) => c.resident_id === residentId || c.resident === residentId
         ),
 
-      deleteComplaint: (id) =>
-        set((state) => ({
-          complaints: state.complaints.filter(
-            (c) => c.complaint_id !== id && c.id !== id
-          ),
-        })),
+      deleteComplaint: () => ({ success: false, message: "Complaint delete is not supported." }),
 
       resetComplaints: () => set({ complaints: [], categories: [], adminCategories: [] }),
     }),

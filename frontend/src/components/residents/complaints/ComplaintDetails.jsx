@@ -1,5 +1,6 @@
 import Modal from "../../ui/Modal";
 import Badge from "../../ui/Badge";
+import { mediaUrl } from "../../../utils/mediaUrl";
 
 const ComplaintDetails = ({
   complaint,
@@ -126,7 +127,7 @@ const ComplaintDetails = ({
               {(complaint.images || complaint.image_urls || []).map((img, idx) => (
                 <img
                   key={idx}
-                  src={typeof img === "string" ? img : img.image_url}
+                  src={mediaUrl(typeof img === "string" ? img : (img.url || img.image_url))}
                   alt={`Attachment ${idx + 1}`}
                   className="rounded-xl border border-slate-200 dark:border-slate-800 object-cover w-full h-36"
                 />

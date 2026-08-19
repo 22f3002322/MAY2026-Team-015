@@ -20,7 +20,6 @@ const Billing = () => {
   const bills = useBillingStore((state) => state.bills);
   const fetchBills = useBillingStore((state) => state.fetchBills);
   const fetchBillingSummary = useBillingStore((state) => state.fetchBillingSummary);
-  const deleteBillById = useBillingStore((state) => state.deleteBill);
 
   useEffect(() => {
     fetchBills();
@@ -49,7 +48,11 @@ const Billing = () => {
       amount: Number(b.total_amount || b.amount || 0).toLocaleString(),
       dueDate: b.due_date || b.dueDate || "N/A",
       paidDate: b.paid_at ? new Date(b.paid_at).toLocaleDateString() : (b.paidDate || "-"),
-      status: b.status || "Pending",
+      status: String(b.status || "unpaid").toLowerCase() === "paid" ? "Paid" : "Unpaid",
+      flat_id: b.flat_id,
+      billing_month: b.billing_month,
+      due_date: b.due_date,
+      amountRaw: Number(b.amount || 0),
       items: b.items || [],
     }));
   }, [bills]);
@@ -142,15 +145,11 @@ const Billing = () => {
 
       <ConfirmDialog
         open={!!deleteBill}
-        title="Delete Bill"
-        message={`Are you sure you want to delete ${deleteBill?.billId}?`}
-        confirmText="Delete"
+        title="Delete not available"
+        message="Bill deletion is not supported by the API. Mark bills as paid instead."
+        confirmText="OK"
         onCancel={() => setDeleteBill(null)}
-        onConfirm={() => {
-          deleteBillById(deleteBill.id);
-          setDeleteBill(null);
-          toast.success("Bill deleted.");
-        }}
+        onConfirm={() => setDeleteBill(null)}
       />
     </Layout>
   );

@@ -56,6 +56,17 @@ export const authApi = {
     });
   },
 
+  // Authenticated change password
+  changePassword: async (currentPassword, newPassword) => {
+    return apiRequest("/api/v1/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+      }),
+    });
+  },
+
   // Admin registers committee member
   registerCommittee: async (payload) => {
     return apiRequest("/api/v1/auth/register-committee", {

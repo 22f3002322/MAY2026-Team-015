@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authApi } from "../api/authApi";
+import { mediaUrl } from "../utils/mediaUrl";
 
 export const mapBackendRoleToFrontend = (backendRole) => {
   if (!backendRole) return "resident";
@@ -82,7 +83,7 @@ const useAuthStore = create(
                     ? "security"
                     : null,
                   residentProfile: residentInfo,
-                  avatar: me.profile_image || null,
+                  avatar: mediaUrl(residentInfo.profile_image),
                 },
               });
             }
@@ -229,7 +230,7 @@ const useAuthStore = create(
                   ? "security"
                   : null,
                 residentProfile: residentInfo,
-                avatar: me.profile_image || null,
+                avatar: mediaUrl(residentInfo.profile_image),
               },
               role: mapBackendRoleToFrontend(me.role),
               backendRole: me.role,
