@@ -32,6 +32,8 @@ def _to_booking_out(booking) -> FacilityBookingOut:
     data.facility_name = booking.facility.facility_name if booking.facility else None
     if booking.resident and booking.resident.user:
         data.resident_name = booking.resident.user.full_name
+    if booking.resident and booking.resident.flat:          # NEW
+        data.flat_number = booking.resident.flat.flat_number  # NEW
     return data
 
 

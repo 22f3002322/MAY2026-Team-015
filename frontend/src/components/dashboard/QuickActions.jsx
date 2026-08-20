@@ -18,52 +18,21 @@ const QuickActions = ({
 }) => {
   const actions = [
     ...(onRaiseComplaint
-      ? [
-          {
-            title: "Raise Complaint",
-            icon: Plus,
-            onClick: onRaiseComplaint,
-          },
-        ]
+      ? [{ title: "Complaints Summary", icon: Plus, onClick: onRaiseComplaint }]
       : []),
     ...(onAddResident
-      ? [
-          {
-            title: "Add Resident",
-            icon: UserPlus,
-            onClick: onAddResident,
-          },
-        ]
+      ? [{ title: "Add Resident", icon: UserPlus, onClick: onAddResident }]
       : []),
     ...(onRegisterVisitor
-      ? [
-          {
-            title: "Register Visitor",
-            icon: UserRoundPlus,
-            onClick: onRegisterVisitor,
-          },
-        ]
+      ? [{ title: "Register Visitor", icon: UserRoundPlus, onClick: onRegisterVisitor }]
       : []),
     ...(onBookFacility
-      ? [
-          {
-            title: "Book Facility",
-            icon: CalendarPlus,
-            onClick: onBookFacility,
-          },
-        ]
+      ? [{ title: "Booked Facilities Summary", icon: CalendarPlus, onClick: onBookFacility }]
       : []),
     ...(onAddCommittee
-      ? [
-          {
-            title: "Add Committee",
-            icon: Shield,
-            onClick: onAddCommittee,
-            highlight: true,
-          },
-        ]
+      ? [{ title: "Add Committee", icon: Shield, onClick: onAddCommittee, highlight: true }]
       : []),
-  ];
+];
 
   return (
     <Card

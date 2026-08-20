@@ -31,27 +31,18 @@ const BillingRevenueChart = () => {
     (state) => state.bills
   );
 
-  const monthlyRevenue = months.map(
-    (month) => ({
-      month,
-      revenue: 0,
-    })
-  );
+  const monthlyRevenue = months.map((month) => ({ month, revenue: 0 }));
 
   bills.forEach((bill) => {
-    if (bill.status !== "Paid") return;
+    if (String(bill.status || "").toLowerCase() !== "paid") return;
 
-    const date =
-      bill.createdAt || bill.updatedAt;
+    const dateStr = bill.paid_at || bill.generated_at;   // was bill.createdAt || bill.updatedAt (neither exists)
+    if (!dateStr) return;
 
-    if (!date) return;
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return;
 
-    const monthIndex = new Date(
-      date
-    ).getMonth();
-
-    monthlyRevenue[monthIndex].revenue +=
-      Number(bill.amount || 0);
+    monthlyRevenue[date.getMonth()].revenue += Number(bill.amount || 0);
   });
 
   return (

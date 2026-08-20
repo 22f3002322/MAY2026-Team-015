@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   PieChart,
   Pie,
@@ -22,26 +23,36 @@ const BillingStatusChart = () => {
     (state) => state.bills
   );
 
-  const data = [
-    {
-      name: "Paid",
-      value: bills.filter(
-        (bill) => bill.status === "Paid"
-      ).length,
-    },
-    {
-      name: "Pending",
-      value: bills.filter(
-        (bill) => bill.status === "Pending"
-      ).length,
-    },
-    {
-      name: "Overdue",
-      value: bills.filter(
-        (bill) => bill.status === "Overdue"
-      ).length,
-    },
-  ].filter((item) => item.value > 0);
+  const data = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let paid = 0;
+    let pending = 0;
+    let overdue = 0;
+
+    bills.forEach((bill) => {
+      const status = String(bill.status || "").toLowerCase();
+
+      if (status === "paid") {
+        paid += 1;
+        return;
+      }
+
+      const due = bill.due_date ? new Date(bill.due_date) : null;
+      if (due && !Number.isNaN(due.getTime()) && due < today) {
+        overdue += 1;
+      } else {
+        pending += 1;
+      }
+    });
+
+    return [
+      { name: "Paid", value: paid },
+      { name: "Pending", value: pending },
+      { name: "Overdue", value: overdue },
+    ].filter((item) => item.value > 0);
+  }, [bills]);
 
   return (
     <Card>

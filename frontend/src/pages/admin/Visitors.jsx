@@ -33,20 +33,17 @@ const Visitors = () => {
       id: log.log_id || log.id,
       name: log.visitor_name || `Visitor #${log.visitor_id || log.log_id}`,
       phone: log.visitor_phone || "N/A",
+      resident: log.resident_name || `Resident #${log.resident_id}`,   // NEW
       flat: log.flat_number ? `Flat ${log.flat_number}` : `Flat #${log.flat_id || log.resident_id}`,
       purpose: log.visitor_type || "Guest",
       status: log.exit_time ? "Completed" : "Checked In",
       date: log.entry_time
-        ? new Date(log.entry_time).toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
+        ? new Date(log.entry_time).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
         : "N/A",
-      entryTime: log.entry_time
+      checkIn: log.entry_time                                          // renamed from entryTime
         ? new Date(log.entry_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         : "N/A",
-      exitTime: log.exit_time
+      checkOut: log.exit_time                                          // renamed from exitTime
         ? new Date(log.exit_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         : "N/A",
     }));
@@ -56,20 +53,13 @@ const Visitors = () => {
     return mappedVisitors.filter((visitor) => {
       const matchesSearch =
         (visitor.name || "").toLowerCase().includes(search.toLowerCase()) ||
+        (visitor.resident || "").toLowerCase().includes(search.toLowerCase()) ||  // NEW
         (visitor.flat || "").toLowerCase().includes(search.toLowerCase()) ||
         (visitor.phone || "").includes(search);
-
       const matchesStatus = status === "" || visitor.status === status;
-
       const matchesDate =
         date === "" ||
-        visitor.date ===
-          new Date(date).toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          });
-
+        visitor.date === new Date(date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
       return matchesSearch && matchesStatus && matchesDate;
     });
   }, [mappedVisitors, search, status, date]);

@@ -13,9 +13,13 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 import useApartmentStore from "../../store/apartmentStore";
 import useAuthStore from "../../store/authStore";
+import useResidentStore from "../../store/residentStore";   // NEW
 
-const mapFlatToRow = (flat, blocks) => {
+const mapFlatToRow = (flat, blocks, residentsByFlat = {}) => {
   const block = blocks.find((b) => b.block_id === flat.block_id);
+  const flatResidents = residentsByFlat[flat.flat_id] || [];
+  const ownerResident =
+    flatResidents.find((r) => r.occupancy === "Owner") || flatResidents[0];
   return {
     id: flat.flat_id,
     flat_id: flat.flat_id,
@@ -24,7 +28,7 @@ const mapFlatToRow = (flat, blocks) => {
     block_id: flat.block_id,
     floor: flat.floor_number,
     type: flat.flat_type,
-    owner: "—",
+    owner: ownerResident?.name || "—",
     occupancy: flat.occupancy_status === "occupied" ? "Occupied" : "Vacant",
     raw: flat,
   };
@@ -42,15 +46,30 @@ const Apartments = () => {
   const updateFlat = useApartmentStore((state) => state.updateFlat);
   const deleteFlat = useApartmentStore((state) => state.deleteFlat);
 
+  const residentsList = useResidentStore((state) => state.residents);          // NEW
+  const fetchResidentsList = useResidentStore((state) => state.fetchResidents); // NEW
+
   useEffect(() => {
     fetchBlocks();
     fetchFlats();
-  }, [fetchBlocks, fetchFlats]);
+    fetchResidentsList();   // NEW
+  }, [fetchBlocks, fetchFlats, fetchResidentsList]);
+
+  const residentsByFlat = useMemo(() => {                    // NEW
+    const map = {};
+    residentsList.forEach((r) => {
+      if (!r.flat_id) return;
+      if (!map[r.flat_id]) map[r.flat_id] = [];
+      map[r.flat_id].push(r);
+    });
+    return map;
+  }, [residentsList]);
 
   const apartments = useMemo(
-    () => flats.map((f) => mapFlatToRow(f, blocks)),
-    [flats, blocks]
+    () => flats.map((f) => mapFlatToRow(f, blocks, residentsByFlat)),  // residentsByFlat added
+    [flats, blocks, residentsByFlat]
   );
+
 
   const [search, setSearch] = useState("");
   const [block, setBlock] = useState("");

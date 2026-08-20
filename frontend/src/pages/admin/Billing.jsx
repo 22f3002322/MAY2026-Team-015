@@ -48,6 +48,7 @@ const Billing = () => {
       amount: Number(b.total_amount || b.amount || 0).toLocaleString(),
       dueDate: b.due_date || b.dueDate || "N/A",
       paidDate: b.paid_at ? new Date(b.paid_at).toLocaleDateString() : (b.paidDate || "-"),
+      paymentMethod: b.payment_method || undefined,   // NEW
       status: String(b.status || "unpaid").toLowerCase() === "paid" ? "Paid" : "Unpaid",
       flat_id: b.flat_id,
       billing_month: b.billing_month,

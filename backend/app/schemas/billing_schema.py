@@ -58,6 +58,8 @@ class MaintenanceBillOut(MaintenanceBillBase):
     items: list[BillItemOut] = []
     flat_number: Optional[str] = None
     block_name: Optional[str] = None
+    paid_at: Optional[datetime] = None        # NEW
+    payment_method: Optional[str] = None      # NEW
 
 
 class PaymentCreate(BaseModel):

@@ -23,30 +23,19 @@ const DAYS = [
 ];
 
 const VisitorTrendChart = () => {
-  const visitors = useVisitorStore(
-    (state) => state.visitors
-  );
+  const logs = useVisitorStore((state) => state.logs);   // was: state.visitors
 
   const dayCounts = new Array(7).fill(0);
 
-  visitors.forEach((visitor) => {
-    let date;
-
-    if (visitor.visitDate) {
-      date = new Date(visitor.visitDate);
-    } else if (visitor.createdAt) {
-      date = new Date(visitor.createdAt);
-    } else {
-      date = new Date();
-    }
-
+  logs.forEach((log) => {
+    const dateStr = log.entry_time || log.created_at;
+    if (!dateStr) return;
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return;
     dayCounts[date.getDay()]++;
   });
 
-  const data = DAYS.map((day, index) => ({
-    day,
-    visitors: dayCounts[index],
-  }));
+  const data = DAYS.map((day, index) => ({ day, visitors: dayCounts[index] }));
 
   return (
     <Card>

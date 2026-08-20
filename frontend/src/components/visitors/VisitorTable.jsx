@@ -62,11 +62,6 @@ const VisitorTable = ({
     },
 
     {
-      key: "vehicle",
-      header: "Vehicle",
-    },
-
-    {
       key: "time",
       header: "Visit Time",
       render: (row) => (

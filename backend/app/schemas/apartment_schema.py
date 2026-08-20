@@ -102,6 +102,7 @@ class ResidentDirectoryOut(BaseModel):
     email: str
     phone: Optional[str] = None
     is_verified: bool
+    is_active: bool = True          # NEW — powers the admin active/inactive toggle
     flat_id: Optional[int] = None
     flat_number: Optional[str] = None
     block_name: Optional[str] = None

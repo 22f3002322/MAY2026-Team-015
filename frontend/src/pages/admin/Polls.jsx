@@ -20,10 +20,24 @@ const Polls = () => {
   const polls = usePollStore((state) => state.polls);
   const fetchPolls = usePollStore((state) => state.fetchPolls);
   const updatePoll = usePollStore((state) => state.updatePoll);
+  const pollResults = usePollStore((state) => state.pollResults);
+  const fetchResults = usePollStore((state) => state.fetchResults);
 
   useEffect(() => {
     fetchPolls();
   }, [fetchPolls]);
+
+  useEffect(() => {
+    if (polls.length > 0) {
+      const latestPollId = polls[0].poll_id;
+      if (latestPollId != null) {
+        fetchResults(latestPollId);
+      }
+    }
+  }, [polls, fetchResults]);
+
+  const latestPollResults =
+    polls.length > 0 ? pollResults[polls[0].poll_id] : null;
 
   // Filters
   const [search, setSearch] = useState("");
@@ -69,7 +83,7 @@ const Polls = () => {
       <PollStats />
 
       <div className="mb-6 grid gap-6 xl:grid-cols-2">
-        <PollResultsChart />
+        <PollResultsChart data={latestPollResults} />
         <PollStatusChart />
       </div>
 

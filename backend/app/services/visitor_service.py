@@ -10,6 +10,7 @@ from app.schemas.visitor_schema import VisitorCreate, VisitorRequestCreate
 from app.services import notification_service
 from app.utils.api_error import BadRequest, Conflict, NotAuthorized, NotFound
 from app.utils.otp import hash_otp, verify_otp
+from app.models.apartment import ResidentProfile   # NEW import
 
 
 def create_visitor(db: Session, payload: VisitorCreate) -> Visitor:
@@ -147,7 +148,11 @@ def get_visitor_log(db: Session, log_id: int) -> Optional[VisitorLog]:
 def list_visitor_logs(db: Session) -> list[VisitorLog]:
     result = db.execute(
         select(VisitorLog)
-        .options(joinedload(VisitorLog.visitor))
+        .options(
+            joinedload(VisitorLog.visitor),
+            joinedload(VisitorLog.resident).joinedload(ResidentProfile.user),
+            joinedload(VisitorLog.resident).joinedload(ResidentProfile.flat),
+        )
         .order_by(VisitorLog.created_at.desc())
     )
     return list(result.scalars().unique().all())
