@@ -2,7 +2,6 @@ import {
   User,
   Phone,
   Home,
-  Car,
   Calendar,
   Clock,
   FileText,
@@ -111,12 +110,6 @@ const VisitorDetails = ({
             />
 
             <Info
-              icon={Car}
-              label="Vehicle"
-              value={visitor.vehicle || "N/A"}
-            />
-
-            <Info
               icon={Calendar}
               label="Visit Date"
               value={visitor.date}
@@ -124,13 +117,13 @@ const VisitorDetails = ({
 
             <Info
               icon={Clock}
-              label="Check In"
+              label="Entry Time"
               value={visitor.checkIn}
             />
 
             <Info
               icon={Clock}
-              label="Check Out"
+              label="Exit Time"
               value={visitor.checkOut}
             />
 
