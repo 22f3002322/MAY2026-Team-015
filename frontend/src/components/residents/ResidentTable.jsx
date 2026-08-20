@@ -13,6 +13,7 @@ const ResidentTable = ({
   onView,
   onEdit,
   onDelete,
+  onToggleStatus,
 }) => {
   const columns = [
     {
@@ -61,6 +62,37 @@ const ResidentTable = ({
         >
           {row.status}
         </Badge>
+      ),
+    },
+    {
+      key: "active",
+      header: "Active",
+      render: (row) => (
+        <button
+          type="button"
+          disabled={!onToggleStatus}
+          onClick={() => onToggleStatus && onToggleStatus(row)}
+          title={
+            row.isActive
+              ? "Deactivate account"
+              : "Activate account"
+          }
+          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
+            row.isActive
+              ? "bg-emerald-500"
+              : "bg-slate-300 dark:bg-slate-600"
+          } ${
+            !onToggleStatus
+              ? "cursor-not-allowed opacity-50"
+              : "cursor-pointer"
+          }`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+              row.isActive ? "translate-x-6" : "translate-x-1"
+            }`}
+          />
+        </button>
       ),
     },
     {

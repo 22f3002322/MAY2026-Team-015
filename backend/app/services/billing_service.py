@@ -33,7 +33,7 @@ from app.schemas.billing_schema import MaintenanceBillCreate, MaintenanceBillUpd
 from app.services import apartment_service, notification_service
 from app.utils.api_error import BadRequest, Conflict, NotFound
 
-_BILL_LOAD = (selectinload(MaintenanceBill.items),)
+_BILL_LOAD = (selectinload(MaintenanceBill.items), selectinload(MaintenanceBill.payments))
 
 
 def create_bill(db: Session, payload: MaintenanceBillCreate) -> MaintenanceBill:

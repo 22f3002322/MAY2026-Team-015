@@ -45,6 +45,7 @@ def _to_directory_out(profile: ResidentProfile) -> ResidentDirectoryOut:
         email=profile.user.email,
         phone=profile.user.phone,
         is_verified=profile.user.is_verified,
+        is_active=profile.user.is_active,   # NEW
         flat_id=profile.flat_id,
         flat_number=flat.flat_number if flat else None,
         block_name=flat.block.block_name if flat and flat.block else None,

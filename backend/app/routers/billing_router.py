@@ -33,6 +33,12 @@ def _to_bill_out(bill) -> MaintenanceBillOut:
     if flat:
         data.flat_number = flat.flat_number
         data.block_name = flat.block.block_name if flat.block else None
+
+    successful_payments = [p for p in (bill.payments or []) if p.status == "success"]
+    if successful_payments:
+        latest_payment = max(successful_payments, key=lambda p: p.paid_at or p.created_at)
+        data.paid_at = latest_payment.paid_at
+        data.payment_method = latest_payment.payment_method
     return data
 
 

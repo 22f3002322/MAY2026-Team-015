@@ -73,3 +73,4 @@ class FacilityBookingOut(FacilityBookingBase):
     updated_at: Optional[datetime] = None
     facility_name: Optional[str] = None
     resident_name: Optional[str] = None
+    flat_number: Optional[str] = None   # NEW
