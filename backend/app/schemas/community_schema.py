@@ -55,6 +55,7 @@ class PollOut(PollBase):
 
     poll_id: int
     is_active: bool
+    total_votes: int = 0
     options: list[PollOptionOut] = []
 
 

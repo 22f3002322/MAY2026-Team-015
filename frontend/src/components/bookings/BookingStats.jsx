@@ -1,7 +1,8 @@
+import { useEffect } from "react";
 import {
   CalendarDays,
   Building2,
-  IndianRupee,
+  CheckCircle2,
   Clock,
 } from "lucide-react";
 
@@ -15,50 +16,46 @@ const facilityLabel = (b) =>
 
 const BookingStats = () => {
   const bookings = useBookingStore((state) => state.bookings);
+  const facilities = useBookingStore((state) => state.facilities);
+  const fetchFacilities = useBookingStore((state) => state.fetchFacilities);
+
+  useEffect(() => {
+    if (!facilities.length) fetchFacilities();
+  }, [facilities.length, fetchFacilities]);
 
   const totalBookings = bookings.length;
 
-  const activeFacilities = new Set(
-    bookings.map(facilityLabel).filter(Boolean)
-  ).size;
+  const activeFacilities = facilities.length
+    ? facilities.filter((f) => f.is_active !== false).length
+    : new Set(bookings.map(facilityLabel).filter(Boolean)).size;
 
-  const totalRevenue = bookings.reduce(
-    (sum, booking) => sum + (Number(booking.amount) || 0),
-    0
-  );
+  const approvedBookings = bookings.filter(
+    (booking) => String(booking.status || "").toLowerCase() === "approved"
+  ).length;
 
-  const pendingRequests = bookings.filter((booking) => {
-    const s = String(booking.status || "").toLowerCase();
-    return s === "booked" || s === "pending";
-  }).length;
+  const pendingRequests = bookings.filter(
+    (booking) => String(booking.status || "").toLowerCase() === "booked"
+  ).length;
 
   const stats = [
     {
       title: "Total Bookings",
       value: totalBookings,
-      change: "",
-      trend: "up",
       icon: CalendarDays,
     },
     {
       title: "Active Facilities",
       value: activeFacilities,
-      change: "",
-      trend: "up",
       icon: Building2,
     },
     {
-      title: "Revenue",
-      value: `₹${totalRevenue.toLocaleString()}`,
-      change: "",
-      trend: "up",
-      icon: IndianRupee,
+      title: "Approved Bookings",
+      value: approvedBookings,
+      icon: CheckCircle2,
     },
     {
       title: "Pending Requests",
       value: pendingRequests,
-      change: "",
-      trend: pendingRequests > 0 ? "down" : "up",
       icon: Clock,
     },
   ];
@@ -77,13 +74,6 @@ const BookingStats = () => {
                 <h2 className="mt-3 text-3xl font-bold text-slate-800 dark:text-slate-100">
                   {item.value}
                 </h2>
-                <p
-                  className={`mt-2 text-sm font-medium ${
-                    item.trend === "up" ? "text-emerald-600" : "text-red-600"
-                  }`}
-                >
-                  Live Data
-                </p>
               </div>
               <div className="rounded-xl bg-indigo-100 p-3 text-indigo-600">
                 <Icon size={24} />

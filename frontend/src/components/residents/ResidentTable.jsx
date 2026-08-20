@@ -55,12 +55,12 @@ const ResidentTable = ({
       render: (row) => (
         <Badge
           variant={
-            row.status === "Active"
+            row.isActive
               ? "success"
               : "danger"
           }
         >
-          {row.status}
+          {row.isActive ? "Active" : "Inactive"}
         </Badge>
       ),
     },

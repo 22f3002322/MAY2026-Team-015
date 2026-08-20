@@ -33,18 +33,30 @@ const Visitors = () => {
       id: log.log_id || log.id,
       name: log.visitor_name || `Visitor #${log.visitor_id || log.log_id}`,
       phone: log.visitor_phone || "N/A",
-      resident: log.resident_name || `Resident #${log.resident_id}`,   // NEW
+      resident: log.resident_name || `Resident #${log.resident_id}`,
       flat: log.flat_number ? `Flat ${log.flat_number}` : `Flat #${log.flat_id || log.resident_id}`,
       purpose: log.visitor_type || "Guest",
       status: log.exit_time ? "Completed" : "Checked In",
       date: log.entry_time
         ? new Date(log.entry_time).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
         : "N/A",
-      checkIn: log.entry_time                                          // renamed from entryTime
-        ? new Date(log.entry_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      checkIn: log.entry_time
+        ? new Date(log.entry_time).toLocaleString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
         : "N/A",
-      checkOut: log.exit_time                                          // renamed from exitTime
-        ? new Date(log.exit_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      checkOut: log.exit_time
+        ? new Date(log.exit_time).toLocaleString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
         : "N/A",
     }));
   }, [logs]);
@@ -53,7 +65,7 @@ const Visitors = () => {
     return mappedVisitors.filter((visitor) => {
       const matchesSearch =
         (visitor.name || "").toLowerCase().includes(search.toLowerCase()) ||
-        (visitor.resident || "").toLowerCase().includes(search.toLowerCase()) ||  // NEW
+        (visitor.resident || "").toLowerCase().includes(search.toLowerCase()) ||
         (visitor.flat || "").toLowerCase().includes(search.toLowerCase()) ||
         (visitor.phone || "").includes(search);
       const matchesStatus = status === "" || visitor.status === status;

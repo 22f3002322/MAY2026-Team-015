@@ -8,35 +8,37 @@ from app.services import community_service
 from app.schemas.community_schema import PollCreate, PollOut, PollResultsOut, PollUpdate, PollVoteCreate, PollVoteOut
 from app.utils.api_response import success_response
 
-# BUGFIX: reference used require_admin only for create/update. Switched
-# to require_admin_or_committee for the same reason as
-# communication_router.py's announcements -- consistency with every
-# other admin-capable module in this app.
 router = APIRouter(prefix="/api/v1/polls", tags=["polls"])
+
+
+def _to_poll_out(poll) -> PollOut:
+    data = PollOut.model_validate(poll)
+    data.total_votes = len(poll.votes) if poll.votes is not None else 0
+    return data
 
 
 @router.post("")
 def create_poll(payload: PollCreate, _staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
     poll = community_service.create_poll(db, payload)
-    return success_response(data=PollOut.model_validate(poll), message="Poll created.")
+    return success_response(data=_to_poll_out(poll), message="Poll created.")
 
 
 @router.get("")
 def list_polls(_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     polls = community_service.list_polls(db)
-    return success_response(data=[PollOut.model_validate(p) for p in polls])
+    return success_response(data=[_to_poll_out(p) for p in polls])
 
 
 @router.get("/{poll_id}")
 def get_poll(poll_id: int, _user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     poll = community_service.get_poll(db, poll_id)
-    return success_response(data=PollOut.model_validate(poll))
+    return success_response(data=_to_poll_out(poll))
 
 
 @router.patch("/{poll_id}")
 def update_poll(poll_id: int, payload: PollUpdate, _staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
     poll = community_service.update_poll(db, poll_id, payload)
-    return success_response(data=PollOut.model_validate(poll), message="Poll updated.")
+    return success_response(data=_to_poll_out(poll), message="Poll updated.")
 
 
 @router.post("/{poll_id}/vote")

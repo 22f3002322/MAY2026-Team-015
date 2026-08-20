@@ -76,11 +76,6 @@ const NoticeTable = ({
     },
 
     {
-      key: "author",
-      header: "Author",
-    },
-
-    {
       key: "publishDate",
       header: "Published",
     },
