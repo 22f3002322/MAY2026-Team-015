@@ -14,8 +14,10 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import useApartmentStore from "../../store/apartmentStore";
 import useAuthStore from "../../store/authStore";
 
-const mapFlatToRow = (flat, blocks) => {
+// Step 2: mapFlatToRow now accepts an ownersByFlatId lookup and fills `owner`
+const mapFlatToRow = (flat, blocks, ownersByFlatId = {}) => {
   const block = blocks.find((b) => b.block_id === flat.block_id);
+  const owners = ownersByFlatId[flat.flat_id];
   return {
     id: flat.flat_id,
     flat_id: flat.flat_id,
@@ -24,7 +26,7 @@ const mapFlatToRow = (flat, blocks) => {
     block_id: flat.block_id,
     floor: flat.floor_number,
     type: flat.flat_type,
-    owner: "—",
+    owner: owners?.length ? owners.join(", ") : "—",
     occupancy: flat.occupancy_status === "occupied" ? "Occupied" : "Vacant",
     raw: flat,
   };
@@ -33,11 +35,16 @@ const mapFlatToRow = (flat, blocks) => {
 const Apartments = () => {
   const { backendRole } = useAuthStore();
   const isPureAdmin = String(backendRole || "").toLowerCase() === "admin";
+  const canSeeResidents = ["admin", "committee"].includes(
+    String(backendRole || "").toLowerCase()
+  );
 
   const flats = useApartmentStore((state) => state.flats);
   const blocks = useApartmentStore((state) => state.blocks);
+  const residents = useApartmentStore((state) => state.residents);
   const fetchFlats = useApartmentStore((state) => state.fetchFlats);
   const fetchBlocks = useApartmentStore((state) => state.fetchBlocks);
+  const fetchResidents = useApartmentStore((state) => state.fetchResidents);
   const createFlat = useApartmentStore((state) => state.createFlat);
   const updateFlat = useApartmentStore((state) => state.updateFlat);
   const deleteFlat = useApartmentStore((state) => state.deleteFlat);
@@ -45,11 +52,22 @@ const Apartments = () => {
   useEffect(() => {
     fetchBlocks();
     fetchFlats();
-  }, [fetchBlocks, fetchFlats]);
+    if (canSeeResidents) fetchResidents();
+  }, [fetchBlocks, fetchFlats, fetchResidents, canSeeResidents]);
+
+  // Step 3: build flat_id -> [owner names] map from the residents directory
+  const ownersByFlatId = useMemo(() => {
+    const map = {};
+    (residents || []).forEach((r) => {
+      if (!r.flat_id) return;
+      (map[r.flat_id] ||= []).push(r.full_name);
+    });
+    return map;
+  }, [residents]);
 
   const apartments = useMemo(
-    () => flats.map((f) => mapFlatToRow(f, blocks)),
-    [flats, blocks]
+    () => flats.map((f) => mapFlatToRow(f, blocks, ownersByFlatId)),
+    [flats, blocks, ownersByFlatId]
   );
 
   const [search, setSearch] = useState("");
