@@ -18,6 +18,7 @@ import useVisitorStore from "../../store/visitorStore";
 import useBillingStore from "../../store/billingStore";
 import useAuthStore from "../../store/authStore";
 import CreateCommitteeModal from "../../components/admin/CreateCommitteeModal";
+import ComplaintSummaryCard from "../../components/ai/ComplaintSummaryCard";
 
 // Backend stores status as lowercase: "open", "assigned", "in_progress", "resolved"
 const isResolved = (s) =>
@@ -240,6 +241,10 @@ const Dashboard = () => {
         {stats.map((item) => (
           <StatCard key={item.id} title={item.title} value={item.value} />
         ))}
+      </div>
+
+      <div className="mt-8">
+        <ComplaintSummaryCard />
       </div>
 
       <div className="mt-8">

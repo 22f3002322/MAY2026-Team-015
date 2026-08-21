@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 from collections import Counter
 from typing import Any, Optional
 
@@ -62,6 +63,31 @@ def _truncate(text: Optional[str], n: int = 500) -> str:
         return ""
     text = text.strip()
     return text if len(text) <= n else text[: n - 1] + "…"
+
+
+_MARKDOWN_BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
+_MARKDOWN_ITALIC_RE = re.compile(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)")
+_ID_IN_PARENS_RE = re.compile(
+    r"\s*\((?:announcement|complaint|notice)_id\s*=\s*\d+\)",
+    re.IGNORECASE,
+)
+_BARE_ID_RE = re.compile(
+    r"\b(?:announcement_id|complaint_id|notice_id)\s*=\s*\d+\b",
+    re.IGNORECASE,
+)
+
+
+def _plain_chat_reply(text: Optional[str]) -> str:
+    """Strip markdown and raw entity ids so the chat bubble stays readable."""
+    cleaned = _MARKDOWN_BOLD_RE.sub(r"\1", text or "")
+    cleaned = _MARKDOWN_ITALIC_RE.sub(r"\1", cleaned)
+    cleaned = cleaned.replace("`", "")
+    cleaned = _ID_IN_PARENS_RE.sub("", cleaned)
+    cleaned = _BARE_ID_RE.sub("", cleaned)
+    cleaned = re.sub(r"[ \t]+\n", "\n", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    cleaned = re.sub(r" {2,}", " ", cleaned)
+    return cleaned.strip()
 
 
 def _request_hash(payload: Any) -> str:
@@ -694,7 +720,12 @@ def chat(db: Session, user: User, messages: list[ChatMessage]) -> ChatResponse:
             citations.append(ChatCitation(entity_type=et, entity_id=eid))
 
     result = ChatResponse(
-        reply=_truncate(str(parsed.get("reply") or "I don't know based on available community records."), 4000),
+        reply=_truncate(
+            _plain_chat_reply(
+                str(parsed.get("reply") or "I don't know based on available community records.")
+            ),
+            4000,
+        ),
         citations=citations[:10],
         refused=bool(parsed.get("refused", False)),
     )

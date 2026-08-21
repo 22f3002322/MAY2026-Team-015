@@ -3,28 +3,59 @@ import { toast } from "sonner";
 
 import Modal from "../ui/Modal";
 import Button from "../ui/Button";
+import Badge from "../ui/Badge";
 import maintenanceApi from "../../api/maintenanceApi";
 import useComplaintStore from "../../store/complaintStore";
+import aiApi, { getAiErrorInfo } from "../../api/aiApi";
+import AiStatusBanner from "../ai/AiStatusBanner";
 
 const AssignStaffModal = ({ complaint, onClose }) => {
   const assignComplaint = useComplaintStore((s) => s.assignComplaint);
   const [staffList, setStaffList] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
   const [staffId, setStaffId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [recommendLoading, setRecommendLoading] = useState(false);
+  const [recommendError, setRecommendError] = useState(null);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (!complaint) return;
     setStaffId("");
     setErrors({});
+    setRecommendations([]);
+    setRecommendError(null);
+
     (async () => {
       try {
-        const res = await maintenanceApi.getStaffDirectory({ is_available: true });
+        const res = await maintenanceApi.getStaffDirectory();
         if (res?.success && Array.isArray(res.data)) {
           setStaffList(res.data);
         }
       } catch (err) {
         console.warn("Staff directory fetch failed:", err.message);
+      }
+    })();
+
+    const complaintId = complaint.id || complaint.complaint_id;
+    if (!complaintId) return;
+
+    setRecommendLoading(true);
+    (async () => {
+      try {
+        const res = await aiApi.getStaffRecommendations(complaintId);
+        if (res?.success && Array.isArray(res.data?.recommendations)) {
+          setRecommendations(res.data.recommendations);
+        } else {
+          setRecommendError({
+            kind: "error",
+            message: res?.message || "Could not load staff suggestions.",
+          });
+        }
+      } catch (err) {
+        setRecommendError(getAiErrorInfo(err));
+      } finally {
+        setRecommendLoading(false);
       }
     })();
   }, [complaint]);
@@ -38,7 +69,10 @@ const AssignStaffModal = ({ complaint, onClose }) => {
       return;
     }
     setLoading(true);
-    const res = await assignComplaint(complaint.id || complaint.complaint_id, Number(staffId));
+    const res = await assignComplaint(
+      complaint.id || complaint.complaint_id,
+      Number(staffId)
+    );
     setLoading(false);
     if (res.success) {
       toast.success(res.message || "Staff assigned.");
@@ -47,6 +81,21 @@ const AssignStaffModal = ({ complaint, onClose }) => {
       toast.error(res.message || "Assignment failed.");
     }
   };
+
+  const selectStaff = (id) => {
+    setStaffId(String(id));
+    setErrors({});
+  };
+
+  const staffById = new Map(
+    staffList.map((s) => [Number(s.staff_id), s])
+  );
+  recommendations.forEach((r) => {
+    if (!staffById.has(Number(r.staff_id))) {
+      staffById.set(Number(r.staff_id), r);
+    }
+  });
+  const dropdownStaff = [...staffById.values()];
 
   return (
     <Modal open={!!complaint} title="Assign Staff" onClose={onClose}>
@@ -66,6 +115,73 @@ const AssignStaffModal = ({ complaint, onClose }) => {
         </div>
 
         <div>
+          <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            Suggested staff
+          </p>
+          {recommendLoading && (
+            <p className="text-sm text-slate-500">Loading suggestions…</p>
+          )}
+          {recommendError && (
+            <AiStatusBanner
+              error={recommendError}
+              message={
+                recommendError.kind === "unavailable"
+                  ? "AI suggestions are unavailable. Pick someone from the staff directory below."
+                  : recommendError.message
+              }
+              className="mb-3"
+            />
+          )}
+          {!recommendLoading && recommendations.length > 0 && (
+            <ul className="space-y-2">
+              {recommendations.map((item, index) => {
+                const selected = String(staffId) === String(item.staff_id);
+                return (
+                  <li key={item.staff_id}>
+                    <button
+                      type="button"
+                      onClick={() => selectStaff(item.staff_id)}
+                      className={`w-full rounded-xl border p-3 text-left transition ${
+                        selected
+                          ? "border-indigo-500 bg-indigo-50 dark:border-indigo-400 dark:bg-indigo-950/40"
+                          : "border-slate-200 hover:border-indigo-300 dark:border-slate-700 dark:hover:border-indigo-600"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                            {index + 1}. {item.full_name || `Staff #${item.staff_id}`}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {item.specialization || "General"}
+                            {item.experience_years != null
+                              ? ` · ${item.experience_years} yrs`
+                              : ""}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-1">
+                          <Badge variant={item.is_available ? "success" : "warning"}>
+                            {item.is_available ? "Available" : "Busy"}
+                          </Badge>
+                          <Badge variant="secondary">
+                            {item.open_task_count ?? 0} open
+                          </Badge>
+                        </div>
+                      </div>
+                      {item.reason && (
+                        <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
+                          {item.reason}
+                        </p>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        <div>
           <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Assign Staff
           </label>
@@ -78,11 +194,11 @@ const AssignStaffModal = ({ complaint, onClose }) => {
             className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-4"
           >
             <option value="">Select staff…</option>
-            {staffList.map((s) => (
+            {dropdownStaff.map((s) => (
               <option key={s.staff_id} value={s.staff_id}>
                 {s.full_name || s.email}
                 {s.specialization ? ` — ${s.specialization}` : ""}
-                {` (${s.active_task_count} active)`}
+                {` (${s.active_task_count ?? s.open_task_count ?? 0} active)`}
               </option>
             ))}
           </select>

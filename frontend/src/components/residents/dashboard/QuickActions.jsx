@@ -1,12 +1,25 @@
-import React from 'react';
+import { Sparkles } from "lucide-react";
+
 import Card from "../../ui/Card";
+import Button from "../../ui/Button";
+import useAiStore from "../../../store/aiStore";
 
 const QuickActions = () => {
+  const openPanel = useAiStore((s) => s.openPanel);
+
   return (
-    <Card title="Quick Actions">
-      <div className="flex items-center justify-center p-4">
-        <p className="text-slate-500 dark:text-slate-400 text-sm">Quick actions coming soon...</p>
-      </div>
+    <Card
+      title="Quick Actions"
+      subtitle="Ask about your complaints and notices"
+    >
+      <Button
+        variant="outline"
+        className="h-14 w-full justify-start sm:w-auto"
+        icon={Sparkles}
+        onClick={() => openPanel("ask")}
+      >
+        Ask Neighbourly
+      </Button>
     </Card>
   );
 };

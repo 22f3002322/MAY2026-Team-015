@@ -7,6 +7,7 @@ import UpcomingBills from "../../components/residents/dashboard/UpcomingBills";
 import VisitorOverview from "../../components/residents/dashboard/VisistorOverview";
 import NoticeOverview from "../../components/residents/dashboard/NoticeOverview";
 import FacilityBookings from "../../components/residents/dashboard/FacilityBookings";
+import QuickActions from "../../components/residents/dashboard/QuickActions";
 
 import useComplaintStore from "../../store/complaintStore";
 import useBillingStore from "../../store/billingStore";
@@ -38,6 +39,10 @@ const Dashboard = () => {
     >
       {/* Statistics */}
       <ResidentStats />
+
+      <div className="mt-8">
+        <QuickActions />
+      </div>
 
       {/* Complaints + Bills */}
       <div className="mt-8 grid gap-6 xl:grid-cols-2">
