@@ -15,7 +15,7 @@ from app.schemas.community_schema import PollCreate, PollUpdate
 from app.services import notification_service
 from app.utils.api_error import BadRequest, Conflict, NotFound
 
-_LOAD_OPTIONS = (selectinload(Poll.options),)
+_LOAD_OPTIONS = (selectinload(Poll.options), selectinload(Poll.votes))
 
 
 def create_poll(db: Session, payload: PollCreate) -> Poll:

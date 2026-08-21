@@ -46,11 +46,16 @@ const Billing = () => {
         bill_id: b.bill_id || b.id,
         billId: `BILL-${b.bill_id || b.id}`,
         resident: b.resident_name || b.resident || `Flat #${b.flat_id}`,
-        flat: b.flat_number ? `Flat ${b.flat_number}` : (b.flat || `Flat #${b.flat_id}`),
+        flat: b.flat_number
+          ? `Flat ${b.flat_number}`
+          : b.flat || `Flat #${b.flat_id}`,
         category: b.bill_type || b.category || "Maintenance",
         amount: Number(b.total_amount || b.amount || 0).toLocaleString(),
         dueDate: b.due_date || b.dueDate || "N/A",
-        paidDate: b.paid_at ? new Date(b.paid_at).toLocaleDateString() : (b.paidDate || "-"),
+        paidDate: b.paid_at
+          ? new Date(b.paid_at).toLocaleDateString()
+          : b.paidDate || "-",
+        paymentMethod: b.payment_method || undefined,
         status: rawStatus === "paid" ? "Paid" : "Unpaid",
         statusValue: rawStatus === "paid" ? "paid" : "unpaid",
         flat_id: b.flat_id,

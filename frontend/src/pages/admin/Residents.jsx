@@ -19,11 +19,13 @@ import PendingVerifications from "../../components/admin/PendingVerifications";
 const Residents = () => {
   const { backendRole } = useAuthStore();
   const isCommittee = String(backendRole || "").toLowerCase() === "committee";
+  const isAdmin = String(backendRole || "").toLowerCase() === "admin";
 
   const residents = useResidentStore((state) => state.residents);
   const addResident = useResidentStore((state) => state.addResident);
   const updateResident = useResidentStore((state) => state.updateResident);
   const removeResident = useResidentStore((state) => state.deleteResident);
+  const toggleResidentActive = useResidentStore((state) => state.toggleResidentActive);
   const fetchResidents = useResidentStore((state) => state.fetchResidents);
 
   useEffect(() => {
@@ -84,6 +86,17 @@ const Residents = () => {
     }
   };
 
+  const handleToggleActive = async (resident) => {
+    const res = await toggleResidentActive(resident);
+    if (res.success) {
+      toast.success(
+        resident.isActive ? "Resident account deactivated." : "Resident account activated."
+      );
+    } else {
+      toast.error(res.message || "Failed to update account status.");
+    }
+  };
+
   return (
     <Layout title="Residents" breadcrumb={["Home", "Residents"]}>
       <PendingVerifications />
@@ -108,6 +121,7 @@ const Residents = () => {
           setEditModal(true);
         }}
         onDelete={setDeleteResident}
+        onToggleStatus={isAdmin ? handleToggleActive : undefined}
       />
 
       <Modal open={openModal} title="Add Resident" onClose={() => setOpenModal(false)}>

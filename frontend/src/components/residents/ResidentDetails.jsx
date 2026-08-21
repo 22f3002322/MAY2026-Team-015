@@ -76,12 +76,12 @@ const ResidentDetails = ({
 
               <Badge
                 variant={
-                  resident.status === "Active"
+                  resident.isActive
                     ? "success"
                     : "danger"
                 }
               >
-                {resident.status}
+                {resident.isActive ? "Active" : "Inactive"}
               </Badge>
 
             </div>

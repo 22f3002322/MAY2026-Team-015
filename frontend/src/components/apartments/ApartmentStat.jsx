@@ -52,7 +52,7 @@ const ApartmentStats = () => {
           <Card key={item.title}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">{item.title}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{item.title}</p>
                 <h2 className="mt-2 text-3xl font-bold text-slate-800 dark:text-slate-100">{item.value}</h2>
               </div>
               <div className={`flex h-14 w-14 items-center justify-center rounded-xl ${item.color}`}>

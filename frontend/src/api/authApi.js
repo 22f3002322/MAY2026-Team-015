@@ -91,6 +91,19 @@ export const authApi = {
     });
   },
 
+  // Admin: suspend / restore a user's login access
+  deactivateUser: async (userId) => {
+    return apiRequest(`/api/v1/auth/users/${userId}/deactivate`, {
+      method: "POST",
+    });
+  },
+
+  reactivateUser: async (userId) => {
+    return apiRequest(`/api/v1/auth/users/${userId}/reactivate`, {
+      method: "POST",
+    });
+  },
+
   // Health check
   checkHealth: async () => {
     return apiRequest("/health", {

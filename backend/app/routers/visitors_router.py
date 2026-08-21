@@ -55,6 +55,8 @@ def _request_out(request, otp: str | None = None) -> VisitorRequestOut:
 
 def _log_out(log) -> VisitorLogOut:
     visitor = getattr(log, "visitor", None)
+    resident = getattr(log, "resident", None)
+    flat = getattr(resident, "flat", None) if resident else None
     return VisitorLogOut(
         log_id=log.log_id,
         visitor_id=log.visitor_id,
@@ -68,6 +70,8 @@ def _log_out(log) -> VisitorLogOut:
         visitor_name=visitor.visitor_name if visitor else None,
         visitor_phone=visitor.phone if visitor else None,
         visitor_type=visitor.visitor_type if visitor else None,
+        resident_name=resident.user.full_name if resident and resident.user else None,
+        flat_number=flat.flat_number if flat else None,
     )
 
 

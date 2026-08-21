@@ -24,7 +24,7 @@ const ResidentStats = () => {
   ).length;
 
   const inactive = residents.filter(
-    (resident) => resident.status === "Inactive"
+    (resident) => !resident.isActive
   ).length;
 
   const stats = [

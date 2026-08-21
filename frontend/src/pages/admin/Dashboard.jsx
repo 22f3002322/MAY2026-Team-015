@@ -25,6 +25,7 @@ import useBillingStore from "../../store/billingStore";
 import useAuthStore from "../../store/authStore";
 
 import CreateCommitteeModal from "../../components/admin/CreateCommitteeModal";
+import ComplaintSummaryCard from "../../components/ai/ComplaintSummaryCard";
 
 // Backend stores status as lowercase:
 // "open", "assigned", "in_progress", "resolved"
@@ -455,6 +456,10 @@ const Dashboard = () => {
       {/* --------------------------------------------- */}
       {/* Quick Actions */}
       {/* --------------------------------------------- */}
+
+      <div className="mt-8">
+        <ComplaintSummaryCard />
+      </div>
 
       <div className="mt-8">
         <QuickActions

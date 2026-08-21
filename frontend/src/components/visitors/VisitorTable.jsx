@@ -62,23 +62,22 @@ const VisitorTable = ({
     },
 
     {
-      key: "vehicle",
-      header: "Vehicle",
+      key: "entryTime",
+      header: "Entry Time",
+      render: (row) => (
+        <span className="text-sm text-slate-700 dark:text-slate-300">
+          {row.checkIn}
+        </span>
+      ),
     },
 
     {
-      key: "time",
-      header: "Visit Time",
+      key: "exitTime",
+      header: "Exit Time",
       render: (row) => (
-        <div>
-          <p className="text-sm">
-            In : {row.checkIn}
-          </p>
-
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Out : {row.checkOut}
-          </p>
-        </div>
+        <span className="text-sm text-slate-700 dark:text-slate-300">
+          {row.checkOut}
+        </span>
       ),
     },
 

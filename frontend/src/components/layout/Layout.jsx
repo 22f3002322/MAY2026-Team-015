@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import AiAssistant from "../ai/AiAssistant";
 import useAuthStore from "../../store/authStore";
 import { ShieldAlert } from "lucide-react";
 
@@ -56,8 +57,10 @@ const Layout = ({
           {children}
         </main>
       </div>
+
+      <AiAssistant />
     </div>
   );
 };
 
-export default Layout;
+export default Layout;

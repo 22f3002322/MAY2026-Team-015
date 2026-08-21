@@ -8,6 +8,14 @@ import {
 import Card from "../ui/Card";
 import usePollStore from "../../store/pollStore";
 
+const getPollStatus = (poll) => {
+  const today = new Date().toISOString().split("T")[0];
+  if (!poll.is_active) return "Closed";
+  if (poll.start_date && poll.start_date > today) return "Upcoming";
+  if (poll.end_date && poll.end_date < today) return "Closed";
+  return "Active";
+};
+
 const PollStats = () => {
   const polls = usePollStore(
     (state) => state.polls
@@ -16,16 +24,16 @@ const PollStats = () => {
   const totalPolls = polls.length;
 
   const activePolls = polls.filter(
-    (poll) => poll.status === "Active"
+    (poll) => getPollStatus(poll) === "Active"
   ).length;
 
   const completedPolls = polls.filter(
-    (poll) => poll.status === "Closed"
+    (poll) => getPollStatus(poll) === "Closed"
   ).length;
 
   const totalVotes = polls.reduce(
     (sum, poll) =>
-      sum + Number(poll.totalVotes || 0),
+      sum + Number(poll.total_votes || 0),
     0
   );
 

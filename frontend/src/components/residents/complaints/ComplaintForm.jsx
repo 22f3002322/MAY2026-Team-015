@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 
 import Button from "../../ui/Button";
 import useComplaintStore from "../../../store/complaintStore";
 import { COMPLAINT_PRIORITY } from "../../../utils/adminMaps";
+import useAuthStore from "../../../store/authStore";
+import aiApi, { getAiErrorInfo } from "../../../api/aiApi";
+import AiStatusBanner from "../../ai/AiStatusBanner";
 
 const ComplaintForm = ({
   initialData = null,
@@ -12,6 +16,10 @@ const ComplaintForm = ({
 }) => {
   const categories = useComplaintStore((s) => s.categories);
   const fetchCategories = useComplaintStore((s) => s.fetchCategories);
+  const isVerified = useAuthStore((s) => s.isVerified);
+  const user = useAuthStore((s) => s.user);
+  const canClassify =
+    isVerified !== false && user?.isVerified !== false;
 
   useEffect(() => {
     fetchCategories();
@@ -24,6 +32,9 @@ const ComplaintForm = ({
     description: initialData?.description || "",
     imageFile: null,
   });
+  const [classifyLoading, setClassifyLoading] = useState(false);
+  const [classifyError, setClassifyError] = useState(null);
+  const [classifyHint, setClassifyHint] = useState(null);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -122,6 +133,81 @@ const ComplaintForm = ({
           placeholder="Describe the issue in detail..."
           className="w-full rounded-xl border border-slate-300 bg-white p-4 text-slate-900 outline-none focus:border-indigo-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
+        {canClassify && (
+          <div className="mt-3 space-y-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              loading={classifyLoading}
+              disabled={classifyLoading || formData.description.trim().length < 3}
+              icon={Sparkles}
+              onClick={async () => {
+                const text = [formData.title, formData.description]
+                  .filter((part) => String(part || "").trim())
+                  .join("\n\n");
+                if (formData.description.trim().length < 3) return;
+                setClassifyLoading(true);
+                setClassifyError(null);
+                try {
+                  const res = await aiApi.classifyComplaint(text);
+                  if (res?.success && res.data) {
+                    const suggested = res.data;
+                    setFormData((prev) => ({
+                      ...prev,
+                      category_id: suggested.category_id
+                        ? String(suggested.category_id)
+                        : prev.category_id,
+                      priority: String(
+                        suggested.priority || prev.priority || "medium"
+                      ).toLowerCase(),
+                    }));
+                    setClassifyHint({
+                      rationale: suggested.rationale,
+                      confidence: suggested.confidence,
+                      alternatives: suggested.alternative_categories || [],
+                      categoryName: suggested.category_name,
+                    });
+                  } else {
+                    setClassifyError({
+                      kind: "error",
+                      message: res?.message || "Could not classify this complaint.",
+                    });
+                  }
+                } catch (err) {
+                  setClassifyError(getAiErrorInfo(err));
+                } finally {
+                  setClassifyLoading(false);
+                }
+              }}
+            >
+              Suggest category & priority
+            </Button>
+            {classifyError && <AiStatusBanner error={classifyError} />}
+            {classifyHint && !classifyError && (
+              <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 text-xs text-slate-600 dark:border-indigo-900/40 dark:bg-indigo-950/20 dark:text-slate-300">
+                <p>
+                  Suggested <span className="font-medium">{classifyHint.categoryName}</span>
+                  {typeof classifyHint.confidence === "number"
+                    ? ` (${Math.round(classifyHint.confidence * 100)}% confidence)`
+                    : ""}
+                  . You can still change category or priority before submitting.
+                </p>
+                {classifyHint.rationale && (
+                  <p className="mt-1">{classifyHint.rationale}</p>
+                )}
+                {classifyHint.alternatives.length > 0 && (
+                  <p className="mt-1 text-slate-500 dark:text-slate-400">
+                    Alternatives:{" "}
+                    {classifyHint.alternatives
+                      .map((alt) => alt.category_name)
+                      .join(", ")}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {!isEdit && (

@@ -22,6 +22,7 @@ const mapBackendToResident = (profile) => {
     emergency_contact: profile.emergency_contact || "",
     alternate_phone: profile.alternate_phone || "",
     status: profile.is_verified ? "Active" : "Inactive",
+    isActive: profile.is_active !== false,   // NEW — real account active/inactive
     joined: "",
   };
 };
@@ -150,6 +151,21 @@ const useResidentStore = create(
           return { success: false, message: res?.message || "Failed to move out resident." };
         } catch (err) {
           return { success: false, message: err.message || "Failed to move out resident." };
+        }
+      },
+
+      toggleResidentActive: async (resident) => {
+        try {
+          const res = resident.isActive
+            ? await authApi.deactivateUser(resident.user_id)
+            : await authApi.reactivateUser(resident.user_id);
+          if (res && res.success) {
+            await get().fetchResidents();
+            return { success: true, message: res.message };
+          }
+          return { success: false, message: res?.message || "Failed to update status." };
+        } catch (err) {
+          return { success: false, message: err.message || "Failed to update status." };
         }
       },
 

@@ -14,7 +14,6 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import useApartmentStore from "../../store/apartmentStore";
 import useAuthStore from "../../store/authStore";
 
-// Step 2: mapFlatToRow now accepts an ownersByFlatId lookup and fills `owner`
 const mapFlatToRow = (flat, blocks, ownersByFlatId = {}) => {
   const block = blocks.find((b) => b.block_id === flat.block_id);
   const owners = ownersByFlatId[flat.flat_id];
@@ -55,7 +54,6 @@ const Apartments = () => {
     if (canSeeResidents) fetchResidents();
   }, [fetchBlocks, fetchFlats, fetchResidents, canSeeResidents]);
 
-  // Step 3: build flat_id -> [owner names] map from the residents directory
   const ownersByFlatId = useMemo(() => {
     const map = {};
     (residents || []).forEach((r) => {
