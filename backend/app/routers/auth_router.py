@@ -33,6 +33,22 @@ def get_redis():
     return get_redis_client()
 
 
+def _to_resident_profile_out(profile) -> ResidentProfileOut | None:
+    if profile is None:
+        return None
+    flat = profile.flat
+    return ResidentProfileOut(
+        resident_id=profile.resident_id,
+        flat_id=profile.flat_id,
+        flat_number=flat.flat_number if flat else None,
+        block_name=flat.block.block_name if flat and flat.block else None,
+        emergency_contact=profile.emergency_contact,
+        alternate_phone=profile.alternate_phone,
+        occupation=profile.occupation,
+        profile_image=profile.profile_image,
+    )
+
+
 def _to_me_response(user: User) -> MeResponse:
     return MeResponse(
         user_id=user.user_id,
@@ -42,7 +58,7 @@ def _to_me_response(user: User) -> MeResponse:
         role=user.role.role_name.value,
         is_active=user.is_active,
         is_verified=user.is_verified,
-        resident_profile=ResidentProfileOut.model_validate(user.resident_profile) if user.resident_profile else None,
+        resident_profile=_to_resident_profile_out(user.resident_profile),
         maintenance_profile=MaintenanceProfileOut.model_validate(user.maintenance_staff_profile)
         if user.maintenance_staff_profile
         else None,
@@ -155,17 +171,31 @@ def me(current_user: User = Depends(get_current_user)):
 @router.get("/pending-verifications")
 def pending_verifications(committee: User = Depends(require_committee), db: Session = Depends(get_db)):
     users = auth_service.list_pending_verifications(db)
-    data = [
-        PendingUserOut(
-            user_id=u.user_id,
-            full_name=u.full_name,
-            email=u.email,
-            phone=u.phone,
-            role=u.role.role_name.value,
-            created_at=u.created_at.isoformat() if u.created_at else None,
+    data = []
+    for u in users:
+        flat_id = None
+        flat_number = None
+        block_name = None
+        profile = u.resident_profile
+        if profile is not None:
+            flat_id = profile.flat_id
+            if profile.flat is not None:
+                flat_number = profile.flat.flat_number
+                if profile.flat.block is not None:
+                    block_name = profile.flat.block.block_name
+        data.append(
+            PendingUserOut(
+                user_id=u.user_id,
+                full_name=u.full_name,
+                email=u.email,
+                phone=u.phone,
+                role=u.role.role_name.value,
+                created_at=u.created_at.isoformat() if u.created_at else None,
+                flat_id=flat_id,
+                flat_number=flat_number,
+                block_name=block_name,
+            )
         )
-        for u in users
-    ]
     return success_response(data=data, message=f"{len(data)} account(s) pending verification.")
 
 
@@ -176,14 +206,15 @@ def verify(
     _committee: User = Depends(require_committee),
     db: Session = Depends(get_db),
 ):
-    """Verifies the account. If the user is a Resident who selected a
-    flat at signup, this is also the moment they're officially moved in
-    (occupancy_history row created, flat flipped to occupied) --
-    optionally pass {"occupancy_type": "Owner"|"Rental"} in the body;
-    defaults to "Owner" if omitted. Ignored for Maintenance/Security or a
-    Resident with no flat_id set."""
+    """Verifies the account. For Residents, verification also performs
+    move-in when a flat is available (from signup or from flat_id in the
+    body). Pass {"occupancy_type": "Owner"|"Rental", "flat_id": <id>} —
+    flat_id is required when the resident has no flat yet."""
     occupancy_type = payload.occupancy_type if payload else None
-    user = auth_service.verify_user(db, user_id, occupancy_type=occupancy_type)
+    flat_id = payload.flat_id if payload else None
+    user = auth_service.verify_user(
+        db, user_id, occupancy_type=occupancy_type, flat_id=flat_id
+    )
     return success_response(data=_to_me_response(user), message="User verified successfully.")
 
 

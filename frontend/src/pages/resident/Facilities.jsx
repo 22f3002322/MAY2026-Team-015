@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
-import useBookingStore from "../../store/bookingStore";
+import { toast } from "sonner";
 
+import useBookingStore from "../../store/bookingStore";
 import Layout from "../../components/layout/Layout";
 import Modal from "../../components/ui/Modal";
 
@@ -13,18 +14,11 @@ import BookingDetails from "../../components/residents/facilities/BookingDetails
 
 import useFacilityStore from "../../store/facilityStore";
 import useAuthStore from "../../store/authStore";
-import { toast } from "sonner";
 
 const Facilities = () => {
   const { user, isVerified } = useAuthStore();
-  const facilities = useFacilityStore(
-    (state) => state.facilities
-  );
-
-  const bookings = useFacilityStore(
-    (state) => state.bookings
-  );
-
+  const facilities = useFacilityStore((state) => state.facilities);
+  const bookings = useFacilityStore((state) => state.bookings);
   const fetchFacilities = useFacilityStore((state) => state.fetchFacilities);
   const fetchBookings = useBookingStore((state) => state.fetchBookings);
 
@@ -33,91 +27,58 @@ const Facilities = () => {
     fetchBookings();
   }, [fetchFacilities, fetchBookings]);
 
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [sort, setSort] = useState("newest");
+  const [selectedFacility, setSelectedFacility] = useState(null);
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
-  const [status, setStatus] =
-    useState("");
+  const filteredFacilities = useMemo(() => {
+    let data = [...facilities];
 
-  const [sort, setSort] =
-    useState("newest");
-
-  const [
-    selectedFacility,
-    setSelectedFacility,
-  ] = useState(null);
-
-  const [
-    selectedBooking,
-    setSelectedBooking,
-  ] = useState(null);
-
-  const filteredFacilities =
-    useMemo(() => {
-      let data = [...facilities];
-
-      if (search.trim()) {
-        const query =
-          search.toLowerCase();
-
-        data = data.filter(
-          (facility) =>
-            facility.name
-              .toLowerCase()
-              .includes(query) ||
-            facility.category
-              .toLowerCase()
-              .includes(query) ||
-            facility.location
-              .toLowerCase()
-              .includes(query)
+    if (search.trim()) {
+      const query = search.toLowerCase();
+      data = data.filter((facility) => {
+        const name = String(facility.name || facility.facility_name || "").toLowerCase();
+        const category = String(facility.category || "").toLowerCase();
+        const location = String(facility.location || "").toLowerCase();
+        return (
+          name.includes(query) ||
+          category.includes(query) ||
+          location.includes(query)
         );
-      }
-
-      data.sort((a, b) =>
-        a.name.localeCompare(b.name)
-      );
-
-      return data;
-    }, [facilities, search]);
-
-  const filteredBookings =
-    useMemo(() => {
-      let data = [...bookings];
-
-      if (status) {
-        data = data.filter(
-          (booking) =>
-            booking.status === status
-        );
-      }
-
-      data.sort((a, b) => {
-        const dateA = new Date(
-          a.date
-        );
-
-        const dateB = new Date(
-          b.date
-        );
-
-        return sort === "newest"
-          ? dateB - dateA
-          : dateA - dateB;
       });
+    }
 
-      return data;
-    }, [bookings, status, sort]);
+    data.sort((a, b) =>
+      String(a.name || "").localeCompare(String(b.name || ""))
+    );
+
+    return data;
+  }, [facilities, search]);
+
+  const filteredBookings = useMemo(() => {
+    let data = [...bookings];
+
+    if (status) {
+      data = data.filter(
+        (booking) =>
+          booking.statusValue === status || booking.status === status
+      );
+    }
+
+    data.sort((a, b) => {
+      const dateA = new Date(a.date || a.createdAt || 0);
+      const dateB = new Date(b.date || b.createdAt || 0);
+      return sort === "newest" ? dateB - dateA : dateA - dateB;
+    });
+
+    return data;
+  }, [bookings, status, sort]);
 
   return (
-    <Layout
-      title="Facilities"
-      breadcrumb={[
-        "Resident",
-        "Facilities",
-      ]}
-    >
-      <FacilityStats />
+    <Layout title="Facilities" breadcrumb={["Resident", "Facilities"]}>
+      <FacilityStats bookings={bookings} />
 
       <FacilityFilters
         search={search}
@@ -128,63 +89,53 @@ const Facilities = () => {
         setSort={setSort}
       />
 
-      {/* Facilities */}
-
       <section className="mb-10">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-slate-800">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
             Available Facilities
           </h2>
-
           <span className="text-sm text-slate-500">
             {filteredFacilities.length} Facilities
           </span>
         </div>
 
-        {filteredFacilities.length ===
-        0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white py-16 text-center">
-            <h3 className="text-xl font-semibold text-slate-700">
+        {filteredFacilities.length === 0 ? (
+          <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white py-16 text-center dark:border-slate-700 dark:bg-slate-900">
+            <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200">
               No Facilities Found
             </h3>
-
-            <p className="mt-2 text-slate-500">
-              Try changing your search.
-            </p>
+            <p className="mt-2 text-slate-500">Try changing your search.</p>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {filteredFacilities.map(
-              (facility) => (
-                <FacilityCard
-                  key={facility.id}
-                  facility={facility}
-                  onBook={(f) => {
-                    const userIsVerified = isVerified !== false && user?.isVerified !== false;
-                    if (!userIsVerified) {
-                      toast.error("Your account must be verified by the Committee to book facilities.");
-                      return;
-                    }
-                    setSelectedFacility(f);
-                  }}
-                />
-              )
-            )}
+            {filteredFacilities.map((facility) => (
+              <FacilityCard
+                key={facility.id}
+                facility={facility}
+                onBook={(f) => {
+                  const userIsVerified =
+                    isVerified === true && user?.isVerified !== false;
+                  if (!userIsVerified) {
+                    toast.error(
+                      "Your account must be verified by the Committee to book facilities."
+                    );
+                    return;
+                  }
+                  setSelectedFacility(f);
+                }}
+              />
+            ))}
           </div>
         )}
       </section>
-
-      {/* Booking History */}
 
       <section>
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
             My Bookings
           </h2>
-
           <span className="text-sm text-slate-500">
-            {filteredBookings.length}{" "}
-            Booking(s)
+            {filteredBookings.length} Booking(s)
           </span>
         </div>
 
@@ -194,36 +145,22 @@ const Facilities = () => {
         />
       </section>
 
-      {/* Booking Modal */}
-
       <Modal
         open={!!selectedFacility}
         title="Book Facility"
-        onClose={() =>
-          setSelectedFacility(null)
-        }
+        onClose={() => setSelectedFacility(null)}
       >
         {selectedFacility && (
           <FacilityBookingForm
-            facility={
-              selectedFacility
-            }
-            onClose={() =>
-              setSelectedFacility(
-                null
-              )
-            }
+            facility={selectedFacility}
+            onClose={() => setSelectedFacility(null)}
           />
         )}
       </Modal>
 
-      {/* Details Modal */}
-
       <BookingDetails
         booking={selectedBooking}
-        onClose={() =>
-          setSelectedBooking(null)
-        }
+        onClose={() => setSelectedBooking(null)}
       />
     </Layout>
   );

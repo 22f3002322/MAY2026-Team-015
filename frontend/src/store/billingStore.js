@@ -45,7 +45,7 @@ const useBillingStore = create(
         try {
           const res = await billingApi.createBill(payload);
           if (res && res.success) {
-            get().fetchBills();
+            await get().fetchBills();
             return { success: true, data: res.data, message: res.message };
           }
           return { success: false, message: res?.message || "Failed to create bill." };
@@ -58,7 +58,7 @@ const useBillingStore = create(
         try {
           const res = await billingApi.updateBill(billId, payload);
           if (res && res.success) {
-            get().fetchBills();
+            await get().fetchBills();
             return { success: true, data: res.data, message: res.message };
           }
           return { success: false, message: res?.message || "Update failed." };
@@ -86,11 +86,12 @@ const useBillingStore = create(
         try {
           const res = await billingApi.createPayment(payload);
           if (res && res.success) {
-            // Refresh both payments and bills lists
-            get().fetchPayments();
-            get().fetchBills();
-            get().fetchMyBills();
-            get().fetchMyPayments();
+            await Promise.all([
+              get().fetchMyBills(),
+              get().fetchMyPayments(),
+              get().fetchPayments(),
+              get().fetchBills(),
+            ]);
             return { success: true, data: res.data, message: res.message };
           }
           return { success: false, message: res?.message || "Payment failed." };

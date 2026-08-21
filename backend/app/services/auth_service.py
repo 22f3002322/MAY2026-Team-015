@@ -362,7 +362,12 @@ def list_pending_verifications(db: Session) -> list[User]:
     )
 
 
-def verify_user(db: Session, user_id: int, occupancy_type: str | None = None) -> User:
+def verify_user(
+    db: Session,
+    user_id: int,
+    occupancy_type: str | None = None,
+    flat_id: int | None = None,
+) -> User:
     user = get_user_by_id(db, user_id)
     if user is None:
         raise NotFound("User not found.")
@@ -373,13 +378,31 @@ def verify_user(db: Session, user_id: int, occupancy_type: str | None = None) ->
     # If this Resident selected a flat at signup (resident_profiles.flat_id
     # was set then, but no occupancy_history row exists yet -- see
     # signup_user), this is the moment that request becomes official:
-    # verification IS the move-in, dated to right now. Guarded by
-    # `already_current` so re-verifying (or verifying someone an Admin
-    # already moved in manually beforehand) is a harmless no-op rather
-    # than a duplicate/conflicting move-in.
+    # verification IS the move-in, dated to right now. Committee may also
+    # supply flat_id here for residents who signed up without one.
     needs_move_in = False
     profile = user.resident_profile
-    if user.role.role_name == RoleEnum.RESIDENT and profile is not None and profile.flat_id is not None:
+    if user.role.role_name == RoleEnum.RESIDENT and profile is not None:
+        if profile.flat_id is None:
+            if flat_id is None:
+                raise BadRequest(
+                    "This resident has no flat assigned. Select a vacant flat to verify."
+                )
+            flat = apartment_service.get_flat(db, flat_id, for_update=True)
+            if flat.occupancy_status != "vacant":
+                raise Conflict(f"Flat '{flat.flat_number}' is already occupied.")
+            already_claimed = (
+                db.query(ResidentProfile)
+                .filter(ResidentProfile.flat_id == flat_id)
+                .first()
+            )
+            if already_claimed is not None:
+                raise Conflict(
+                    f"Flat '{flat.flat_number}' is already claimed by another resident."
+                )
+            profile.flat_id = flat_id
+            db.flush()
+
         already_current = (
             db.query(OccupancyHistory)
             .filter(
@@ -388,7 +411,7 @@ def verify_user(db: Session, user_id: int, occupancy_type: str | None = None) ->
             )
             .first()
         )
-        needs_move_in = already_current is None
+        needs_move_in = already_current is None and profile.flat_id is not None
 
     user.is_verified = True
     db.commit()

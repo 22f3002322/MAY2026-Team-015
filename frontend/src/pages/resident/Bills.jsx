@@ -23,7 +23,6 @@ const Bills = () => {
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [category, setCategory] = useState("");
   const [selectedBill, setSelectedBill] = useState(null);
   const [payingBill, setPayingBill] = useState(null);
 
@@ -51,10 +50,9 @@ const Bills = () => {
       const matchesStatus =
         status === "" ||
         String(bill.status).toLowerCase() === String(status).toLowerCase();
-      const matchesCategory = category === "" || bill.category === category;
-      return matchesSearch && matchesStatus && matchesCategory;
+      return matchesSearch && matchesStatus;
     });
-  }, [mappedBills, search, status, category]);
+  }, [mappedBills, search, status]);
 
   const handlePay = async (paymentMethod) => {
     const bill = payingBill?.raw || payingBill;
@@ -74,7 +72,7 @@ const Bills = () => {
     if (res.success) {
       toast.success(res.message || "Payment recorded.");
       setPayingBill(null);
-      fetchMyBills();
+      await fetchMyBills();
     } else {
       toast.error(res.message || "Payment failed.");
     }
@@ -90,8 +88,6 @@ const Bills = () => {
           setSearch={setSearch}
           status={status}
           setStatus={setStatus}
-          category={category}
-          setCategory={setCategory}
         />
 
         <BillTable

@@ -126,10 +126,13 @@ const Polls = () => {
         confirmText="Close Poll"
         onCancel={() => setDeletePoll(null)}
         onConfirm={async () => {
-          if (deletePoll) {
-            await updatePoll(deletePoll.id, { is_active: false });
+          if (!deletePoll) return;
+          const res = await updatePoll(deletePoll.id, { is_active: false });
+          if (res?.success) {
             toast.success("Poll closed successfully.");
             setDeletePoll(null);
+          } else {
+            toast.error(res?.message || "Failed to close poll.");
           }
         }}
       />

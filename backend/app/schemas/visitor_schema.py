@@ -43,6 +43,10 @@ class VisitorRequestOut(VisitorRequestBase):
     visitor_name: Optional[str] = None
     visitor_phone: Optional[str] = None
     visitor_type: Optional[str] = None
+    # Denormalized from ResidentProfile / Flat for admin lists
+    flat_number: Optional[str] = None
+    block_name: Optional[str] = None
+    resident_name: Optional[str] = None
 
 
 class VisitorPreRegisterRequest(BaseModel):

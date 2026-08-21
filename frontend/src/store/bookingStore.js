@@ -2,21 +2,31 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import useFacilityStore from "./facilityStore";
 import facilityApi from "../api/facilityApi";
+import { BOOKING_STATUS, labelFor } from "../utils/adminMaps";
 
 const syncToFacilityStore = (bookings) => {
-  const facilityBookings = bookings.map((b) => ({
-    id: b.booking_id || b.id,
-    facilityId: b.facility_id || (b.facility === "Club House" ? 1 : b.facility === "Swimming Pool" ? 2 : b.facility === "Gym" ? 3 : 4),
-    facility: b.facility || `Facility #${b.facility_id}`,
-    date: b.booking_date || b.date,
-    time: b.time_slot || b.time || `${b.start_time?.slice(0, 5)} - ${b.end_time?.slice(0, 5)}`,
-    purpose: b.description || b.purpose,
-    status: b.status,
-    createdAt: b.createdAt || b.created_at,
-    updatedAt: new Date().toISOString(),
-    bookedBy: b.resident || `Resident #${b.resident_id}`,
-    flat: b.flat || "A-101",
-  }));
+  const facilityBookings = bookings.map((b) => {
+    const statusValue = String(b.status || "").toLowerCase();
+    return {
+      id: b.booking_id || b.id,
+      facilityId: b.facility_id,
+      facility:
+        b.facility_name || b.facility || `Facility #${b.facility_id}`,
+      date: b.booking_date || b.date,
+      time:
+        b.time_slot ||
+        b.time ||
+        `${String(b.start_time || "").slice(0, 5)} - ${String(b.end_time || "").slice(0, 5)}`,
+      guests: b.guest_count ?? b.guests ?? null,
+      guest_count: b.guest_count ?? b.guests ?? null,
+      status: labelFor(BOOKING_STATUS, statusValue) || statusValue,
+      statusValue,
+      createdAt: b.created_at || b.createdAt,
+      updatedAt: b.updated_at || b.updatedAt || null,
+      bookedBy: b.resident_name || b.resident || `Resident #${b.resident_id}`,
+      flat: b.flat_number || b.flat || "—",
+    };
+  });
   useFacilityStore.setState({ bookings: facilityBookings });
 };
 
@@ -64,6 +74,10 @@ const useBookingStore = create(
             start_time: booking.startTime || "10:00:00",
             end_time: booking.endTime || "12:00:00",
           };
+          const guests = booking.guest_count ?? booking.guests;
+          if (guests != null && guests !== "") {
+            payload.guest_count = Number(guests);
+          }
           const res = await facilityApi.createBooking(payload);
           if (res && res.success) {
             await get().fetchBookings();

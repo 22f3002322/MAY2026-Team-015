@@ -24,7 +24,7 @@ const useAuthStore = create(
       isAuthenticated: false,
       accessToken: null,
       refreshToken: null,
-      isVerified: true,
+      isVerified: false,
       pendingVerifications: [],
 
       // Backend-only login
@@ -54,7 +54,7 @@ const useAuthStore = create(
             role: frontendRole,
             backendRole: rawBackendRole,
             isAuthenticated: true,
-            isVerified: is_verified !== false,
+            isVerified: is_verified === true,
           });
 
           // Fetch complete user profile
@@ -71,10 +71,9 @@ const useAuthStore = create(
                   name: me.full_name,
                   email: me.email,
                   phone: me.phone,
-                  flat: residentInfo.flat_id
-                    ? String(residentInfo.flat_id)
-                    : null,
-                  block: residentInfo.block || null,
+                  flat: residentInfo.flat_number || null,
+                  flatId: residentInfo.flat_id ?? null,
+                  block: residentInfo.block_name || null,
                   occupancy: "Resident",
                   isVerified: me.is_verified,
                   staffRole: me.maintenance_profile || String(me.role || rawBackendRole || "").toLowerCase() === "maintenance"
@@ -104,7 +103,7 @@ const useAuthStore = create(
           return {
             success: true,
             role: frontendRole,
-            isVerified: is_verified !== false,
+            isVerified: is_verified === true,
           };
 
         } catch (err) {
@@ -218,10 +217,9 @@ const useAuthStore = create(
                 name: me.full_name,
                 email: me.email,
                 phone: me.phone,
-                flat: residentInfo.flat_id
-                  ? String(residentInfo.flat_id)
-                  : null,
-                block: residentInfo.block || null,
+                flat: residentInfo.flat_number || null,
+                flatId: residentInfo.flat_id ?? null,
+                block: residentInfo.block_name || null,
                 occupancy: "Resident",
                 isVerified: me.is_verified,
                 staffRole: me.maintenance_profile || String(me.role || "").toLowerCase() === "maintenance"
@@ -235,7 +233,7 @@ const useAuthStore = create(
               role: mapBackendRoleToFrontend(me.role),
               backendRole: me.role,
               isAuthenticated: true,
-              isVerified: me.is_verified !== false,
+              isVerified: me.is_verified === true,
             });
           }
 
@@ -253,65 +251,77 @@ const useAuthStore = create(
         const { backendRole } = get();
         const role = String(backendRole || "").toLowerCase();
 
-        // Admin cannot call this endpoint — backend returns 403.
-        // Only committee members are allowed.
         if (role !== "committee") {
-          return { success: false, data: [] };
+          return { success: false, data: [], message: "Not allowed." };
         }
 
         try {
           const res = await authApi.getPendingVerifications();
 
           if (res && res.success) {
-            set({
-              pendingVerifications: res.data || [],
-            });
-
-            return {
-              success: true,
-              data: res.data,
-            };
+            set({ pendingVerifications: res.data || [] });
+            return { success: true, data: res.data || [] };
           }
 
+          set({ pendingVerifications: [] });
+          return {
+            success: false,
+            data: [],
+            message: res?.message || "Failed to load pending verifications.",
+          };
         } catch (err) {
-          console.warn(
-            "Fetch verification failed:",
-            err.message
-          );
+          console.warn("Fetch verification failed:", err.message);
+          set({ pendingVerifications: [] });
+          return {
+            success: false,
+            data: [],
+            message: err.message || "Failed to load pending verifications.",
+          };
         }
-
-        return {
-          success: false,
-          data: [],
-        };
       },
 
 
-      // Verify user
-      verifyUserAccount: async (userId) => {
+      // Verify user (Committee). Optional occupancy_type + flat_id.
+      verifyUserAccount: async (userId, options = {}) => {
         try {
-          const res = await authApi.verifyUser(userId);
+          const payload = {};
+          // Back-compat: second arg used to be occupancyType string
+          if (typeof options === "string") {
+            if (options) payload.occupancy_type = options;
+          } else if (options && typeof options === "object") {
+            if (options.occupancyType || options.occupancy_type) {
+              payload.occupancy_type =
+                options.occupancyType || options.occupancy_type;
+            }
+            if (options.flatId != null || options.flat_id != null) {
+              payload.flat_id = Number(options.flatId ?? options.flat_id);
+            }
+          }
+
+          const res = await authApi.verifyUser(userId, payload);
 
           if (res && res.success) {
             set((state) => ({
-              pendingVerifications:
-                state.pendingVerifications.filter(
-                  (u) => u.user_id !== userId
-                ),
+              pendingVerifications: state.pendingVerifications.filter(
+                (u) => u.user_id !== userId
+              ),
             }));
 
             return {
               success: true,
-              message:
-                res.message ||
-                "User verified successfully",
+              message: res.message || "User verified successfully",
             };
           }
 
+          return {
+            success: false,
+            message: res?.message || "Failed to verify user",
+          };
         } catch (err) {
           return {
             success: false,
             message:
+              err?.message ||
               err?.response?.data?.message ||
               "Failed to verify user",
           };
@@ -360,9 +370,11 @@ const useAuthStore = create(
         set({
           user: null,
           role: null,
+          backendRole: null,
           isAuthenticated: false,
           accessToken: null,
           refreshToken: null,
+          isVerified: false,
           pendingVerifications: [],
         });
       },

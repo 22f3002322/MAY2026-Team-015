@@ -17,14 +17,21 @@ const AssignStaffModal = ({ complaint, onClose }) => {
     if (!complaint) return;
     setStaffId("");
     setErrors({});
+    setStaffList([]);
     (async () => {
       try {
         const res = await maintenanceApi.getStaffDirectory({ is_available: true });
         if (res?.success && Array.isArray(res.data)) {
           setStaffList(res.data);
+          if (res.data.length === 0) {
+            toast.message("No available maintenance staff found.");
+          }
+        } else {
+          toast.error(res?.message || "Could not load staff directory.");
         }
       } catch (err) {
         console.warn("Staff directory fetch failed:", err.message);
+        toast.error(err.message || "Could not load staff directory.");
       }
     })();
   }, [complaint]);
@@ -77,7 +84,9 @@ const AssignStaffModal = ({ complaint, onClose }) => {
             }}
             className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 px-4"
           >
-            <option value="">Select staff…</option>
+            <option value="">
+              {staffList.length === 0 ? "No staff available" : "Select staff…"}
+            </option>
             {staffList.map((s) => (
               <option key={s.staff_id} value={s.staff_id}>
                 {s.full_name || s.email}

@@ -23,24 +23,19 @@ const ResidentStats = () => {
 
   const stats = useMemo(() => {
     const pendingBills = myBills.filter(
-      (bill) => bill.status === "Pending" || bill.status === "pending"
+      (bill) => String(bill.status || "").toLowerCase() === "unpaid"
     );
 
-    const upcomingBookings = bookings.filter(
-      (b) =>
-        b.status === "Pending" ||
-        b.status === "pending" ||
-        b.status === "Confirmed" ||
-        b.status === "confirmed" ||
-        b.status === "Approved" ||
-        b.status === "approved"
-    );
+    const upcomingBookings = bookings.filter((b) => {
+      const status = String(b.status || "").toLowerCase();
+      return status === "booked" || status === "approved";
+    });
 
     return [
       {
         title: "My Apartment",
         value: user?.flat || "--",
-        subtitle: user?.occupancy || "Resident",
+        subtitle: user?.block ? `Block ${user.block}` : "Resident",
         icon: Home,
       },
       {

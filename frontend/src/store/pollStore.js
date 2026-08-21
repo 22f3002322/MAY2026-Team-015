@@ -30,7 +30,7 @@ const usePollStore = create(
         try {
           const res = await pollApi.createPoll(payload);
           if (res && res.success) {
-            get().fetchPolls();
+            await get().fetchPolls();
             return { success: true, data: res.data, message: res.message };
           }
           return { success: false, message: res?.message || "Failed to create poll." };
@@ -44,7 +44,7 @@ const usePollStore = create(
         try {
           const res = await pollApi.updatePoll(pollId, payload);
           if (res && res.success) {
-            get().fetchPolls();
+            await get().fetchPolls();
             return { success: true, data: res.data, message: res.message };
           }
           return { success: false, message: res?.message || "Update failed." };
@@ -61,11 +61,12 @@ const usePollStore = create(
             // Mark locally as voted so UI updates immediately
             set((state) => ({
               polls: state.polls.map((p) =>
-                (p.poll_id || p.id) === pollId ? { ...p, user_voted: true } : p
+                (p.poll_id || p.id) === pollId
+                  ? { ...p, user_voted: true, userVoted: true }
+                  : p
               ),
             }));
-            // Refresh results
-            get().fetchResults(pollId);
+            await get().fetchResults(pollId);
             return { success: true, data: res.data, message: res.message };
           }
           return { success: false, message: res?.message || "Vote failed." };

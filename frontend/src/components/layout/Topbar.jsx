@@ -20,7 +20,7 @@ const NOTIFICATION_TYPE_STYLES = {
 };
 
 const Topbar = ({ title = "Dashboard", breadcrumb = [], onMenuClick }) => {
-  const { user, role } = useAuthStore();
+  const { user, role, backendRole } = useAuthStore();
   const { notifications, unreadCount, fetchNotifications, markRead, markAllRead } = useNoticeStore();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -207,7 +207,7 @@ const Topbar = ({ title = "Dashboard", breadcrumb = [], onMenuClick }) => {
               {user?.name || "User"}
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
-              {role || "Guest"}
+              {backendRole || role || "Guest"}
             </p>
           </div>
         </div>

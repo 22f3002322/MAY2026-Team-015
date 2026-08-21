@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-
 import {
   User,
   Phone,
@@ -8,24 +7,20 @@ import {
   Save,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import Card from "../../ui/Card";
 import Button from "../../ui/Button";
-
 import useProfileStore from "../../../store/profileStore";
 
 const EmergencyContacts = () => {
-  const profile = useProfileStore(
-    (state) => state.profile
+  const profile = useProfileStore((state) => state.profile);
+  const updateEmergencyContact = useProfileStore(
+    (state) => state.updateEmergencyContact
   );
 
-  const updateEmergencyContact =
-    useProfileStore(
-      (state) => state.updateEmergencyContact
-    );
-
   const [editing, setEditing] = useState(false);
-
+  const [saving, setSaving] = useState(false);
   const [contact, setContact] = useState(
     profile.emergencyContact || { name: "", relation: "", phone: "" }
   );
@@ -38,36 +33,38 @@ const EmergencyContacts = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    setContact((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setContact((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    updateEmergencyContact(contact);
-    setEditing(false);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await updateEmergencyContact(contact);
+      if (res?.success) {
+        toast.success(res.message || "Emergency contact saved.");
+        setEditing(false);
+      } else {
+        toast.error(res?.message || "Failed to save emergency contact.");
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const inputClass =
     "h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-800 shadow-sm transition-all duration-200 outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:bg-slate-800 dark:focus:border-blue-400";
 
   return (
-    <Card className="p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
-
+    <Card className="rounded-2xl border border-slate-200 p-6 shadow-sm dark:border-slate-800">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
         <div>
           <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
             Emergency Contact
           </h3>
-
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Person to contact during emergencies
+            Saved as Name | Relation | Phone (max 200 characters)
           </p>
         </div>
-
 
         {!editing ? (
           <Button
@@ -79,9 +76,7 @@ const EmergencyContacts = () => {
             Edit
           </Button>
         ) : (
-
           <div className="flex gap-3">
-
             <Button
               variant="outline"
               onClick={() => {
@@ -89,36 +84,25 @@ const EmergencyContacts = () => {
                 setEditing(false);
               }}
               className="flex items-center gap-2"
+              disabled={saving}
             >
               <X size={16} />
               Cancel
             </Button>
-
-
-            <Button
-              onClick={handleSave}
-              className="flex items-center gap-2"
-            >
+            <Button onClick={handleSave} className="flex items-center gap-2" loading={saving}>
               <Save size={16} />
               Save
             </Button>
-
           </div>
-
         )}
-
       </div>
 
-
       <div className="space-y-6">
-
-
         <div>
           <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
             <User size={16} />
             Contact Name
           </label>
-
           <input
             type="text"
             name="name"
@@ -129,14 +113,11 @@ const EmergencyContacts = () => {
           />
         </div>
 
-
-
         <div>
           <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
             <HeartHandshake size={16} />
             Relation
           </label>
-
           <input
             type="text"
             name="relation"
@@ -147,14 +128,11 @@ const EmergencyContacts = () => {
           />
         </div>
 
-
-
         <div>
           <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
             <Phone size={16} />
             Phone Number
           </label>
-
           <input
             type="tel"
             name="phone"
@@ -164,10 +142,7 @@ const EmergencyContacts = () => {
             className={inputClass}
           />
         </div>
-
-
       </div>
-
     </Card>
   );
 };

@@ -4,13 +4,6 @@ import Button from "../ui/Button";
 import usePollStore from "../../store/pollStore";
 import { toast } from "sonner";
 
-const categories = [
-  "Community",
-  "Parking",
-  "Finance",
-  "Events",
-];
-
 const PollForm = ({ initialData = null, onClose }) => {
   const createPoll = usePollStore((state) => state.createPoll);
   const updatePoll = usePollStore((state) => state.updatePoll);
@@ -19,11 +12,18 @@ const PollForm = ({ initialData = null, onClose }) => {
 
   const [form, setForm] = useState({
     question: initialData?.question || "",
-    category: initialData?.category || "Community",
-    startDate: initialData?.start_date || initialData?.startDate || new Date().toISOString().split("T")[0],
-    endDate: initialData?.end_date || initialData?.endDate || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
+    startDate:
+      initialData?.start_date ||
+      initialData?.startDate ||
+      new Date().toISOString().split("T")[0],
+    endDate:
+      initialData?.end_date ||
+      initialData?.endDate ||
+      new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
     options: initialData?.options?.length
-      ? initialData.options.map((o) => ({ option: o.option_text || o.option || "" }))
+      ? initialData.options.map((o) => ({
+          option: o.option_text || o.option || "",
+        }))
       : [{ option: "" }, { option: "" }],
   });
 
@@ -32,23 +32,14 @@ const PollForm = ({ initialData = null, onClose }) => {
   const today = new Date().toISOString().split("T")[0];
 
   const handleChange = (field, value) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-    setErrors((prev) => ({
-      ...prev,
-      [field]: "",
-    }));
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handleOptionChange = (index, value) => {
     const updated = [...form.options];
     updated[index] = { option: value };
-    setForm((prev) => ({
-      ...prev,
-      options: updated,
-    }));
+    setForm((prev) => ({ ...prev, options: updated }));
   };
 
   const addOption = () => {
@@ -68,24 +59,16 @@ const PollForm = ({ initialData = null, onClose }) => {
 
   const validate = () => {
     const newErrors = {};
-    if (!form.question.trim()) {
-      newErrors.question = "Question is required.";
-    }
-    if (!form.startDate) {
-      newErrors.startDate = "Start date is required.";
-    }
-    if (!form.endDate) {
-      newErrors.endDate = "End date is required.";
-    }
+    if (!form.question.trim()) newErrors.question = "Question is required.";
+    if (!form.startDate) newErrors.startDate = "Start date is required.";
+    if (!form.endDate) newErrors.endDate = "End date is required.";
     if (form.startDate && form.endDate && form.endDate < form.startDate) {
       newErrors.endDate = "End date must be after start date.";
     }
-
     const filledOptions = form.options.filter((o) => o.option.trim());
     if (filledOptions.length < 2) {
       newErrors.options = "At least 2 non-empty poll options are required.";
     }
-
     return newErrors;
   };
 
@@ -101,7 +84,9 @@ const PollForm = ({ initialData = null, onClose }) => {
 
     const payload = {
       question: form.question.trim(),
-      options: form.options.filter((o) => o.option.trim()).map((o) => ({ option_text: o.option.trim() })),
+      options: form.options
+        .filter((o) => o.option.trim())
+        .map((o) => ({ option_text: o.option.trim() })),
       start_date: form.startDate,
       end_date: form.endDate,
       allow_multiple_votes: false,
@@ -122,7 +107,9 @@ const PollForm = ({ initialData = null, onClose }) => {
     setLoading(false);
 
     if (res && res.success) {
-      toast.success(res.message || (initialData ? "Poll updated!" : "Poll created successfully!"));
+      toast.success(
+        res.message || (initialData ? "Poll updated!" : "Poll created successfully!")
+      );
       onClose();
     } else {
       toast.error(res?.message || "Failed to save poll.");
@@ -139,24 +126,7 @@ const PollForm = ({ initialData = null, onClose }) => {
         onChange={(e) => handleChange("question", e.target.value)}
       />
 
-      <div className="grid gap-5 md:grid-cols-3">
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-            Category
-          </label>
-          <select
-            value={form.category}
-            onChange={(e) => handleChange("category", e.target.value)}
-            className="h-14 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 outline-none focus:border-indigo-600"
-          >
-            {categories.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </div>
-
+      <div className="grid gap-5 md:grid-cols-2">
         <Input
           label="Start Date"
           type="date"
@@ -165,7 +135,6 @@ const PollForm = ({ initialData = null, onClose }) => {
           error={errors.startDate}
           onChange={(e) => handleChange("startDate", e.target.value)}
         />
-
         <Input
           label="End Date"
           type="date"
@@ -181,7 +150,6 @@ const PollForm = ({ initialData = null, onClose }) => {
           <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
             Poll Options (min 2)
           </label>
-
           <Button type="button" variant="outline" size="sm" onClick={addOption}>
             + Add Option
           </Button>
@@ -197,7 +165,6 @@ const PollForm = ({ initialData = null, onClose }) => {
                   onChange={(e) => handleOptionChange(index, e.target.value)}
                 />
               </div>
-
               {form.options.length > 2 && (
                 <Button
                   type="button"
@@ -213,9 +180,7 @@ const PollForm = ({ initialData = null, onClose }) => {
         </div>
 
         {errors.options && (
-          <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-            {errors.options}
-          </p>
+          <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.options}</p>
         )}
       </div>
 

@@ -24,7 +24,6 @@ const ResidentForm = ({
     occupation: initialData?.occupation || "",
     emergency_contact: initialData?.emergency_contact || "",
     alternate_phone: initialData?.alternate_phone || "",
-    status: initialData?.status || "Active",
   });
   const [submitting, setSubmitting] = useState(false);
 

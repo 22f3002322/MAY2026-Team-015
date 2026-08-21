@@ -29,6 +29,9 @@ router = APIRouter(prefix="/api/v1/visitors", tags=["visitors"])
 
 def _request_out(request, otp: str | None = None) -> VisitorRequestOut:
     visitor = getattr(request, "visitor", None)
+    resident = getattr(request, "resident", None)
+    flat = getattr(resident, "flat", None) if resident else None
+    user = getattr(resident, "user", None) if resident else None
     return VisitorRequestOut(
         request_id=request.request_id,
         resident_id=request.resident_id,
@@ -37,11 +40,16 @@ def _request_out(request, otp: str | None = None) -> VisitorRequestOut:
         expected_time=request.expected_time,
         status=request.status,
         approved_at=request.approved_at,
-        otp=otp if otp is not None else request.otp,
+        # Only return plaintext OTP when explicitly provided (pre-register).
+        # Never expose the stored hash from list/deny responses.
+        otp=otp,
         created_at=request.created_at,
         visitor_name=visitor.visitor_name if visitor else None,
         visitor_phone=visitor.phone if visitor else None,
         visitor_type=visitor.visitor_type if visitor else None,
+        flat_number=flat.flat_number if flat else None,
+        block_name=flat.block.block_name if flat and flat.block else None,
+        resident_name=user.full_name if user else None,
     )
 
 
@@ -111,6 +119,16 @@ def list_my_requests(
     db: Session = Depends(get_db),
 ):
     requests = visitor_service.list_visitor_requests(db, resident_id=profile.resident_id)
+    return success_response(data=[_request_out(r) for r in requests])
+
+
+@router.get("/requests/all")
+def list_all_requests(
+    _staff: User = Depends(require_admin_or_committee),
+    db: Session = Depends(get_db),
+):
+    """Admin/Committee: all visitor pre-registration requests (no OTP hashes)."""
+    requests = visitor_service.list_visitor_requests(db)
     return success_response(data=[_request_out(r) for r in requests])
 
 

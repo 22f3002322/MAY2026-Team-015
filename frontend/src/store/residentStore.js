@@ -91,23 +91,32 @@ const useResidentStore = create(
           };
 
           const signupRes = await authApi.signup(signupPayload);
-          if (signupRes?.success && signupRes.data) {
-            const userId = signupRes.data.user_id;
-            const callerRole = String(useAuthStore.getState().backendRole || "").toLowerCase();
-            if (resident.status === "Active" && callerRole === "committee") {
-              await authApi.verifyUser(userId);
-              // After verify, move-in may already happen; ensure occupancy type if needed
-              const directory = await apartmentApi.getResidents({ current_only: false });
-              const created = (directory?.data || []).find((r) => r.user_id === userId);
-              const occType = occupancyToApi(resident.occupancy);
-              if (created && occType && created.flat_id) {
-                // occupancy already set by verify; ignore if move-in already done
-              }
-            }
-            await get().fetchResidents();
-            return { success: true, message: "Resident created successfully." };
+          if (!signupRes?.success || !signupRes.data) {
+            return { success: false, message: signupRes?.message || "Failed to create account." };
           }
-          return { success: false, message: signupRes?.message || "Failed to create account." };
+
+          const userId = signupRes.data.user_id;
+          const callerRole = String(useAuthStore.getState().backendRole || "").toLowerCase();
+          if (callerRole !== "committee") {
+            return {
+              success: false,
+              message: "Only committee members can create and activate residents.",
+            };
+          }
+
+          const occType = occupancyToApi(resident.occupancy) || "Owner";
+          const verifyRes = await authApi.verifyUser(userId, { occupancy_type: occType });
+          if (!verifyRes?.success) {
+            return {
+              success: false,
+              message:
+                verifyRes?.message ||
+                "Account was created but activation failed. Find them under Pending Verifications.",
+            };
+          }
+
+          await get().fetchResidents();
+          return { success: true, message: "Resident created and activated." };
         } catch (err) {
           return { success: false, message: err.message || "Failed to add resident." };
         }

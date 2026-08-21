@@ -2,64 +2,111 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import visitorApi from "../api/visitorApi";
 
+const STATUS_LABEL = {
+  expected: "Expected",
+  pre_registered: "Expected",
+  arrived: "Arrived",
+  denied: "Denied",
+  departed: "Departed",
+};
+
+const mapStatus = (raw) => {
+  const value = String(raw || "expected").toLowerCase();
+  return {
+    statusValue: value === "pre_registered" ? "expected" : value,
+    status: STATUS_LABEL[value] || value,
+  };
+};
+
+const isPlainOtp = (otp) => {
+  if (!otp) return false;
+  const s = String(otp);
+  return /^\d{4,8}$/.test(s);
+};
+
 const useVisitorStore = create(
   persist(
     (set, get) => ({
       visitors: [],
       requests: [],
+      allRequests: [],
       logs: [],
       loading: false,
+      lastPlainOtp: null,
 
-      // Pre-register visitor via backend API
       preRegisterVisitor: async (visitorData) => {
         try {
+          const timeRaw =
+            visitorData.visitTime ||
+            visitorData.expectedTime ||
+            visitorData.expected_time ||
+            "10:00";
+          const expected_time =
+            String(timeRaw).length === 5 ? `${timeRaw}:00` : timeRaw;
+
           const payload = {
             visitor_name: visitorData.name || visitorData.visitor_name,
-            visitor_phone: visitorData.phone || visitorData.visitor_phone || "+919876543210",
-            visitor_type: visitorData.type || visitorData.visitor_type || "Guest",
-            expected_date: visitorData.expectedDate || visitorData.expected_date || new Date().toISOString().split("T")[0],
-            expected_time: visitorData.visitTime || visitorData.expectedTime || visitorData.expected_time || "10:00:00",
+            visitor_phone:
+              visitorData.phone || visitorData.visitor_phone || "",
+            visitor_type:
+              visitorData.purpose ||
+              visitorData.type ||
+              visitorData.visitor_type ||
+              "Guest",
+            expected_date:
+              visitorData.expectedDate ||
+              visitorData.date ||
+              visitorData.expected_date ||
+              new Date().toISOString().split("T")[0],
+            expected_time,
           };
+
           const res = await visitorApi.preRegisterVisitor(payload);
           if (res && res.success && res.data) {
-            const newVisitor = {
-              id: res.data.request_id || Date.now(),
-              name: payload.visitor_name,
-              phone: payload.visitor_phone,
-              purpose: payload.visitor_type,
-              date: payload.expected_date,
-              visitTime: payload.expected_time,
-              status: "Expected",
-              otp: res.data.otp,
-              createdAt: res.data.created_at || payload.expected_date,
+            const plainOtp = res.data.otp;
+            set({ lastPlainOtp: plainOtp || null });
+            await get().fetchVisitorRequests();
+            return {
+              success: true,
+              data: res.data,
+              otp: plainOtp,
+              message: res.message,
             };
-            set((state) => ({ visitors: [newVisitor, ...state.visitors] }));
-            get().fetchVisitorRequests();
-            return { success: true, data: res.data, otp: res.data.otp };
           }
-          return { success: false, message: res?.message || "Failed to pre-register visitor." };
+          return {
+            success: false,
+            message: res?.message || "Failed to pre-register visitor.",
+          };
         } catch (err) {
-          return { success: false, message: err.message || "Failed to pre-register visitor." };
+          return {
+            success: false,
+            message: err.message || "Failed to pre-register visitor.",
+          };
         }
       },
 
-      // Fetch visitor requests for current resident
       fetchVisitorRequests: async () => {
         set({ loading: true });
         try {
           const res = await visitorApi.getVisitorRequests();
           if (res && res.success && Array.isArray(res.data)) {
-            const mapped = res.data.map((r) => ({
-              id: r.request_id,
-              name: r.visitor_name,
-              phone: r.visitor_phone,
-              purpose: r.visitor_type,
-              date: r.expected_date,
-              visitTime: r.expected_time,
-              status: r.status === "pre_registered" || r.status === "expected" ? "Expected" : r.status === "arrived" ? "Checked In" : r.status === "departed" ? "Completed" : r.status,
-              otp: r.otp,
-              createdAt: r.created_at || r.expected_date,
-            }));
+            const mapped = res.data.map((r) => {
+              const { status, statusValue } = mapStatus(r.status);
+              return {
+                id: r.request_id,
+                name: r.visitor_name,
+                phone: r.visitor_phone,
+                purpose: r.visitor_type,
+                date: r.expected_date,
+                visitTime: r.expected_time,
+                status,
+                statusValue,
+                otpSent: statusValue === "expected",
+                // Never surface hashed OTP from list responses
+                otp: null,
+                createdAt: r.created_at || r.expected_date,
+              };
+            });
             set({ requests: res.data, visitors: mapped, loading: false });
             return { success: true, data: mapped };
           }
@@ -74,7 +121,25 @@ const useVisitorStore = create(
         return get().preRegisterVisitor(visitorData);
       },
 
-      // Verify OTP at gate (Security)
+      denyVisitor: async (requestId) => {
+        try {
+          const res = await visitorApi.denyVisitorRequest(requestId);
+          if (res && res.success) {
+            await get().fetchVisitorRequests();
+            return { success: true, data: res.data, message: res.message };
+          }
+          return {
+            success: false,
+            message: res?.message || "Failed to deny visitor request.",
+          };
+        } catch (err) {
+          return {
+            success: false,
+            message: err.message || "Failed to deny visitor request.",
+          };
+        }
+      },
+
       verifyOtp: async (requestId, otp) => {
         try {
           const res = await visitorApi.verifyVisitorOtp(requestId, otp);
@@ -88,7 +153,6 @@ const useVisitorStore = create(
         }
       },
 
-      // Log exit at gate (Security)
       logExit: async (logId) => {
         try {
           const res = await visitorApi.logVisitorExit(logId);
@@ -102,7 +166,6 @@ const useVisitorStore = create(
         }
       },
 
-      // Fetch visitor logs for admin
       fetchVisitorLogs: async () => {
         try {
           const res = await visitorApi.getVisitorLogs();
@@ -116,7 +179,29 @@ const useVisitorStore = create(
         return { success: false, data: get().logs };
       },
 
-      resetVisitors: () => set({ visitors: [], requests: [], logs: [] }),
+      fetchAllVisitorRequests: async () => {
+        try {
+          const res = await visitorApi.getAllVisitorRequests();
+          if (res && res.success && Array.isArray(res.data)) {
+            set({ allRequests: res.data });
+            return { success: true, data: res.data };
+          }
+        } catch (err) {
+          console.warn("All visitor requests fetch failed:", err.message);
+        }
+        return { success: false, data: get().allRequests };
+      },
+
+      clearLastPlainOtp: () => set({ lastPlainOtp: null }),
+
+      resetVisitors: () =>
+        set({
+          visitors: [],
+          requests: [],
+          allRequests: [],
+          logs: [],
+          lastPlainOtp: null,
+        }),
     }),
     {
       name: "visitor-storage",
@@ -124,4 +209,5 @@ const useVisitorStore = create(
   )
 );
 
+export { isPlainOtp };
 export default useVisitorStore;

@@ -28,7 +28,11 @@ const BillForm = ({ initialData = null, onClose }) => {
           due_date: (initialData.due_date || today).toString().slice(0, 10),
           amount: String(initialData.amount || ""),
           description: initialData.description || "Maintenance charges",
-          status: initialData.status || "unpaid",
+          status:
+            String(initialData.statusValue || initialData.status || "unpaid")
+              .toLowerCase() === "paid"
+              ? "paid"
+              : "unpaid",
         }
       : {
           flat_id: "",

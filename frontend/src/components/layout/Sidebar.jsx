@@ -53,7 +53,7 @@ const maintenanceMenuItems = [
 ];
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
-  const { user, role, logout } = useAuthStore();
+  const { user, role, backendRole, logout } = useAuthStore();
   const navigate = useNavigate();
 
   const getMenuItems = () => {
@@ -144,7 +144,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 {user?.name || "User"}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
-                {role || "Guest"}
+                {backendRole || role || "Guest"}
               </p>
             </div>
           </div>

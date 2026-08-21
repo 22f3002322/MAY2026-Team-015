@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Modal from "../ui/Modal";
 import Button from "../ui/Button";
@@ -7,6 +7,13 @@ import { COMPLAINT_STATUS } from "../../utils/adminMaps";
 const StatusUpdateModal = ({ complaint, onClose, onUpdate }) => {
   const [status, setStatus] = useState(complaint?.statusValue || "assigned");
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (complaint) {
+      setStatus(complaint.statusValue || "assigned");
+      setErrors({});
+    }
+  }, [complaint]);
 
   if (!complaint) return null;
 

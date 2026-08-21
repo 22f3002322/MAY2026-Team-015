@@ -88,7 +88,7 @@ class ResidentProfile(Base, TimestampMixin):
     user_id = Column(Integer, ForeignKey("users.user_id"), unique=True, nullable=False)
     flat_id = Column(Integer, ForeignKey("flats.flat_id"), nullable=True)
 
-    emergency_contact = Column(String(20), nullable=True)
+    emergency_contact = Column(String(200), nullable=True)
     alternate_phone = Column(String(20), nullable=True)
     occupation = Column(String(100), nullable=True)
     profile_image = Column(String(255), nullable=True)

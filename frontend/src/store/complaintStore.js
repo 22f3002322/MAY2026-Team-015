@@ -106,20 +106,27 @@ const useComplaintStore = create(
             category_id: complaint.category_id || 1,
             description: complaint.description || complaint.details || complaint.title || "",
             priority: complaint.priority
-              ? complaint.priority.toLowerCase()
+              ? String(complaint.priority).toLowerCase()
               : "medium",
           });
           if (res && res.success) {
             const complaintId = res.data?.complaint_id || res.data?.id;
+            let imageUploadFailed = false;
             if (complaintId && complaint.imageFile) {
               try {
                 await complaintApi.uploadComplaintImage(complaintId, complaint.imageFile);
               } catch (imgErr) {
                 console.warn("Complaint image upload failed:", imgErr.message);
+                imageUploadFailed = true;
               }
             }
             await get().fetchComplaints();
-            return { success: true, data: res.data, message: res.message };
+            return {
+              success: true,
+              data: res.data,
+              message: res.message,
+              imageUploadFailed,
+            };
           }
           return { success: false, message: res?.message || "Failed to file complaint." };
         } catch (err) {
@@ -129,16 +136,21 @@ const useComplaintStore = create(
 
       updateComplaint: async (id, updatedData) => {
         try {
-          const payload = { ...updatedData };
-          if (payload.status) {
-            payload.status = String(payload.status)
+          const payload = {};
+          if (updatedData.description != null) {
+            payload.description = updatedData.description;
+          }
+          if (updatedData.priority != null) {
+            payload.priority = String(updatedData.priority).toLowerCase();
+          }
+          if (updatedData.status != null) {
+            payload.status = String(updatedData.status)
               .toLowerCase()
               .replace(/\s+/g, "_");
           }
-          if (payload.priority) {
-            payload.priority = String(payload.priority).toLowerCase();
+          if (updatedData.category_id != null) {
+            payload.category_id = updatedData.category_id;
           }
-          delete payload.remarks;
           const res = await complaintApi.updateComplaint(id, payload);
           if (res && res.success) {
             await get().fetchComplaints();

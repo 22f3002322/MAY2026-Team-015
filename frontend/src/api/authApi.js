@@ -83,9 +83,11 @@ export const authApi = {
   },
 
   // Committee verifies a pending user account
-  verifyUser: async (userId) => {
+  // payload optional: { occupancy_type: "Owner" | "Rental", flat_id?: number }
+  verifyUser: async (userId, payload = {}) => {
     return apiRequest(`/api/v1/auth/verify/${userId}`, {
       method: "POST",
+      body: JSON.stringify(payload),
     });
   },
 
