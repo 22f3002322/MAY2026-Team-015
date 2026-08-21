@@ -41,6 +41,7 @@ class FacilityBookingBase(BaseModel):
     booking_date: date
     start_time: time
     end_time: time
+    guest_count: Optional[int] = None
 
 
 class FacilityBookingCreate(FacilityBookingBase):
@@ -58,6 +59,7 @@ class FacilityBookingUpdate(BaseModel):
     start_time: Optional[time] = None
     end_time: Optional[time] = None
     status: Optional[str] = None
+    guest_count: Optional[int] = None
 
 
 class FacilityBookingOut(FacilityBookingBase):
@@ -66,6 +68,7 @@ class FacilityBookingOut(FacilityBookingBase):
     booking_id: int
     resident_id: int
     status: str
+    guest_count: Optional[int] = None
     approved_at: Optional[datetime] = None
     cancelled_by: Optional[int] = None
     cancelled_at: Optional[datetime] = None
@@ -73,4 +76,4 @@ class FacilityBookingOut(FacilityBookingBase):
     updated_at: Optional[datetime] = None
     facility_name: Optional[str] = None
     resident_name: Optional[str] = None
-    flat_number: Optional[str] = None   # NEW
+    flat_number: Optional[str] = None

@@ -118,13 +118,15 @@ const ComplaintTable = ({
             <Pencil size={16} />
           </Button>
 
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={() => onDelete(row)}
-          >
-            <Trash2 size={16} />
-          </Button>
+          {typeof onDelete === "function" && (
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => onDelete(row)}
+            >
+              <Trash2 size={16} />
+            </Button>
+          )}
         </div>
       ),
     },

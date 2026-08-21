@@ -15,19 +15,26 @@ const useFacilityStore = create(
         try {
           const res = await facilityApi.getFacilities();
           if (res && res.success && Array.isArray(res.data)) {
-            const mapped = res.data.map((f) => ({
-              id: f.facility_id || f.id,
-              facility_id: f.facility_id || f.id,
-              name: f.name,
-              category: f.description?.includes("Gym") ? "Fitness" : "Community",
-              image: f.image_url || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
-              location: "Main Grounds",
-              timings: `${f.opening_time || "08:00:00"} - ${f.closing_time || "22:00:00"}`,
-              capacity: f.max_capacity || 100,
-              bookingRequired: true,
-              available: f.is_active !== false,
-              description: f.description || "",
-            }));
+            const mapped = res.data.map((f) => {
+              const name =
+                f.facility_name || f.name || `Facility #${f.facility_id || f.id}`;
+              return {
+                id: f.facility_id || f.id,
+                facility_id: f.facility_id || f.id,
+                name,
+                facility_name: name,
+                category: f.category || "Community",
+                image:
+                  f.image_url ||
+                  "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
+                location: f.location || "Society premises",
+                timings: `${String(f.opening_time || "08:00:00").slice(0, 5)} - ${String(f.closing_time || "22:00:00").slice(0, 5)}`,
+                capacity: f.capacity ?? f.max_capacity ?? null,
+                bookingRequired: true,
+                available: f.is_active !== false,
+                description: f.description || "",
+              };
+            });
             set({ facilities: mapped, loading: false });
             return { success: true, data: mapped };
           }
@@ -53,21 +60,13 @@ const useFacilityStore = create(
         return store.deleteBooking(id);
       },
 
-      approveBooking: async (id) => {
-        const store = useBookingStore.getState();
-        return store.updateBooking({ booking_id: id, status: "Approved" });
-      },
-
-      rejectBooking: async (id) => {
-        const store = useBookingStore.getState();
-        return store.updateBooking({ booking_id: id, status: "Rejected" });
-      },
-
       getBookingById: (id) =>
         get().bookings.find((booking) => booking.id === id),
 
       getFacilityById: (id) =>
-        get().facilities.find((facility) => facility.id === id || facility.facility_id === id),
+        get().facilities.find(
+          (facility) => facility.id === id || facility.facility_id === id
+        ),
 
       resetBookings: () => set({ bookings: [] }),
     }),

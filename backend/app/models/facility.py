@@ -31,6 +31,7 @@ class FacilityBooking(Base, TimestampMixin):
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
     status = Column(String, default="booked")
+    guest_count = Column(Integer, nullable=True)
     approved_at = Column(DateTime)
     cancelled_by = Column(Integer, ForeignKey("users.user_id"))
     cancelled_at = Column(DateTime)

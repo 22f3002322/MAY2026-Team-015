@@ -4,9 +4,7 @@ import {
   Phone,
   Home,
   Building2,
-  User,
   Pencil,
-  Car,
   Camera,
   Trash2,
 } from "lucide-react";
@@ -37,8 +35,12 @@ const ProfileCard = ({ onEdit }) => {
 
     setUploading(true);
     try {
-      await uploadAvatar(file);
-      toast.success("Profile picture updated!");
+      const res = await uploadAvatar(file);
+      if (res?.success) {
+        toast.success(res.message || "Profile picture updated!");
+      } else {
+        toast.error(res?.message || "Failed to upload profile picture.");
+      }
     } catch (err) {
       toast.error("Failed to upload profile picture.");
     } finally {
@@ -48,8 +50,12 @@ const ProfileCard = ({ onEdit }) => {
 
   const handleRemoveAvatar = async () => {
     try {
-      await removeAvatar();
-      toast.success("Profile picture removed.");
+      const res = await removeAvatar();
+      if (res?.success) {
+        toast.success(res.message || "Profile picture removed.");
+      } else {
+        toast.error(res?.message || "Failed to remove profile picture.");
+      }
     } catch (err) {
       toast.error("Failed to remove profile picture.");
     }
@@ -104,7 +110,7 @@ const ProfileCard = ({ onEdit }) => {
             {profile.name}
           </h2>
           <p className="mt-1 text-slate-500 dark:text-slate-400">
-            {profile.occupancy}
+            {profile.occupation || "Resident"}
           </p>
         </div>
 
@@ -127,22 +133,14 @@ const ProfileCard = ({ onEdit }) => {
           <div className="flex items-center gap-3">
             <Building2 size={18} className="text-indigo-600" />
             <span className="text-slate-700 dark:text-slate-100">
-              Block {profile.block}
+              {profile.block ? `Block ${profile.block}` : "Block —"}
             </span>
           </div>
 
           <div className="flex items-center gap-3">
             <Home size={18} className="text-indigo-600" />
             <span className="text-slate-700 dark:text-slate-100">
-              Flat {profile.flat}
-            </span>
-          </div>
-
-
-          <div className="flex items-center gap-3">
-            <User size={18} className="text-indigo-600" />
-            <span className="text-slate-700 dark:text-slate-100">
-              Joined {profile.joined}
+              {profile.flat ? `Flat ${profile.flat}` : "Flat —"}
             </span>
           </div>
         </div>

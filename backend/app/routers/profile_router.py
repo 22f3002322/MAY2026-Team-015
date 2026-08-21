@@ -13,6 +13,20 @@ from app.utils.api_response import success_response
 router = APIRouter(prefix="/api/v1/residents/me", tags=["profile"])
 
 
+def _to_resident_profile_out(profile: ResidentProfile) -> ResidentProfileOut:
+    flat = profile.flat
+    return ResidentProfileOut(
+        resident_id=profile.resident_id,
+        flat_id=profile.flat_id,
+        flat_number=flat.flat_number if flat else None,
+        block_name=flat.block.block_name if flat and flat.block else None,
+        emergency_contact=profile.emergency_contact,
+        alternate_phone=profile.alternate_phone,
+        occupation=profile.occupation,
+        profile_image=profile.profile_image,
+    )
+
+
 def _get_own_resident_profile(current_user: User) -> ResidentProfile:
     # require_resident already guarantees role == Resident, but a
     # resident_profile row could in principle be missing (e.g. old data) --
@@ -41,7 +55,7 @@ def update_my_profile(
     return success_response(
         data={
             "phone": current_user.phone,
-            "resident_profile": ResidentProfileOut.model_validate(profile),
+            "resident_profile": _to_resident_profile_out(profile),
         },
         message="Profile updated.",
     )
@@ -57,7 +71,7 @@ def upload_profile_picture(
     profile = _get_own_resident_profile(current_user)
     updated = profile_service.upload_profile_picture(db, profile, file)
     return success_response(
-        data=ResidentProfileOut.model_validate(updated),
+        data=_to_resident_profile_out(updated),
         message="Profile picture updated successfully.",
     )
 
@@ -70,6 +84,6 @@ def remove_profile_picture(
     profile = _get_own_resident_profile(current_user)
     updated = profile_service.delete_profile_picture(db, profile)
     return success_response(
-        data=ResidentProfileOut.model_validate(updated),
+        data=_to_resident_profile_out(updated),
         message="Profile picture removed.",
     )

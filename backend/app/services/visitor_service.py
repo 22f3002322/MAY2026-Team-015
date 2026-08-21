@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.mixins import ist_now
 from app.models.visitor import Visitor, VisitorRequest, VisitorLog
+from app.models.apartment import ResidentProfile, Flat
 from app.models.staff import SecurityGuard
 from app.schemas.visitor_schema import VisitorCreate, VisitorRequestCreate
 from app.services import notification_service
@@ -38,7 +39,14 @@ def create_visitor_request(db: Session, payload: VisitorRequestCreate, otp: str)
 
 
 def list_visitor_requests(db: Session, resident_id: Optional[int] = None) -> list[VisitorRequest]:
-    stmt = select(VisitorRequest).options(joinedload(VisitorRequest.visitor))
+    stmt = (
+        select(VisitorRequest)
+        .options(
+            joinedload(VisitorRequest.visitor),
+            joinedload(VisitorRequest.resident).joinedload(ResidentProfile.flat).joinedload(Flat.block),
+            joinedload(VisitorRequest.resident).joinedload(ResidentProfile.user),
+        )
+    )
     if resident_id is not None:
         stmt = stmt.where(VisitorRequest.resident_id == resident_id)
     result = db.execute(stmt.order_by(VisitorRequest.created_at.desc()))

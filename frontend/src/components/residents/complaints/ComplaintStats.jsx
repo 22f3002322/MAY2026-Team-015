@@ -7,35 +7,27 @@ import {
 } from "lucide-react";
 
 import Card from "../../ui/Card";
-
 import useComplaintStore from "../../../store/complaintStore";
-import useAuthStore from "../../../store/authStore";
 
-const ComplaintStats = () => {
-  const allComplaints = useComplaintStore(
-    (state) => state.complaints
-  );
-
-  const user = useAuthStore((state) => state.user);
+const ComplaintStats = ({ complaints: complaintsProp }) => {
+  const storeComplaints = useComplaintStore((state) => state.complaints);
+  const complaints = complaintsProp || storeComplaints;
 
   const stats = useMemo(() => {
-    // Filter to only show the logged-in resident's complaints
-    const complaints = allComplaints.filter(
-      (c) => c.flat === user?.flat
-    );
-
     const total = complaints.length;
-
     const open = complaints.filter(
-      (item) => item.status === "Open"
+      (item) => item.statusValue === "open" || item.status === "Open"
     ).length;
-
     const progress = complaints.filter(
-      (item) => item.status === "In Progress"
+      (item) =>
+        item.statusValue === "in_progress" || item.status === "In Progress"
     ).length;
-
     const resolved = complaints.filter(
-      (item) => item.status === "Resolved"
+      (item) =>
+        item.statusValue === "resolved" ||
+        item.statusValue === "closed" ||
+        item.status === "Resolved" ||
+        item.status === "Closed"
     ).length;
 
     return [
@@ -64,13 +56,12 @@ const ComplaintStats = () => {
         color: "bg-emerald-100 text-emerald-600",
       },
     ];
-  }, [allComplaints, user]);
+  }, [complaints]);
 
   return (
     <div className="mb-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((item) => {
         const Icon = item.icon;
-
         return (
           <Card key={item.title}>
             <div className="flex items-center justify-between">
@@ -78,15 +69,11 @@ const ComplaintStats = () => {
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   {item.title}
                 </p>
-
                 <h2 className="mt-3 text-3xl font-bold text-slate-800 dark:text-slate-100">
                   {item.value}
                 </h2>
               </div>
-
-              <div
-                className={`rounded-xl p-3 ${item.color}`}
-              >
+              <div className={`rounded-xl p-3 ${item.color}`}>
                 <Icon size={24} />
               </div>
             </div>

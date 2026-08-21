@@ -17,26 +17,26 @@ const ResidentTable = ({
 }) => {
   const columns = [
     {
-  key: "resident",
-  header: "Resident",
-  render: (row) => (
-    <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-600">
-        {row.name.charAt(0)}
-      </div>
+      key: "resident",
+      header: "Resident",
+      render: (row) => (
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-600">
+            {row.name.charAt(0)}
+          </div>
 
-      <div>
-        <p className="font-medium text-slate-800 dark:text-slate-100">
-          {row.name}
-        </p>
+          <div>
+            <p className="font-medium text-slate-800 dark:text-slate-100">
+              {row.name}
+            </p>
 
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          {row.email}
-        </p>
-      </div>
-    </div>
-  ),
-},
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {row.email}
+            </p>
+          </div>
+        </div>
+      ),
+    },
     {
       key: "flat",
       header: "Flat",
@@ -53,13 +53,7 @@ const ResidentTable = ({
       key: "status",
       header: "Status",
       render: (row) => (
-        <Badge
-          variant={
-            row.isActive
-              ? "success"
-              : "danger"
-          }
-        >
+        <Badge variant={row.isActive ? "success" : "danger"}>
           {row.isActive ? "Active" : "Inactive"}
         </Badge>
       ),
@@ -72,11 +66,7 @@ const ResidentTable = ({
           type="button"
           disabled={!onToggleStatus}
           onClick={() => onToggleStatus && onToggleStatus(row)}
-          title={
-            row.isActive
-              ? "Deactivate account"
-              : "Activate account"
-          }
+          title={row.isActive ? "Deactivate account" : "Activate account"}
           className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
             row.isActive
               ? "bg-emerald-500"
@@ -96,46 +86,31 @@ const ResidentTable = ({
       ),
     },
     {
-  key: "actions",
-  header: "Actions",
-  render: (row) => (
-    <div className="flex gap-2">
-
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => onView(row)}
-      >
-        <Eye size={16} />
-      </Button>
-
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => onEdit(row)}
-      >
-        <Pencil size={16} />
-      </Button>
-
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => onDelete(row)}
-      >
-        <Trash2 size={16} />
-      </Button>
-
-    </div>
-  ),
-},
+      key: "actions",
+      header: "Actions",
+      render: (row) => (
+        <div className="flex gap-2">
+          {typeof onView === "function" && (
+            <Button variant="ghost" size="sm" onClick={() => onView(row)}>
+              <Eye size={16} />
+            </Button>
+          )}
+          {typeof onEdit === "function" && (
+            <Button variant="ghost" size="sm" onClick={() => onEdit(row)}>
+              <Pencil size={16} />
+            </Button>
+          )}
+          {typeof onDelete === "function" && (
+            <Button variant="ghost" size="sm" onClick={() => onDelete(row)}>
+              <Trash2 size={16} />
+            </Button>
+          )}
+        </div>
+      ),
+    },
   ];
 
-  return (
-    <Table
-      columns={columns}
-      data={residents}
-    />
-  );
+  return <Table columns={columns} data={residents} />;
 };
 
 export default ResidentTable;

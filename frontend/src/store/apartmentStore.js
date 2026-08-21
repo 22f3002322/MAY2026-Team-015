@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-
 import apartmentApi from "../api/apartmentApi";
 
 const useApartmentStore = create(
@@ -10,7 +9,7 @@ const useApartmentStore = create(
       apartments: [],
       blocks: [],
       flats: [],
-      residents: [],       // backend resident directory
+      residents: [],        // backend resident directory
       occupancyHistory: {}, // keyed by resident_id
       loading: false,
 
@@ -135,10 +134,15 @@ const useApartmentStore = create(
       },
 
       // ── Resident Directory (Admin / Committee) ────────────────────────────
+      // Defaults to current_only: true so the owner map only reflects
+      // residents who actually live in the flat right now.
       fetchResidents: async (params = {}) => {
         set({ loading: true });
         try {
-          const res = await apartmentApi.getResidents(params);
+          const res = await apartmentApi.getResidents({
+            current_only: true,
+            ...params,
+          });
           if (res && res.success && Array.isArray(res.data)) {
             set({ residents: res.data, loading: false });
             return { success: true, data: res.data };
@@ -155,7 +159,6 @@ const useApartmentStore = create(
         try {
           const res = await apartmentApi.updateResident(residentId, payload);
           if (res && res.success) {
-            // refresh directory
             get().fetchResidents();
             return { success: true, data: res.data, message: res.message };
           }

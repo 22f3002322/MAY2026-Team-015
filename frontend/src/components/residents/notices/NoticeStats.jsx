@@ -28,7 +28,10 @@ const NoticeStats = () => {
 
   const highPriority = notices.filter(
     (notice) =>
-      notice.priority === "High"
+      notice.priorityValue === "high" ||
+      notice.priorityValue === "urgent" ||
+      notice.priority === "High" ||
+      notice.priority === "Urgent"
   ).length;
 
   const stats = [
@@ -36,29 +39,25 @@ const NoticeStats = () => {
       title: "Total Notices",
       value: total,
       icon: Bell,
-      color:
-        "bg-indigo-100 text-indigo-600",
+      color: "bg-indigo-100 text-indigo-600",
     },
     {
       title: "Published",
       value: published,
       icon: CheckCircle2,
-      color:
-        "bg-green-100 text-green-600",
+      color: "bg-green-100 text-green-600",
     },
     {
       title: "Draft",
       value: draft,
       icon: Clock3,
-      color:
-        "bg-amber-100 text-amber-600",
+      color: "bg-amber-100 text-amber-600",
     },
     {
-      title: "High Priority",
+      title: "High / Urgent",
       value: highPriority,
       icon: AlertTriangle,
-      color:
-        "bg-red-100 text-red-600",
+      color: "bg-red-100 text-red-600",
     },
   ];
 

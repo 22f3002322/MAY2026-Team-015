@@ -2,17 +2,22 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import communicationApi from "../api/communicationApi";
 
+import { NOTICE_PRIORITY, labelFor } from "../utils/adminMaps";
+
 const mapBackendToNotice = (ann) => {
   if (!ann) return null;
+  const priorityValue = String(ann.priority || "normal").toLowerCase();
   return {
     id: ann.announcement_id,
     noticeId: `NOT-${ann.announcement_id}`,
     title: ann.title,
     description: ann.description || "",
-    priority: ann.priority ? ann.priority.charAt(0).toUpperCase() + ann.priority.slice(1) : "Normal",
+    priority: labelFor(NOTICE_PRIORITY, priorityValue) || "Normal",
+    priorityValue,
     status: ann.is_active ? "Published" : "Draft",
-    category: "General",
-    publishDate: ann.published_at ? ann.published_at.split("T")[0] : new Date().toISOString().split("T")[0],
+    publishDate: ann.published_at
+      ? ann.published_at.split("T")[0]
+      : new Date().toISOString().split("T")[0],
     expiryDate: ann.expiry_date || "",
     createdAt: ann.published_at || new Date().toISOString(),
     updatedAt: null,

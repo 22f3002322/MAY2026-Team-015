@@ -8,6 +8,8 @@ class ResidentProfileOut(BaseModel):
 
     resident_id: Optional[int] = None
     flat_id: Optional[int] = None
+    flat_number: Optional[str] = None
+    block_name: Optional[str] = None
     emergency_contact: Optional[str] = None
     alternate_phone: Optional[str] = None
     occupation: Optional[str] = None
@@ -16,7 +18,7 @@ class ResidentProfileOut(BaseModel):
 
 class ResidentSelfUpdate(BaseModel):
     phone: Optional[str] = Field(default=None, max_length=20)
-    emergency_contact: Optional[str] = Field(default=None, max_length=20)
+    emergency_contact: Optional[str] = Field(default=None, max_length=200)
     alternate_phone: Optional[str] = Field(default=None, max_length=20)
     occupation: Optional[str] = Field(default=None, max_length=100)
 

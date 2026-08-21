@@ -4,6 +4,35 @@ import { authApi } from "../api/authApi";
 import profileApi from "../api/profileApi";
 import { mediaUrl } from "../utils/mediaUrl";
 
+const parseEmergencyContact = (raw) => {
+  if (!raw) return { name: "", relation: "", phone: "" };
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") {
+      return {
+        name: parsed.name || "",
+        relation: parsed.relation || "",
+        phone: parsed.phone || "",
+      };
+    }
+  } catch {
+    /* pipe-delimited single line */
+  }
+  const parts = String(raw).split("|").map((p) => p.trim());
+  return {
+    name: parts[0] || String(raw),
+    relation: parts[1] || "",
+    phone: parts[2] || "",
+  };
+};
+
+const formatEmergencyContact = (contact) => {
+  const name = (contact?.name || "").trim();
+  const relation = (contact?.relation || "").trim();
+  const phone = (contact?.phone || "").trim();
+  return [name, relation, phone].filter(Boolean).join(" | ").slice(0, 200);
+};
+
 const getProfileFromUser = (user) => {
   if (!user) {
     return {
@@ -11,8 +40,10 @@ const getProfileFromUser = (user) => {
       name: "",
       email: "",
       phone: "",
+      alternatePhone: "",
       block: "",
       flat: "",
+      occupation: "",
       occupancy: "",
       joined: "",
       avatar: "",
@@ -21,48 +52,24 @@ const getProfileFromUser = (user) => {
   }
 
   const resProfile = user.residentProfile || {};
-  let emergencyContact = { name: "", relation: "", phone: "" };
-  if (resProfile.emergency_contact) {
-    try {
-      const parsed = JSON.parse(resProfile.emergency_contact);
-      if (parsed && typeof parsed === "object") {
-        emergencyContact = {
-          name: parsed.name || "",
-          relation: parsed.relation || "",
-          phone: parsed.phone || "",
-        };
-      }
-    } catch {
-      emergencyContact = {
-        name: resProfile.emergency_contact,
-        relation: "Emergency",
-        phone: "",
-      };
-    }
-  }
 
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     phone: user.phone || "",
-    block: user.block || "",
-    flat: user.flat || "",
-    occupancy: resProfile.occupation || "Resident",
-    joined: resProfile.move_in_date
-      ? new Date(resProfile.move_in_date).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })
-      : "Recently",
+    alternatePhone: resProfile.alternate_phone || "",
+    block: user.block || resProfile.block_name || "",
+    flat: user.flat || resProfile.flat_number || "",
+    occupation: resProfile.occupation || "",
+    occupancy: "Resident",
+    joined: "—",
     avatar: mediaUrl(user.avatar) || mediaUrl(resProfile.profile_image) || null,
-    emergencyContact,
+    emergencyContact: parseEmergencyContact(resProfile.emergency_contact),
   };
 };
 
 const useProfileStore = create((set, get) => {
-  // Listen to authStore changes and keep profile synced
   useAuthStore.subscribe((state) => {
     set({ profile: getProfileFromUser(state.user) });
   });
@@ -74,17 +81,21 @@ const useProfileStore = create((set, get) => {
       try {
         const payload = {
           phone: data.phone || undefined,
-          occupation: data.occupancy || data.occupation || undefined,
+          occupation: data.occupation || undefined,
+          alternate_phone: data.alternatePhone || data.alternate_phone || undefined,
         };
+        if (data.emergencyContact) {
+          payload.emergency_contact = formatEmergencyContact(data.emergencyContact);
+        }
         const res = await profileApi.updateMyProfile(payload);
         if (res && res.success) {
           await useAuthStore.getState().restoreSession();
-          return { success: true };
+          return { success: true, message: res.message };
         }
-        return { success: false, message: res?.message };
+        return { success: false, message: res?.message || "Update failed." };
       } catch (err) {
         console.error("Profile update failed:", err);
-        return { success: false, message: err.message };
+        return { success: false, message: err.message || "Update failed." };
       }
     },
 
@@ -93,12 +104,13 @@ const useProfileStore = create((set, get) => {
         const res = await profileApi.uploadProfilePicture(file);
         if (res && res.success) {
           await useAuthStore.getState().restoreSession();
-          return { success: true };
+          return { success: true, message: res.message };
         }
+        return { success: false, message: res?.message || "Upload failed." };
       } catch (err) {
         console.error("Avatar upload failed:", err);
+        return { success: false, message: err.message || "Upload failed." };
       }
-      return { success: false };
     },
 
     removeAvatar: async () => {
@@ -106,35 +118,40 @@ const useProfileStore = create((set, get) => {
         const res = await profileApi.deleteProfilePicture();
         if (res && res.success) {
           await useAuthStore.getState().restoreSession();
-          return { success: true };
+          return { success: true, message: res.message };
         }
+        return { success: false, message: res?.message || "Remove failed." };
       } catch (err) {
         console.error("Avatar removal failed:", err);
+        return { success: false, message: err.message || "Remove failed." };
       }
-      return { success: false };
     },
 
     updateEmergencyContact: async (contact) => {
       try {
         const payload = {
-          emergency_contact: JSON.stringify(contact),
+          emergency_contact: formatEmergencyContact(contact),
         };
         const res = await profileApi.updateMyProfile(payload);
         if (res && res.success) {
           await useAuthStore.getState().restoreSession();
-          return { success: true };
+          return { success: true, message: res.message };
         }
+        return { success: false, message: res?.message || "Update failed." };
       } catch (err) {
         console.error("Emergency contact update failed:", err);
+        return { success: false, message: err.message || "Update failed." };
       }
-      return { success: false };
     },
 
     changePassword: async (currentPassword, newPassword) => {
       try {
         const res = await authApi.changePassword(currentPassword, newPassword);
         if (res && res.success) {
-          return { success: true, message: res.message || "Password changed successfully." };
+          return {
+            success: true,
+            message: res.message || "Password changed successfully.",
+          };
         }
         return {
           success: false,

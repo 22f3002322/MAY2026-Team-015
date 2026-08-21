@@ -13,13 +13,10 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 import useApartmentStore from "../../store/apartmentStore";
 import useAuthStore from "../../store/authStore";
-import useResidentStore from "../../store/residentStore";   // NEW
 
-const mapFlatToRow = (flat, blocks, residentsByFlat = {}) => {
+const mapFlatToRow = (flat, blocks, ownersByFlatId = {}) => {
   const block = blocks.find((b) => b.block_id === flat.block_id);
-  const flatResidents = residentsByFlat[flat.flat_id] || [];
-  const ownerResident =
-    flatResidents.find((r) => r.occupancy === "Owner") || flatResidents[0];
+  const owners = ownersByFlatId[flat.flat_id];
   return {
     id: flat.flat_id,
     flat_id: flat.flat_id,
@@ -28,7 +25,7 @@ const mapFlatToRow = (flat, blocks, residentsByFlat = {}) => {
     block_id: flat.block_id,
     floor: flat.floor_number,
     type: flat.flat_type,
-    owner: ownerResident?.name || "—",
+    owner: owners?.length ? owners.join(", ") : "—",
     occupancy: flat.occupancy_status === "occupied" ? "Occupied" : "Vacant",
     raw: flat,
   };
@@ -37,39 +34,39 @@ const mapFlatToRow = (flat, blocks, residentsByFlat = {}) => {
 const Apartments = () => {
   const { backendRole } = useAuthStore();
   const isPureAdmin = String(backendRole || "").toLowerCase() === "admin";
+  const canSeeResidents = ["admin", "committee"].includes(
+    String(backendRole || "").toLowerCase()
+  );
 
   const flats = useApartmentStore((state) => state.flats);
   const blocks = useApartmentStore((state) => state.blocks);
+  const residents = useApartmentStore((state) => state.residents);
   const fetchFlats = useApartmentStore((state) => state.fetchFlats);
   const fetchBlocks = useApartmentStore((state) => state.fetchBlocks);
+  const fetchResidents = useApartmentStore((state) => state.fetchResidents);
   const createFlat = useApartmentStore((state) => state.createFlat);
   const updateFlat = useApartmentStore((state) => state.updateFlat);
   const deleteFlat = useApartmentStore((state) => state.deleteFlat);
 
-  const residentsList = useResidentStore((state) => state.residents);          // NEW
-  const fetchResidentsList = useResidentStore((state) => state.fetchResidents); // NEW
-
   useEffect(() => {
     fetchBlocks();
     fetchFlats();
-    fetchResidentsList();   // NEW
-  }, [fetchBlocks, fetchFlats, fetchResidentsList]);
+    if (canSeeResidents) fetchResidents();
+  }, [fetchBlocks, fetchFlats, fetchResidents, canSeeResidents]);
 
-  const residentsByFlat = useMemo(() => {                    // NEW
+  const ownersByFlatId = useMemo(() => {
     const map = {};
-    residentsList.forEach((r) => {
+    (residents || []).forEach((r) => {
       if (!r.flat_id) return;
-      if (!map[r.flat_id]) map[r.flat_id] = [];
-      map[r.flat_id].push(r);
+      (map[r.flat_id] ||= []).push(r.full_name);
     });
     return map;
-  }, [residentsList]);
+  }, [residents]);
 
   const apartments = useMemo(
-    () => flats.map((f) => mapFlatToRow(f, blocks, residentsByFlat)),  // residentsByFlat added
-    [flats, blocks, residentsByFlat]
+    () => flats.map((f) => mapFlatToRow(f, blocks, ownersByFlatId)),
+    [flats, blocks, ownersByFlatId]
   );
-
 
   const [search, setSearch] = useState("");
   const [block, setBlock] = useState("");

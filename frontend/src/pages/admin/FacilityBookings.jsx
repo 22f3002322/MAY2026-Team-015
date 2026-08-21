@@ -47,6 +47,8 @@ const FacilityBookings = () => {
           b.time ||
           `${String(b.start_time || "").slice(0, 5)} - ${String(b.end_time || "").slice(0, 5)}`,
         purpose: b.description || b.purpose || "Facility Reservation",
+        guests: b.guest_count ?? b.guests ?? null,
+        guest_count: b.guest_count ?? b.guests ?? null,
         status: rawStatus,
         statusLabel: labelFor(BOOKING_STATUS, rawStatus) || rawStatus,
         createdAt: b.created_at || b.createdAt,

@@ -133,13 +133,14 @@ class SignupResponse(BaseModel):
 # Committee verification workflow
 # --------------------------------------------------------------------------
 class VerifyUserRequest(BaseModel):
-    # Only meaningful when verifying a Resident who selected a flat_id at
-    # signup -- that's the moment it becomes an official move-in (see
-    # auth_service.verify_user). Defaults to "Owner" if omitted; pass
-    # "Rental" explicitly when that's the actual arrangement. Ignored
-    # entirely for Maintenance/Security verification or a Resident with
-    # no flat_id set.
+    # occupancy_type: only meaningful when verifying a Resident who will
+    # be moved into a flat (flat already on profile from signup, or flat_id
+    # supplied here). Defaults to "Owner" if omitted.
     occupancy_type: Optional[str] = Field(default=None, pattern="^(Owner|Rental)$")
+    # Optional flat assignment for Residents who signed up without a flat.
+    # If the profile already has a flat_id, this is ignored (existing claim).
+    # Ignored for Maintenance/Security.
+    flat_id: Optional[int] = None
 
 
 class PendingUserOut(BaseModel):
@@ -149,3 +150,6 @@ class PendingUserOut(BaseModel):
     phone: Optional[str] = None
     role: str
     created_at: Optional[str] = None
+    flat_id: Optional[int] = None
+    flat_number: Optional[str] = None
+    block_name: Optional[str] = None

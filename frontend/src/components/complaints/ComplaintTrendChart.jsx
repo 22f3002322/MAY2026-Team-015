@@ -35,11 +35,10 @@ const ComplaintTrendChart = () => {
   const monthCounts = new Array(12).fill(0);
 
   complaints.forEach((complaint) => {
-    // Use createdAt if available; otherwise treat as current month
-    const date = complaint.createdAt
-      ? new Date(complaint.createdAt)
-      : new Date();
-
+    const raw = complaint.created_at || complaint.createdAt;
+    if (!raw) return;
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return;
     monthCounts[date.getMonth()]++;
   });
 
