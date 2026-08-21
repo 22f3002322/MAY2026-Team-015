@@ -1,4 +1,5 @@
 """Module 1.10 AI endpoints — mocked Groq, no live provider calls."""
+import json
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -190,3 +191,35 @@ async def test_chat_mocked(client, seeded_db, ai_enabled, monkeypatch):
         )
     assert resp.status_code == 200, resp.text
     assert "help" in resp.json()["data"]["reply"].lower()
+
+
+@pytest.mark.asyncio
+async def test_chat_strips_markdown_and_raw_ids(client, seeded_db, ai_enabled, monkeypatch):
+    _user, _profile, token = create_test_resident(seeded_db)
+
+    redis_mock = MagicMock()
+    redis_mock.incr.return_value = 1
+    monkeypatch.setattr("app.services.ai_service.get_redis_client", lambda: redis_mock)
+
+    messy = json.dumps(
+        {
+            "reply": (
+                "The most recent notice is:\n\n"
+                "**Monthly Maintenance Reminder** (announcement_id=3)\n"
+                '"Please clear pending bills."'
+            ),
+            "citations": [{"entity_type": "announcement", "entity_id": 3}],
+            "refused": False,
+        }
+    )
+    with patch("app.services.ai_service.chat_completion", return_value=(messy, 15)):
+        resp = await client.post(
+            "/api/v1/ai/chat",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"messages": [{"role": "user", "content": "Latest notices?"}]},
+        )
+    assert resp.status_code == 200, resp.text
+    reply = resp.json()["data"]["reply"]
+    assert "**" not in reply
+    assert "announcement_id" not in reply
+    assert "Monthly Maintenance Reminder" in reply

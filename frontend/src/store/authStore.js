@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authApi } from "../api/authApi";
 import { mediaUrl } from "../utils/mediaUrl";
+import useAiStore from "./aiStore";
 
 export const mapBackendRoleToFrontend = (backendRole) => {
   if (!backendRole) return "resident";
@@ -365,6 +366,8 @@ const useAuthStore = create(
           refreshToken: null,
           pendingVerifications: [],
         });
+
+        useAiStore.getState().reset();
       },
     }),
 
