@@ -21,6 +21,16 @@ export const maintenanceApi = {
     return apiRequest(`/api/v1/maintenance/tasks/${taskId}`, { method: "GET" });
   },
 
+  // POST /api/v1/maintenance/tasks/{task_id}/accept — assigned → accepted
+  acceptTask: async (taskId) => {
+    return apiRequest(`/api/v1/maintenance/tasks/${taskId}/accept`, { method: "POST" });
+  },
+
+  // POST /api/v1/maintenance/tasks/{task_id}/decline — assigned → declined; complaint reopens
+  declineTask: async (taskId) => {
+    return apiRequest(`/api/v1/maintenance/tasks/${taskId}/decline`, { method: "POST" });
+  },
+
   // POST /api/v1/maintenance/tasks/{task_id}/schedule  — { scheduled_at: ISO string }
   scheduleTask: async (taskId, scheduledAt) => {
     return apiRequest(`/api/v1/maintenance/tasks/${taskId}/schedule`, {

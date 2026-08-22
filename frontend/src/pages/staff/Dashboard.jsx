@@ -21,42 +21,65 @@ const StaffDashboard = () => {
   const staffRole = user?.staffRole || "security";
 
   const { tasks, fetchMyTasks, loading: tasksLoading } = useMaintenanceStore();
-  const { logs, fetchVisitorLogs, loading: visitorsLoading } = useVisitorStore();
+  const {
+    myLogs,
+    allRequests,
+    fetchMyVisitorLogs,
+    fetchAllVisitorRequests,
+    loading: visitorsLoading,
+  } = useVisitorStore();
 
   // Fetch data on mount from backend
   useEffect(() => {
     if (staffRole === "maintenance") {
       fetchMyTasks();
     } else if (staffRole === "security") {
-      fetchVisitorLogs();
+      fetchMyVisitorLogs();
+      fetchAllVisitorRequests();
     }
   }, [staffRole]);
 
   const stats = useMemo(() => {
     if (staffRole === "security") {
-      const arrivedToday = logs.filter(l => l.entry_time && l.entry_time.startsWith(new Date().toISOString().split("T")[0])).length;
-      const checkedOutToday = logs.filter(l => l.exit_time && l.exit_time.startsWith(new Date().toISOString().split("T")[0])).length;
-      const totalLogs = logs.length;
-      
+      const todayStr = new Date().toISOString().split("T")[0];
+      const expectedToday = (allRequests || []).filter(
+        (r) => String(r.status || "").toLowerCase() === "expected"
+      ).length;
+      const onPremises = myLogs.filter((l) => l.entry_time && !l.exit_time).length;
+      const arrivedToday = myLogs.filter(l => l.entry_time && l.entry_time.startsWith(todayStr)).length;
+      const checkedOutToday = myLogs.filter(l => l.exit_time && l.exit_time.startsWith(todayStr)).length;
+
       return [
-        { title: "Checked In Today", value: arrivedToday, icon: Users, color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50" },
+        { title: "Expected Visitors", value: expectedToday, icon: UserRoundCheck, color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50" },
+        { title: "On Premises", value: onPremises, icon: Shield, color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50" },
+        { title: "Checked In Today", value: arrivedToday, icon: Users, color: "text-sky-600 bg-sky-50 dark:bg-sky-950/50" },
         { title: "Checked Out Today", value: checkedOutToday, icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50" },
-        { title: "Total Logs", value: totalLogs, icon: Shield, color: "text-sky-600 bg-sky-50 dark:bg-sky-950/50" },
       ];
     } else {
-      // Maintenance
+      // Maintenance -- "assigned" needs an accept/decline response before
+      // anything else in the task lifecycle can move (see Module 4 doc).
+      const assignedTasks = tasks.filter(t => t.status === "assigned").length;
       const acceptedTasks = tasks.filter(t => t.status === "accepted").length;
       const inProgressTasks = tasks.filter(t => t.status === "in_progress").length;
       const completedTasks = tasks.filter(t => t.status === "completed").length;
 
       return [
-        { title: "Pending Tasks", value: acceptedTasks, icon: ClipboardList, color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50" },
-        { title: "In Progress", value: inProgressTasks, icon: PlayCircle, color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50" },
+        { title: "Needs Response", value: assignedTasks, icon: ClipboardList, color: "text-red-600 bg-red-50 dark:bg-red-950/50" },
+        { title: "Accepted", value: acceptedTasks, icon: PlayCircle, color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50" },
+        { title: "In Progress", value: inProgressTasks, icon: Wrench, color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50" },
         { title: "Completed", value: completedTasks, icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50" },
-        { title: "Total Tasks", value: tasks.length, icon: Wrench, color: "text-sky-600 bg-sky-50 dark:bg-sky-950/50" },
       ];
     }
-  }, [staffRole, logs, tasks]);
+  }, [staffRole, allRequests, myLogs, tasks]);
+
+  // Gap-fill: previously there was no way for a maintenance staff member
+  // to see feedback/ratings residents left on their completed work.
+  const ratedTasks = useMemo(() => {
+    if (staffRole !== "maintenance") return [];
+    return tasks
+      .filter((t) => t.resident_rating != null)
+      .sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0));
+  }, [staffRole, tasks]);
 
   const roleName = {
     security: "Security Officer",
@@ -104,7 +127,7 @@ const StaffDashboard = () => {
         </div>
 
         {/* Recent Tasks / Requests */}
-        <Card title={staffRole === "maintenance" ? "Your Recent Tasks" : "Recent Visitor Activity Logs"}>
+        <Card title={staffRole === "maintenance" ? "Your Recent Tasks" : "Recent Visitor Check-Ins"}>
           {loading ? (
             <p className="text-sm text-slate-500 dark:text-slate-400 py-4">Loading...</p>
           ) : staffRole === "maintenance" ? (
@@ -124,13 +147,15 @@ const StaffDashboard = () => {
                         </h4>
                         <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                           <Clock size={12} /> Complaint #{task.complaint_id}
+                          {task.complaint_category ? ` · ${task.complaint_category}` : ""}
                         </p>
                       </div>
                     </div>
                     <Badge
                       variant={
                         task.status === "completed" ? "success" :
-                        task.status === "in_progress" ? "primary" : "warning"
+                        task.status === "in_progress" ? "primary" :
+                        task.status === "declined" ? "danger" : "warning"
                       }
                       className="capitalize"
                     >
@@ -141,11 +166,11 @@ const StaffDashboard = () => {
               </div>
             )
           ) : (
-            logs.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400 py-4">No visitor logs found.</p>
+            myLogs.length === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400 py-4">No visitor check-ins logged by you yet.</p>
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {logs.slice(0, 8).map((log) => (
+                {myLogs.slice(0, 8).map((log) => (
                   <div key={log.log_id || log.id} className="flex items-center justify-between py-3.5 first:pt-0 last:pb-0">
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
@@ -156,7 +181,7 @@ const StaffDashboard = () => {
                           {log.visitor_name || `Visitor #${log.log_id}`}
                         </h4>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          Flat: {log.flat_number || log.flat_id} • Purpose: {log.visitor_type || "Guest"}
+                          Flat: {log.flat_number || "—"} • Purpose: {log.visitor_type || "Guest"}
                         </p>
                       </div>
                     </div>
@@ -174,6 +199,47 @@ const StaffDashboard = () => {
             )
           )}
         </Card>
+
+        {/* Resident Feedback (maintenance only) */}
+        {staffRole === "maintenance" && (
+          <Card
+            title="Resident Feedback"
+            subtitle="Ratings and comments left on your completed work"
+          >
+            {ratedTasks.length === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400 py-4">
+                No feedback from residents yet.
+              </p>
+            ) : (
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {ratedTasks.slice(0, 8).map((task) => (
+                  <div key={task.task_id} className="py-3.5 first:pt-0 last:pb-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                          Complaint #{task.complaint_id}
+                          {task.complaint_category ? ` · ${task.complaint_category}` : ""}
+                        </h4>
+                        {task.resident_feedback && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">
+                            "{task.resident_feedback}"
+                          </p>
+                        )}
+                      </div>
+                      <span
+                        className="shrink-0 text-sm tracking-wide text-amber-500"
+                        aria-label={`Rating ${task.resident_rating} of 5`}
+                      >
+                        {"★".repeat(task.resident_rating)}
+                        {"☆".repeat(Math.max(0, 5 - task.resident_rating))}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
       </div>
     </Layout>
   );

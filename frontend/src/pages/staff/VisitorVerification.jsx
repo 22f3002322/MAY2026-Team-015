@@ -7,7 +7,7 @@ import Modal from "../../components/ui/Modal";
 import EmptyState from "../../components/empty/EmptyState";
 import useVisitorStore from "../../store/visitorStore";
 import { toast } from "sonner";
-import { Search, ShieldAlert, LogIn, LogOut, Key, RefreshCw } from "lucide-react";
+import { Search, ShieldAlert, LogIn, LogOut, Key, RefreshCw, Users, Clock3 } from "lucide-react";
 
 const getStatusBadgeVariant = (status) => {
   switch (status) {
@@ -20,7 +20,15 @@ const getStatusBadgeVariant = (status) => {
 };
 
 const VisitorVerification = () => {
-  const { visitors, logs, fetchVisitorLogs, verifyOtp, logExit, loading } = useVisitorStore();
+  const {
+    allRequests,
+    myLogs,
+    fetchMyVisitorLogs,
+    fetchAllVisitorRequests,
+    verifyOtp,
+    logExit,
+    loading,
+  } = useVisitorStore();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -34,19 +42,24 @@ const VisitorVerification = () => {
   const [otpLoading, setOtpLoading] = useState(false);
 
   useEffect(() => {
-    fetchVisitorLogs();
+    fetchMyVisitorLogs();
+    fetchAllVisitorRequests();
   }, []);
 
-  // Merge visitor logs (checked-in records) with visitor requests for display
-  // Logs have log_id and show active/departed visitors
+  // BUGFIX: this used to read from `visitors`, a field only ever
+  // populated by fetchVisitorRequests() (GET /visitors/requests) -- a
+  // Resident-only endpoint a Security account can't call, and which
+  // nothing on this page ever fetched anyway, so this list was always
+  // empty for a security login. Now sourced from `allRequests`
+  // (GET /visitors/requests/all, open to verified Security) and the
+  // guard's own scoped `myLogs` (GET /visitors/logs/mine).
   const allEntries = useMemo(() => {
-    // Show logs (actual check-ins) and requests with "pre_registered" / "Expected" status
-    const logEntries = logs.map((log) => ({
+    const logEntries = myLogs.map((log) => ({
       id: log.log_id,
       request_id: log.request_id,
       name: log.visitor_name || `Visitor #${log.log_id}`,
       phone: log.visitor_phone || "",
-      flat: log.flat_number || `Flat #${log.flat_id}`,
+      flat: log.flat_number || "—",
       purpose: log.visitor_type || "Guest",
       date: log.entry_time ? log.entry_time.split("T")[0] : "",
       visitTime: log.entry_time
@@ -60,25 +73,26 @@ const VisitorVerification = () => {
       isLog: true,
     }));
 
-    // Requests not yet checked in (still Expected / pre_registered)
-    const requestEntries = visitors
-      .filter((v) => v.status === "Expected")
-      .map((v) => ({
-        id: v.id,
-        request_id: v.id,
-        name: v.name,
-        phone: v.phone,
-        flat: v.flat,
-        purpose: v.purpose,
-        date: v.date,
-        visitTime: v.visitTime,
-        status: v.status,
-        otp: v.otp,
+    // Requests not yet checked in (still Expected)
+    const requestEntries = (allRequests || [])
+      .filter((r) => String(r.status || "").toLowerCase() === "expected")
+      .map((r) => ({
+        id: r.request_id,
+        request_id: r.request_id,
+        name: r.visitor_name || `Visitor #${r.visitor_id}`,
+        phone: r.visitor_phone || "",
+        flat: r.flat_number
+          ? `${r.block_name ? `${r.block_name} · ` : ""}Flat ${r.flat_number}`
+          : `Resident #${r.resident_id}`,
+        purpose: r.visitor_type || "Guest",
+        date: r.expected_date || "",
+        visitTime: r.expected_time || "",
+        status: "Expected",
         isLog: false,
       }));
 
     return [...requestEntries, ...logEntries];
-  }, [visitors, logs]);
+  }, [allRequests, myLogs]);
 
   const filteredEntries = useMemo(() => {
     return allEntries
@@ -92,6 +106,28 @@ const VisitorVerification = () => {
       })
       .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
   }, [allEntries, searchTerm, statusFilter]);
+
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  const statCards = useMemo(() => {
+    const expectedToday = (allRequests || []).filter(
+      (r) => String(r.status || "").toLowerCase() === "expected"
+    ).length;
+    const onPremises = myLogs.filter((l) => l.entry_time && !l.exit_time).length;
+    const checkedInToday = myLogs.filter(
+      (l) => l.entry_time && l.entry_time.startsWith(todayStr)
+    ).length;
+    const checkedOutToday = myLogs.filter(
+      (l) => l.exit_time && l.exit_time.startsWith(todayStr)
+    ).length;
+
+    return [
+      { title: "Expected", value: expectedToday, icon: Clock3 },
+      { title: "On Premises", value: onPremises, icon: Users },
+      { title: "Checked In Today", value: checkedInToday, icon: LogIn },
+      { title: "Checked Out Today", value: checkedOutToday, icon: LogOut },
+    ];
+  }, [allRequests, myLogs, todayStr]);
 
   const totalItems = filteredEntries.length;
   const totalPages = Math.ceil(totalItems / pageSize);
@@ -120,7 +156,8 @@ const VisitorVerification = () => {
       setOtpModal(false);
       setOtpTarget(null);
       setOtpValue("");
-      fetchVisitorLogs();
+      fetchMyVisitorLogs();
+      fetchAllVisitorRequests();
     } else {
       toast.error(res.message || "Invalid OTP. Please try again.");
     }
@@ -135,7 +172,7 @@ const VisitorVerification = () => {
     const res = await logExit(visitor.log_id);
     if (res.success) {
       toast.success(`${visitor.name} checked out successfully!`);
-      fetchVisitorLogs();
+      fetchMyVisitorLogs();
     } else {
       toast.error(res.message || "Check-out failed.");
     }
@@ -144,6 +181,26 @@ const VisitorVerification = () => {
   return (
     <Layout title="Visitor Verification" breadcrumb={["Staff", "Visitor Verification"]}>
       <div className="space-y-6">
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {statCards.map((s) => {
+            const Icon = s.icon;
+            return (
+              <Card key={s.title} className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">
+                  <Icon size={20} />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{s.title}</p>
+                  <p className="text-xl font-bold text-slate-800 dark:text-slate-100">
+                    {loading ? "…" : s.value}
+                  </p>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+
         {/* Filters */}
         <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
           <div className="relative w-full md:w-96">
@@ -175,7 +232,10 @@ const VisitorVerification = () => {
               variant="outline"
               size="sm"
               icon={RefreshCw}
-              onClick={() => fetchVisitorLogs()}
+              onClick={() => {
+                fetchMyVisitorLogs();
+                fetchAllVisitorRequests();
+              }}
               loading={loading}
             >
               Refresh

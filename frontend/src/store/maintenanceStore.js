@@ -24,6 +24,42 @@ const useMaintenanceStore = create(
         return { success: false, data: get().tasks };
       },
 
+      // ── Accept: assigned → accepted ───────────────────────────────────────
+      acceptTask: async (taskId) => {
+        try {
+          const res = await maintenanceApi.acceptTask(taskId);
+          if (res && res.success) {
+            set((state) => ({
+              tasks: state.tasks.map((t) =>
+                t.task_id === taskId ? { ...t, ...res.data } : t
+              ),
+            }));
+            return { success: true, data: res.data, message: res.message };
+          }
+          return { success: false, message: res?.message || "Accept failed." };
+        } catch (err) {
+          return { success: false, message: err.message || "Failed to accept task." };
+        }
+      },
+
+      // ── Decline: assigned → declined (complaint reopens for reassignment) ─
+      declineTask: async (taskId) => {
+        try {
+          const res = await maintenanceApi.declineTask(taskId);
+          if (res && res.success) {
+            set((state) => ({
+              tasks: state.tasks.map((t) =>
+                t.task_id === taskId ? { ...t, ...res.data } : t
+              ),
+            }));
+            return { success: true, data: res.data, message: res.message };
+          }
+          return { success: false, message: res?.message || "Decline failed." };
+        } catch (err) {
+          return { success: false, message: err.message || "Failed to decline task." };
+        }
+      },
+
       // ── Schedule: set a target date/time ─────────────────────────────────
       scheduleTask: async (taskId, scheduledAt) => {
         try {

@@ -28,6 +28,7 @@ import ResidentPolls from "./pages/resident/Polls";
 import ResidentProfile from "./pages/resident/Profile";
 
 // Staff pages (Security & Maintenance)
+import StaffDashboard from "./pages/staff/Dashboard";
 import StaffVisitorVerification from "./pages/staff/VisitorVerification";
 import StaffAssignedComplaints from "./pages/staff/AssignedComplaints";
 
@@ -40,7 +41,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (allowedRoles && !allowedRoles.includes(role)) {
     if (role === "admin" || role === "committee") return <Navigate to="/admin/dashboard" replace />;
-    if (role === "staff" || role === "security" || role === "maintenance") return <Navigate to="/staff/visitors" replace />;
+    if (role === "staff" || role === "security" || role === "maintenance") return <Navigate to="/staff/dashboard" replace />;
     return <Navigate to="/resident/dashboard" replace />;
   }
 
@@ -53,7 +54,7 @@ function App() {
   const getDefaultRedirect = () => {
     if (!accessToken && !isAuthenticated) return "/login";
     if (role === "admin" || role === "committee") return "/admin/dashboard";
-    if (role === "staff" || role === "security" || role === "maintenance") return "/staff/visitors";
+    if (role === "staff" || role === "security" || role === "maintenance") return "/staff/dashboard";
     return "/resident/dashboard";
   };
 
@@ -110,6 +111,7 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["staff", "security", "maintenance"]}>
             <Routes>
+              <Route path="dashboard" element={<StaffDashboard />} />
               <Route path="visitors" element={<StaffVisitorVerification />} />
               <Route path="complaints" element={<StaffAssignedComplaints />} />
               <Route path="*" element={<NotFound />} />

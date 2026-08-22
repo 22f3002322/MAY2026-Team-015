@@ -44,11 +44,13 @@ const residentMenuItems = [
 
 // Security staff menu — Module 5 (Visitor Management)
 const securityMenuItems = [
+  { title: "Dashboard", icon: LayoutDashboard, path: "/staff/dashboard" },
   { title: "Verify Visitors", icon: Shield, path: "/staff/visitors" },
 ];
 
 // Maintenance staff menu — Module 4 (Maintenance Tasks)
 const maintenanceMenuItems = [
+  { title: "Dashboard", icon: LayoutDashboard, path: "/staff/dashboard" },
   { title: "Assigned Complaints", icon: Wrench, path: "/staff/complaints" },
 ];
 
@@ -63,7 +65,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       const staffRole = user?.staffRole;
       if (staffRole === "security") return securityMenuItems;
       if (staffRole === "maintenance") return maintenanceMenuItems;
-      // Default staff gets both options
+      // Default staff gets both options (staffRole not yet resolved)
       return [...securityMenuItems, ...maintenanceMenuItems.slice(1)];
     }
     return [];

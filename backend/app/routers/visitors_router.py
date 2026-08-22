@@ -3,13 +3,14 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import (
+    get_current_user,
     get_resident_profile,
     get_security_guard_profile,
     require_admin_or_committee,
     require_verified_resident,
     require_verified_security,
 )
-from app.models.auth import User
+from app.models.auth import RoleEnum, User
 from app.models.apartment import ResidentProfile
 from app.models.staff import SecurityGuard
 from app.models.visitor import Visitor
@@ -21,6 +22,7 @@ from app.schemas.visitor_schema import (
     VisitorRequestCreate,
     VisitorRequestOut,
 )
+from app.utils.api_error import NotAuthorized
 from app.utils.api_response import success_response
 from app.utils.otp import generate_otp
 
@@ -73,6 +75,31 @@ def _log_out(log) -> VisitorLogOut:
         resident_name=resident.user.full_name if resident and resident.user else None,
         flat_number=flat.flat_number if flat else None,
     )
+
+
+def _authorize_visitor_directory(user: User = Depends(get_current_user)) -> User:
+    """
+    Gap-fill: GET /requests/all lists every pre-registered visitor
+    request society-wide (never the OTP itself -- see _request_out) so a
+    Security guard at the gate can match an arriving visitor to their
+    request_id before calling verify-otp. Previously Admin/Committee
+    only, so a Security account had no way to discover a request_id at
+    all. Deliberately NOT extended to GET /visitors/logs -- that stays
+    the one Admin-only, not-even-Committee audit trail the design doc
+    calls out explicitly; see list_my_visitor_logs below for what a
+    guard actually gets instead.
+    """
+    role = user.role.role_name
+    if role in (RoleEnum.ADMIN, RoleEnum.COMMITTEE):
+        return user
+    if role == RoleEnum.SECURITY:
+        if not user.is_verified:
+            raise NotAuthorized(
+                "Your account is pending verification by a committee member. "
+                "This action isn't available until then."
+            )
+        return user
+    raise NotAuthorized("You do not have permission to view visitor records.")
 
 
 @router.post("/pre-register")
@@ -128,10 +155,12 @@ def list_my_requests(
 
 @router.get("/requests/all")
 def list_all_requests(
-    _staff: User = Depends(require_admin_or_committee),
+    _staff: User = Depends(_authorize_visitor_directory),
     db: Session = Depends(get_db),
 ):
-    """Admin/Committee: all visitor pre-registration requests (no OTP hashes)."""
+    """Admin/Committee/verified Security: all visitor pre-registration
+    requests (no OTP hashes) -- lets gate staff match an arriving
+    visitor to their request_id before calling verify-otp."""
     requests = visitor_service.list_visitor_requests(db)
     return success_response(data=[_request_out(r) for r in requests])
 
@@ -177,4 +206,20 @@ def log_exit(
 @router.get("/logs")
 def list_visitor_logs(_staff: User = Depends(require_admin_or_committee), db: Session = Depends(get_db)):
     logs = visitor_service.list_visitor_logs(db)
+    return success_response(data=[_log_out(l) for l in logs])
+
+
+@router.get("/logs/mine")
+def list_my_visitor_logs(
+    current_user: User = Depends(require_verified_security),
+    guard: SecurityGuard = Depends(get_security_guard_profile),
+    db: Session = Depends(get_db),
+):
+    """
+    Gap-fill: GET /visitors/logs is deliberately Admin-only (see above).
+    This returns only the entries the CALLING guard personally checked
+    in -- exactly what's needed to find a log_id for POST .../exit
+    without opening up the full cross-guard audit trail.
+    """
+    logs = visitor_service.list_visitor_logs_for_guard(db, guard.guard_id)
     return success_response(data=[_log_out(l) for l in logs])

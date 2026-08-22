@@ -44,6 +44,14 @@ export const visitorApi = {
       method: "GET",
     });
   },
+
+  // Gap-fill: GET /visitors/logs is Admin-only (full audit trail). This
+  // hits the new scoped endpoint -- only the calling guard's own logs.
+  getMyVisitorLogs: async () => {
+    return apiRequest("/api/v1/visitors/logs/mine", {
+      method: "GET",
+    });
+  },
 };
 
 export default visitorApi;

@@ -11,19 +11,26 @@ import {
   Search,
   Wrench,
   CheckCircle,
+  Check,
+  XCircle,
   PlayCircle,
   Clock,
   RefreshCw,
   Calendar,
 } from "lucide-react";
 
-// Normalize backend task status
+// Normalize backend task status. "assigned" is the task's real birth
+// state (see complaint_service.create_task_for_assignment) -- it needs
+// an explicit accept/decline before anything else. "scheduled" is
+// deliberately NOT a real status: POST .../schedule only ever sets
+// scheduled_at, it never touches status (stays "accepted").
 const normalizeTaskStatus = (status) => {
   const s = String(status || "").toLowerCase();
+  if (s === "assigned") return "Assigned";
   if (s === "accepted") return "Accepted";
-  if (s === "scheduled") return "Scheduled";
   if (s === "in_progress" || s === "in progress") return "In Progress";
   if (s === "completed") return "Completed";
+  if (s === "declined") return "Declined";
   return status || "Pending";
 };
 
@@ -31,20 +38,30 @@ const getStatusVariant = (status) => {
   const s = normalizeTaskStatus(status);
   if (s === "Completed") return "success";
   if (s === "In Progress") return "primary";
-  if (s === "Scheduled") return "warning";
+  if (s === "Accepted") return "info";
+  if (s === "Assigned") return "warning";
+  if (s === "Declined") return "danger";
   return "default";
 };
 
 const getPriorityVariant = (priority) => {
   const p = String(priority || "").toLowerCase();
-  if (p === "high") return "danger";
+  if (p === "urgent" || p === "high") return "danger";
   if (p === "medium") return "warning";
   return "default";
 };
 
 const AssignedComplaints = () => {
-  const { tasks, fetchMyTasks, startTask, completeTask, scheduleTask, loading } =
-    useMaintenanceStore();
+  const {
+    tasks,
+    fetchMyTasks,
+    acceptTask,
+    declineTask,
+    startTask,
+    completeTask,
+    scheduleTask,
+    loading,
+  } = useMaintenanceStore();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -64,7 +81,6 @@ const AssignedComplaints = () => {
     return tasks
       .filter((t) => {
         const norm = normalizeTaskStatus(t.status);
-        // Active tasks only (not completed)
         const matchesStatus =
           statusFilter === "All" || norm === statusFilter;
 
@@ -72,15 +88,16 @@ const AssignedComplaints = () => {
           !searchTerm ||
           String(t.task_id || "").includes(searchTerm) ||
           String(t.complaint_id || "").includes(searchTerm) ||
-          (t.description || "").toLowerCase().includes(searchTerm.toLowerCase());
+          (t.complaint_description || "").toLowerCase().includes(searchTerm.toLowerCase());
 
         return matchesStatus && matchesSearch;
       })
       .sort((a, b) => {
-        // Put in_progress first, then accepted, then scheduled, then completed
-        const order = { in_progress: 0, accepted: 1, scheduled: 2, completed: 3 };
-        return (order[String(a.status).toLowerCase()] ?? 4) -
-          (order[String(b.status).toLowerCase()] ?? 4);
+        // Tasks needing a response float to the top, then active work,
+        // then things the staff member no longer needs to act on.
+        const order = { assigned: 0, in_progress: 1, accepted: 2, completed: 3, declined: 4 };
+        return (order[String(a.status).toLowerCase()] ?? 5) -
+          (order[String(b.status).toLowerCase()] ?? 5);
       });
   }, [tasks, searchTerm, statusFilter]);
 
@@ -90,6 +107,30 @@ const AssignedComplaints = () => {
     const start = (currentPage - 1) * pageSize;
     return filteredTasks.slice(start, start + pageSize);
   }, [filteredTasks, currentPage]);
+
+  // Accept task (assigned → accepted)
+  const handleAccept = async (task) => {
+    setActionLoading(task.task_id);
+    const res = await acceptTask(task.task_id);
+    setActionLoading(null);
+    if (res.success) {
+      toast.success(`Task #${task.task_id} accepted.`);
+    } else {
+      toast.error(res.message || "Failed to accept task.");
+    }
+  };
+
+  // Decline task (assigned → declined; parent complaint reopens)
+  const handleDecline = async (task) => {
+    setActionLoading(task.task_id);
+    const res = await declineTask(task.task_id);
+    setActionLoading(null);
+    if (res.success) {
+      toast.success(`Task #${task.task_id} declined. It's been reopened for reassignment.`);
+    } else {
+      toast.error(res.message || "Failed to decline task.");
+    }
+  };
 
   // Start task (accepted → in_progress)
   const handleStart = async (task) => {
@@ -115,7 +156,7 @@ const AssignedComplaints = () => {
     }
   };
 
-  // Open schedule modal (accepted → scheduled)
+  // Open schedule modal (accepted → still accepted, just a target time)
   const handleOpenSchedule = (task) => {
     setScheduleTarget(task);
     setScheduledAt("");
@@ -176,10 +217,11 @@ const AssignedComplaints = () => {
               className="w-full md:w-44 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent dark:bg-slate-800 dark:text-slate-100 py-2 px-3 text-sm outline-none transition focus:border-indigo-600 dark:focus:border-indigo-500"
             >
               <option value="All">All</option>
+              <option value="Assigned">Assigned</option>
               <option value="Accepted">Accepted</option>
-              <option value="Scheduled">Scheduled</option>
               <option value="In Progress">In Progress</option>
               <option value="Completed">Completed</option>
+              <option value="Declined">Declined</option>
             </select>
             <Button
               variant="outline"
@@ -224,24 +266,31 @@ const AssignedComplaints = () => {
                         </h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                           Complaint #{task.complaint_id}
+                          {task.complaint_category ? ` · ${task.complaint_category}` : ""}
                         </p>
+                        {(task.resident_name || task.flat_number) && (
+                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                            {task.resident_name || "Resident"}
+                            {task.flat_number ? ` · Flat ${task.flat_number}` : ""}
+                          </p>
+                        )}
                       </div>
                       <div className="flex flex-col gap-1 items-end">
                         <Badge variant={getStatusVariant(task.status)}>
                           {normStatus}
                         </Badge>
-                        {task.priority && (
-                          <Badge variant={getPriorityVariant(task.priority)} className="capitalize">
-                            {task.priority}
+                        {task.complaint_priority && (
+                          <Badge variant={getPriorityVariant(task.complaint_priority)} className="capitalize">
+                            {task.complaint_priority}
                           </Badge>
                         )}
                       </div>
                     </div>
 
                     {/* Description */}
-                    {task.description && (
+                    {task.complaint_description && (
                       <p className="text-sm text-slate-600 dark:text-slate-400 mt-3 line-clamp-3">
-                        {task.description}
+                        {task.complaint_description}
                       </p>
                     )}
 
@@ -261,11 +310,11 @@ const AssignedComplaints = () => {
                           </span>
                         </div>
                       )}
-                      {task.assigned_at && (
+                      {task.created_at && (
                         <div>
                           <span className="block text-slate-400">Assigned</span>
                           <span className="font-medium text-slate-600 dark:text-slate-400">
-                            {new Date(task.assigned_at).toLocaleDateString()}
+                            {new Date(task.created_at).toLocaleDateString()}
                           </span>
                         </div>
                       )}
@@ -282,6 +331,29 @@ const AssignedComplaints = () => {
 
                   {/* Actions */}
                   <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 flex-wrap">
+                    {/* assigned → must accept or decline before anything else */}
+                    {normStatus === "Assigned" && (
+                      <>
+                        <Button
+                          size="sm"
+                          className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                          onClick={() => handleAccept(task)}
+                          loading={isActing}
+                        >
+                          <Check size={14} /> Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 flex items-center justify-center gap-1 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/30"
+                          onClick={() => handleDecline(task)}
+                          loading={isActing}
+                        >
+                          <XCircle size={14} /> Decline
+                        </Button>
+                      </>
+                    )}
+
                     {/* accepted → can schedule or start directly */}
                     {normStatus === "Accepted" && (
                       <>
@@ -305,18 +377,6 @@ const AssignedComplaints = () => {
                       </>
                     )}
 
-                    {/* scheduled → start */}
-                    {normStatus === "Scheduled" && (
-                      <Button
-                        size="sm"
-                        className="w-full flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white"
-                        onClick={() => handleStart(task)}
-                        loading={isActing}
-                      >
-                        <PlayCircle size={14} /> Start Work
-                      </Button>
-                    )}
-
                     {/* in_progress → complete */}
                     {normStatus === "In Progress" && (
                       <Button
@@ -330,8 +390,36 @@ const AssignedComplaints = () => {
                     )}
 
                     {normStatus === "Completed" && (
-                      <p className="text-xs text-emerald-600 dark:text-emerald-400 w-full text-center py-1 font-semibold">
-                        ✓ Task completed
+                      <div className="w-full space-y-2">
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400 text-center font-semibold">
+                          ✓ Task completed
+                        </p>
+                        {task.resident_rating != null ? (
+                          <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 text-center">
+                            <p
+                              className="text-base tracking-wide"
+                              aria-label={`Rating ${task.resident_rating} of 5`}
+                            >
+                              {"★".repeat(task.resident_rating)}
+                              {"☆".repeat(Math.max(0, 5 - task.resident_rating))}
+                            </p>
+                            {task.resident_feedback && (
+                              <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 italic">
+                                "{task.resident_feedback}"
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-slate-400 dark:text-slate-500 text-center">
+                            No resident feedback yet.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {normStatus === "Declined" && (
+                      <p className="text-xs text-red-500 dark:text-red-400 w-full text-center py-1 font-semibold">
+                        ✕ Task declined — reassigned by admin
                       </p>
                     )}
                   </div>

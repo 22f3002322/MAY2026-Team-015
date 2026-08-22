@@ -164,3 +164,25 @@ def list_visitor_logs(db: Session) -> list[VisitorLog]:
         .order_by(VisitorLog.created_at.desc())
     )
     return list(result.scalars().unique().all())
+
+
+def list_visitor_logs_for_guard(db: Session, guard_id: int) -> list[VisitorLog]:
+    """
+    Gap-fill: GET /visitors/logs is deliberately Admin-only (full
+    society-wide audit trail, see visitors_router.list_visitor_logs).
+    A Security account has no access to it and shouldn't need to --
+    this is the scoped equivalent, returning only the entries the
+    CALLING guard personally checked in, same self-scoping pattern as
+    complaint_service.list_tasks_for_staff / billing_service.list_my_bills.
+    """
+    result = db.execute(
+        select(VisitorLog)
+        .options(
+            joinedload(VisitorLog.visitor),
+            joinedload(VisitorLog.resident).joinedload(ResidentProfile.user),
+            joinedload(VisitorLog.resident).joinedload(ResidentProfile.flat),
+        )
+        .where(VisitorLog.security_guard_id == guard_id)
+        .order_by(VisitorLog.created_at.desc())
+    )
+    return list(result.scalars().unique().all())
