@@ -6,6 +6,7 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Modal from "../components/ui/Modal";
 import useAuthStore from "../store/authStore";
+import complaintApi from "../api/complaintApi";
 
 const Login = () => {
   const [isSignup, setIsSignup] = useState(false);
@@ -14,7 +15,18 @@ const Login = () => {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [roleSelection, setRoleSelection] = useState("Resident");
-  
+
+  // Maintenance-only signup fields -- specialization is picked from the
+  // real complaint categories so it lines up with what admins search /
+  // filter by later; experience is a plain number of years.
+  const [specialization, setSpecialization] = useState("");
+  const [experienceYears, setExperienceYears] = useState("");
+  const [categories, setCategories] = useState([]);
+
+  // Security-only signup fields.
+  const [gateAssigned, setGateAssigned] = useState("");
+  const [shift, setShift] = useState("Morning");
+
   const [loading, setLoading] = useState(false);
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
@@ -30,10 +42,27 @@ const Login = () => {
       } else if (role === "resident") {
         navigate("/resident/dashboard");
       } else if (role === "staff") {
-        navigate("/staff/visitors");
+        navigate("/staff/dashboard");
       }
     }
   }, [isAuthenticated, role, navigate]);
+
+  // Load complaint categories (public endpoint) to power the
+  // "Specialization" dropdown once someone picks Maintenance Staff.
+  useEffect(() => {
+    if (isSignup && roleSelection === "Maintenance" && categories.length === 0) {
+      complaintApi
+        .getCategories()
+        .then((res) => {
+          if (res?.success && Array.isArray(res.data)) {
+            setCategories(res.data);
+          }
+        })
+        .catch(() => {
+          // Non-fatal -- specialization stays optional at signup.
+        });
+    }
+  }, [isSignup, roleSelection, categories.length]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,13 +79,28 @@ const Login = () => {
       }
 
       setLoading(true);
-      const result = await signup({
+
+      const signupPayload = {
         email,
         password,
         full_name: fullName,
         phone: phone || undefined,
         role: roleSelection,
-      });
+      };
+
+      if (roleSelection === "Maintenance") {
+        const maintenanceProfile = {};
+        if (specialization) maintenanceProfile.specialization = specialization;
+        if (experienceYears) maintenanceProfile.experience_years = Number(experienceYears);
+        signupPayload.maintenance_profile = maintenanceProfile;
+      } else if (roleSelection === "Security") {
+        const securityProfile = {};
+        if (gateAssigned.trim()) securityProfile.gate_assigned = gateAssigned.trim();
+        if (shift) securityProfile.shift = shift;
+        signupPayload.security_profile = securityProfile;
+      }
+
+      const result = await signup(signupPayload);
 
       if (result.success) {
         toast.success(result.message);
@@ -81,7 +125,7 @@ const Login = () => {
         } else if (result.role === "resident") {
           navigate("/resident/dashboard");
         } else {
-          navigate("/staff/visitors");
+          navigate("/staff/dashboard");
         }
       } else {
         toast.error(result.message);
@@ -175,6 +219,64 @@ const Login = () => {
                     <option value="Security">Security Guard</option>
                   </select>
                 </div>
+
+                {roleSelection === "Maintenance" && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Specialization
+                      </label>
+                      <select
+                        value={specialization}
+                        onChange={(e) => setSpecialization(e.target.value)}
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent dark:bg-slate-800 dark:text-slate-100 py-2.5 px-3 text-sm outline-none focus:border-indigo-600 dark:focus:border-indigo-500"
+                      >
+                        <option value="">Select specialization</option>
+                        {categories.map((cat) => (
+                          <option key={cat.category_id} value={cat.category_name}>
+                            {cat.category_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <Input
+                      label="Years of Experience"
+                      type="number"
+                      min="0"
+                      value={experienceYears}
+                      onChange={(e) => setExperienceYears(e.target.value)}
+                      placeholder="e.g. 5"
+                    />
+                  </>
+                )}
+
+                {roleSelection === "Security" && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      label="Gate Assigned"
+                      type="text"
+                      value={gateAssigned}
+                      onChange={(e) => setGateAssigned(e.target.value)}
+                      placeholder="e.g. Main Gate"
+                    />
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Shift
+                      </label>
+                      <select
+                        value={shift}
+                        onChange={(e) => setShift(e.target.value)}
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent dark:bg-slate-800 dark:text-slate-100 py-2.5 px-3 text-sm outline-none focus:border-indigo-600 dark:focus:border-indigo-500"
+                      >
+                        <option value="Morning">Morning</option>
+                        <option value="Afternoon">Afternoon</option>
+                        <option value="Night">Night</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
                 <Input
                   label="Phone Number"
                   type="tel"

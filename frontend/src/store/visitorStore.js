@@ -31,6 +31,7 @@ const useVisitorStore = create(
       requests: [],
       allRequests: [],
       logs: [],
+      myLogs: [],
       loading: false,
       lastPlainOtp: null,
 
@@ -144,7 +145,9 @@ const useVisitorStore = create(
         try {
           const res = await visitorApi.verifyVisitorOtp(requestId, otp);
           if (res && res.success && res.data) {
-            get().fetchVisitorLogs();
+            // Security-only action -- GET /visitors/logs is Admin-only,
+            // so refresh the guard's own scoped log view instead.
+            get().fetchMyVisitorLogs();
             return { success: true, data: res.data };
           }
           return { success: false, message: res?.message || "Invalid OTP" };
@@ -157,7 +160,7 @@ const useVisitorStore = create(
         try {
           const res = await visitorApi.logVisitorExit(logId);
           if (res && res.success && res.data) {
-            get().fetchVisitorLogs();
+            get().fetchMyVisitorLogs();
             return { success: true, data: res.data };
           }
           return { success: false, message: res?.message || "Exit log failed" };
@@ -166,17 +169,36 @@ const useVisitorStore = create(
         }
       },
 
+      // Admin/Committee full audit trail (GET /visitors/logs, Admin-only).
       fetchVisitorLogs: async () => {
+        set({ loading: true });
         try {
           const res = await visitorApi.getVisitorLogs();
           if (res && res.success && Array.isArray(res.data)) {
-            set({ logs: res.data });
+            set({ logs: res.data, loading: false });
             return { success: true, data: res.data };
           }
         } catch (err) {
           console.warn("Backend visitor logs fetch failed:", err.message);
         }
+        set({ loading: false });
         return { success: false, data: get().logs };
+      },
+
+      // Security's own scoped check-in history (GET /visitors/logs/mine).
+      fetchMyVisitorLogs: async () => {
+        set({ loading: true });
+        try {
+          const res = await visitorApi.getMyVisitorLogs();
+          if (res && res.success && Array.isArray(res.data)) {
+            set({ myLogs: res.data, loading: false });
+            return { success: true, data: res.data };
+          }
+        } catch (err) {
+          console.warn("Backend my-visitor-logs fetch failed:", err.message);
+        }
+        set({ loading: false });
+        return { success: false, data: get().myLogs };
       },
 
       fetchAllVisitorRequests: async () => {
@@ -200,6 +222,7 @@ const useVisitorStore = create(
           requests: [],
           allRequests: [],
           logs: [],
+          myLogs: [],
           lastPlainOtp: null,
         }),
     }),

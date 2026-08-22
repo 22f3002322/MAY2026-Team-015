@@ -63,15 +63,22 @@ def list_categories_admin(_staff: User = Depends(require_admin_or_committee), db
 # BUGFIX: residents need a valid category_id to file a complaint
 # (ComplaintCreate.category_id), but the only way to list categories used
 # to be the Admin-only endpoint above -- there was no way for a resident
-# to discover what categories exist. This is a read-only endpoint any
-# authenticated user can hit; only creating/managing categories stays
-# Admin/Committee-only.
+# to discover what categories exist. This is a read-only, non-sensitive
+# endpoint (category names only).
+#
+# BUGFIX: this used to be gated behind get_current_user, but the
+# Maintenance signup form now offers a "specialization" dropdown sourced
+# from these same categories *before* the user has an account -- same
+# reasoning blocks_router/flats_router's list endpoints are deliberately
+# public (a not-yet-registered caller has no token yet). Now fully
+# public; only creating/managing categories stays Admin/Committee-only
+# (see the Admin router above).
 # --------------------------------------------------------------------------
 router_categories_public = APIRouter(prefix="/api/v1/complaint-categories", tags=["complaint-categories"])
 
 
 @router_categories_public.get("")
-def list_categories(_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def list_categories(db: Session = Depends(get_db)):
     categories = db.query(ComplaintCategory).order_by(ComplaintCategory.category_id).all()
     return success_response(data=[ComplaintCategoryOut.model_validate(c) for c in categories])
 

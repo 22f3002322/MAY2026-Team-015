@@ -58,6 +58,26 @@ class MaintenanceTaskOut(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
+    # --------------------------------------------------------------------
+    # BUGFIX / gap-fill: this schema previously carried nothing about the
+    # underlying complaint at all -- the maintenance staff UI
+    # (AssignedComplaints.jsx) already referenced task.description /
+    # task.priority, but those fields never existed here, so that part of
+    # the page silently rendered blank. Denormalized the same way
+    # ComplaintOut/FacilityBookingOut do (category_name, resident_name,
+    # flat_number computed by the router, not real ORM columns), plus the
+    # resident's post-resolution rating/feedback so completed tasks show
+    # what feedback (if any) the staff member received.
+    # --------------------------------------------------------------------
+    complaint_description: Optional[str] = None
+    complaint_priority: Optional[str] = None
+    complaint_status: Optional[str] = None
+    complaint_category: Optional[str] = None
+    resident_name: Optional[str] = None
+    flat_number: Optional[str] = None
+    resident_rating: Optional[int] = None
+    resident_feedback: Optional[str] = None
+
 
 class MaintenanceTaskScheduleRequest(BaseModel):
     scheduled_at: datetime
