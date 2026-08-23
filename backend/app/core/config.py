@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     # without calling Groq. GROQ_API_KEY is required when AI_ENABLED=true.
     AI_ENABLED: bool = False
     GROQ_API_KEY: str = ""
-    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_MODEL: str = "openai/gpt-oss-120b"
     GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
     GROQ_TIMEOUT_SECONDS: int = 30
     AI_CHAT_RATE_LIMIT_PER_MINUTE: int = 20
