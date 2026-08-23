@@ -22,8 +22,8 @@ from app.schemas.visitor_schema import (
     VisitorRequestCreate,
     VisitorRequestOut,
 )
-from app.utils.api_error import NotAuthorized
 from app.utils.api_response import success_response
+from app.utils.api_error import NotAuthorized
 from app.utils.otp import generate_otp
 
 router = APIRouter(prefix="/api/v1/visitors", tags=["visitors"])
@@ -42,8 +42,11 @@ def _request_out(request, otp: str | None = None) -> VisitorRequestOut:
         expected_time=request.expected_time,
         status=request.status,
         approved_at=request.approved_at,
-        # Only return plaintext OTP when explicitly provided (pre-register).
-        # Never expose the stored hash from list/deny responses.
+        # `otp` is only ever populated when the CALLER explicitly passes
+        # it in -- pre-register (always), and list_my_requests below
+        # (only for the owning resident's own still-"expected" requests).
+        # list_all_requests (admin/committee/security) never passes it,
+        # so those callers never see it regardless of status.
         otp=otp,
         created_at=request.created_at,
         visitor_name=visitor.visitor_name if visitor else None,
@@ -149,8 +152,23 @@ def list_my_requests(
     profile: ResidentProfile = Depends(get_resident_profile),
     db: Session = Depends(get_db),
 ):
+    """
+    Product change: previously only pre-register's own response ever
+    carried the plaintext OTP -- refreshing or revisiting this list
+    always showed otp=None (see _request_out's old comment), because
+    the code was hashed at rest and unrecoverable. It's now stored in
+    plaintext (see visitor_service.create_visitor_request) specifically
+    so the OWNING resident can come back and re-read it here, any time,
+    for as long as the visit is still "expected". Once it's arrived or
+    denied there's nothing left to share, so it's omitted.
+    """
     requests = visitor_service.list_visitor_requests(db, resident_id=profile.resident_id)
-    return success_response(data=[_request_out(r) for r in requests])
+    return success_response(
+        data=[
+            _request_out(r, otp=r.otp if r.status == "expected" else None)
+            for r in requests
+        ]
+    )
 
 
 @router.get("/requests/all")
@@ -159,8 +177,8 @@ def list_all_requests(
     db: Session = Depends(get_db),
 ):
     """Admin/Committee/verified Security: all visitor pre-registration
-    requests (no OTP hashes) -- lets gate staff match an arriving
-    visitor to their request_id before calling verify-otp."""
+    requests (no OTPs -- see _request_out) -- lets gate staff match an
+    arriving visitor to their request_id before calling verify-otp."""
     requests = visitor_service.list_visitor_requests(db)
     return success_response(data=[_request_out(r) for r in requests])
 

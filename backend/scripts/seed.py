@@ -50,7 +50,6 @@ from app.models import (
 )
 from app.models.auth import RoleEnum
 from app.models.mixins import ist_now
-from app.utils.otp import hash_otp
 from app.utils.password import hash_password
 
 DEMO_PASSWORD = "Demo@1234"
@@ -523,6 +522,9 @@ def seed_demo(db) -> None:
     db.add_all(visitors)
     db.flush()
 
+    # NOTE: OTPs are now stored in plaintext (see
+    # visitor_service.create_visitor_request) -- seeded directly as
+    # plain values below, matching what a real pre-register would store.
     demo_otp_plain = "482913"
     visitor_requests = [
         VisitorRequest(
@@ -531,7 +533,7 @@ def seed_demo(db) -> None:
             expected_date=today,
             expected_time=time(18, 30),
             status="expected",
-            otp=hash_otp(demo_otp_plain),
+            otp=demo_otp_plain,
         ),
         VisitorRequest(
             resident_id=profiles[1].resident_id,
@@ -540,7 +542,7 @@ def seed_demo(db) -> None:
             expected_time=time(13, 0),
             status="arrived",
             approved_at=now - timedelta(hours=3),
-            otp=hash_otp("111222"),
+            otp="111222",
         ),
         VisitorRequest(
             resident_id=profiles[2].resident_id,
@@ -548,7 +550,7 @@ def seed_demo(db) -> None:
             expected_date=today + timedelta(days=1),
             expected_time=time(11, 0),
             status="expected",
-            otp=hash_otp("334455"),
+            otp="334455",
         ),
         VisitorRequest(
             resident_id=profiles[4].resident_id,
@@ -557,7 +559,7 @@ def seed_demo(db) -> None:
             expected_time=time(16, 0),
             status="arrived",
             approved_at=now - timedelta(days=1, hours=2),
-            otp=hash_otp("667788"),
+            otp="667788",
         ),
     ]
     db.add_all(visitor_requests)

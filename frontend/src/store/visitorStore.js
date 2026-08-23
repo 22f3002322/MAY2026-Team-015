@@ -103,8 +103,11 @@ const useVisitorStore = create(
                 status,
                 statusValue,
                 otpSent: statusValue === "expected",
-                // Never surface hashed OTP from list responses
-                otp: null,
+                // Product change: the backend now returns the plaintext
+                // OTP here too (not just from pre-register), scoped to
+                // the owning resident and only while still "expected" --
+                // see visitors_router.list_my_requests.
+                otp: r.otp || null,
                 createdAt: r.created_at || r.expected_date,
               };
             });

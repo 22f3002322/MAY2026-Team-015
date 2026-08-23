@@ -34,7 +34,11 @@ const Visitors = () => {
   const [openModal, setOpenModal] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
   const [denyItem, setDenyItem] = useState(null);
-  /** Plain OTPs from pre-register responses only, keyed by request_id */
+  /** Plain OTPs from pre-register responses, keyed by request_id -- only
+   * needed as a fallback now (the backend itself returns the OTP for any
+   * of the resident's own "expected" requests via fetchVisitorRequests,
+   * see visitorStore.js), in case this modal is opened before that fetch
+   * has completed. */
   const [plainOtps, setPlainOtps] = useState({});
 
   const filteredVisitors = useMemo(() => {
@@ -85,7 +89,7 @@ const Visitors = () => {
           onView={(v) =>
             setSelectedVisitor({
               ...v,
-              otp: plainOtps[v.id] || null,
+              otp: v.otp || plainOtps[v.id] || null,
             })
           }
           onDeny={setDenyItem}
