@@ -71,8 +71,8 @@ const VisitorDetails = ({ visitor, onClose }) => {
             </div>
           ) : visitor.otpSent || visitor.statusValue === "expected" ? (
             <div className="col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-              OTP was sent when this visitor was pre-registered. For security,
-              the code is only shown once at registration time.
+              We couldn't load the OTP just now. Try refreshing this page --
+              it stays available here as long as the visit is still expected.
             </div>
           ) : null}
         </div>
