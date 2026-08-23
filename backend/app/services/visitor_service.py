@@ -10,7 +10,7 @@ from app.models.staff import SecurityGuard
 from app.schemas.visitor_schema import VisitorCreate, VisitorRequestCreate
 from app.services import notification_service
 from app.utils.api_error import BadRequest, Conflict, NotAuthorized, NotFound
-from app.utils.otp import hash_otp, verify_otp
+from app.utils.otp import verify_plain_otp
 from app.models.apartment import ResidentProfile   # NEW import
 
 
@@ -28,9 +28,19 @@ def get_visitor(db: Session, visitor_id: int) -> Optional[Visitor]:
 
 
 def create_visitor_request(db: Session, payload: VisitorRequestCreate, otp: str) -> VisitorRequest:
+    """
+    Product change: OTP is stored in PLAINTEXT here, not hashed --
+    deliberate, requested trade-off (weakens the original "shown once"
+    design). There is no email/SMS gateway wired up yet, so the
+    resident has no way to receive the code again except by re-reading
+    it from the app. See app/utils/otp.py:verify_plain_otp and
+    visitors_router.list_my_requests, the only place this ever gets
+    read back out -- scoped to the owning resident, only while the
+    request is still "expected".
+    """
     request = VisitorRequest(
         **payload.model_dump(),
-        otp=hash_otp(otp),
+        otp=otp,
     )
     db.add(request)
     db.commit()
@@ -104,7 +114,7 @@ def verify_visitor_otp(db: Session, request_id: int, otp: str, guard_id: int) ->
     if request.status == "denied":
         raise BadRequest("Visitor request was denied.")
 
-    if not verify_otp(otp, request.otp):
+    if not verify_plain_otp(otp, request.otp):
         raise BadRequest("Invalid OTP.")
 
     guard = db.query(SecurityGuard).filter(SecurityGuard.guard_id == guard_id).first()
